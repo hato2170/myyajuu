@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>野獣撲滅委員会ニガ支部</title>
+
+<style>
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: sans-serif;
+}
+
+.container {
+  max-width: 500px;
+  margin: auto;
+  padding: 10px;
+}
+
+input, button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border-radius: 10px;
+  border: none;
+}
+
+input {
+  background: #111;
+  color: #fff;
+}
+
+button {
+  background: #1d9bf0;
+  color: #fff;
+  font-weight: bold;
+}
+
+.post {
+  border-bottom: 1px solid #222;
+  padding: 12px 0;
+}
+
+.actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 8px;
+  color: #aaa;
+  font-size: 14px;
+}
+
+.actions span {
+  cursor: pointer;
+}
+
+.small {
+  color: #777;
+  font-size: 12px;
+}
+
+img {
+  width: 100%;
+  margin-top: 8px;
+  border-radius: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>野獣撲滅委員会ニガ支部</h2>
+
+<style>
+.fc2-counter img {
+  width: auto !important;
+  height: 16px !important;
+  margin: 0 !important;
+  vertical-align: middle;
+}
+</style>
+
+<div style="margin-bottom:15px; padding:10px; background:#111; border-radius:12px; color:#aaa; font-size:14px;">
+
+📊 累計アクセス：
+<span class="fc2-counter">
+<script type="text/javascript"
+src="https://counter1.fc2.com/counter.php?id=89517152"></script>
+</span>
+
+<br>
+
+👀 現在の閲覧者数：
+<span class="fc2-counter">
+<script type="text/javascript"
+src="https://counter1.fc2.com/views.php?id=89517152"></script>
+</span>
+
+</div>
+
+<h3>プロフィール</h3>
+<input id="profileName" placeholder="名前">
+<input id="profileBio" placeholder="自己紹介">
+<button onclick="saveProfile()">保存</button>
+
+<hr>
+
+<input id="text" placeholder="投稿内容">
+<input type="file" id="imgFile">
+<button onclick="post()">投稿</button>
+
+<div id="posts"></div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  doc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+  deleteDoc,
+  getDoc,
+  query,
+  orderBy
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAR70h...",
+  authDomain: "schoolsns-9d994.firebaseapp.com",
+  projectId: "schoolsns-9d994",
+  storageBucket: "schoolsns-9d994.firebasestorage.app",
+  messagingSenderId: "1047321126149",
+  appId: "1:1047321126149:web:9a495d5d74dfb0ea15836c"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+// ======================
+// UID（ログインなし）
+// ======================
+let uid = localStorage.getItem("uid");
+if (!uid) {
+  uid = Math.random().toString(36).substring(2) + Date.now();
+  localStorage.setItem("uid", uid);
+}
+
+// ======================
+// プロフィール
+// ======================
+window.saveProfile = async function () {
+  const name = document.getElementById("profileName").value;
+  const bio = document.getElementById("profileBio").value;
+
+  await updateDoc(doc(db, "users", uid), {
+    name,
+    bio
+  });
+
+  alert("保存完了");
+};
+
+async function loadProfile() {
+  const refDoc = doc(db, "users", uid);
+  const snap = await getDoc(refDoc);
+
+  if (snap.exists()) {
+    const d = snap.data();
+    document.getElementById("profileName").value = d.name || "";
+    document.getElementById("profileBio").value = d.bio || "";
+  }
+}
+loadProfile();
+
+// ======================
+// 圧縮（超軽量）
+// ======================
+async function resizeImage(file, maxSize = 800) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      const img = new Image();
+
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+
+        let w = img.width;
+        let h = img.height;
+
+        if (w > h) {
+          if (w > maxSize) {
+            h *= maxSize / w;
+            w = maxSize;
+          }
+        } else {
+          if (h > maxSize) {
+            w *= maxSize / h;
+            h = maxSize;
+          }
+        }
+
+        canvas.width = w;
+        canvas.height = h;
+
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+
+        canvas.toBlob(resolve, "image/jpeg", 0.7);
+      };
+
+      img.src = e.target.result;
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+// ======================
+// 投稿（高速版）
+// ======================
+window.post = async function () {
+
+  const profileName = document.getElementById("profileName").value || "名無し";
+  const text = document.getElementById("text").value;
+  const file = document.getElementById("imgFile").files[0];
+
+  if (!text) return alert("内容入れて");
+
+  // 👉 画像なしは即投稿（超高速）
+  if (!file) {
+    await addDoc(collection(db, "posts"), {
+      name: profileName,
+      text,
+      img: "",
+      owner: uid,
+      likes: [],
+      createdAt: Date.now()
+    });
+
+    document.getElementById("text").value = "";
+    return;
+  }
+
+  // 👉 画像あり
+  const compressed = await resizeImage(file);
+
+  const imgRef = ref(storage, "images/" + Date.now());
+  await uploadBytes(imgRef, compressed);
+
+  const url = await getDownloadURL(imgRef);
+
+  await addDoc(collection(db, "posts"), {
+    name: profileName,
+    text,
+    img: url,
+    owner: uid,
+    likes: [],
+    createdAt: Date.now()
+  });
+
+  document.getElementById("text").value = "";
+};
+
+// ======================
+// いいね
+// ======================
+window.like = async function (id) {
+  const refDoc = doc(db, "posts", id);
+  const snap = await getDoc(refDoc);
+
+  const likes = snap.data().likes || [];
+
+  if (likes.includes(uid)) {
+    await updateDoc(refDoc, { likes: arrayRemove(uid) });
+  } else {
+    await updateDoc(refDoc, { likes: arrayUnion(uid) });
+  }
+};
+
+// ======================
+// 削除
+// ======================
+window.removePost = async function (id, owner) {
+  if (owner !== uid) return;
+  await deleteDoc(doc(db, "posts", id));
+};
+
+// ======================
+// タイムライン（即表示）
+// ======================
+const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+
+onSnapshot(q, (snapshot) => {
+  const postsDiv = document.getElementById("posts");
+  postsDiv.innerHTML = "";
+
+  snapshot.forEach(docSnap => {
+    const p = docSnap.data();
+    const id = docSnap.id;
+
+    postsDiv.innerHTML += `
+      <div class="post">
+
+        <b>${p.name}</b>
+        <div class="small">@${p.owner.slice(0,6)}</div>
+
+        <div>${p.text}</div>
+
+        ${p.img ? `<img src="${p.img}">` : ""}
+
+<div class="actions">
+  <span onclick="like('${id}')">❤️ ${(p.likes || []).length}</span>
+
+  ${p.owner === uid ? `
+    <span onclick="removePost('${id}', '${p.owner}')">
+      🗑️ 削除
+    </span>
+  ` : ""}
+</div>
+
+      </div>
+    `;
+  });
+});
+
+</script>
+
+</body>
+</html>
