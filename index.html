@@ -73,6 +73,33 @@ img {
 
 <h2>野獣撲滅委員会ニガ支部</h2>
 
+<style>
+.fc2-counter img {
+  width: auto !important;
+  height: 16px !important;
+  margin: 0 !important;
+  vertical-align: middle;
+}
+</style>
+
+<div style="margin-bottom:15px; padding:10px; background:#111; border-radius:12px; color:#aaa; font-size:14px;">
+
+📊 累計アクセス：
+<span class="fc2-counter">
+<script type="text/javascript"
+src="https://counter1.fc2.com/counter.php?id=89517152"></script>
+</span>
+
+<br>
+
+👀 現在の閲覧者数：
+<span class="fc2-counter">
+<script type="text/javascript"
+src="https://counter1.fc2.com/views.php?id=89517152"></script>
+</span>
+
+</div>
+
 <h3>プロフィール</h3>
 <input id="profileName" placeholder="名前">
 <input id="profileBio" placeholder="自己紹介">
@@ -299,9 +326,15 @@ onSnapshot(q, (snapshot) => {
 
         ${p.img ? `<img src="${p.img}">` : ""}
 
-        <div class="actions">
-          <span onclick="like('${id}')">❤️ ${(p.likes || []).length}</span>
-        </div>
+<div class="actions">
+  <span onclick="like('${id}')">❤️ ${(p.likes || []).length}</span>
+
+  ${p.owner === uid ? `
+    <span onclick="removePost('${id}', '${p.owner}')">
+      🗑️ 削除
+    </span>
+  ` : ""}
+</div>
 
       </div>
     `;
