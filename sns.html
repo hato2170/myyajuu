@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>野獣撲滅委員会ニガ支部</title>
 
 <style>
@@ -24,6 +25,7 @@ input, button {
   margin-top: 5px;
   border-radius: 10px;
   border: none;
+  box-sizing: border-box;
 }
 
 input {
@@ -35,6 +37,21 @@ button {
   background: #1d9bf0;
   color: #fff;
   font-weight: bold;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+button.logout {
+  background: #333;
+}
+
+button.back {
+  background: #333;
+  margin-bottom: 15px;
 }
 
 .post {
@@ -48,10 +65,15 @@ button {
   margin-top: 8px;
   color: #aaa;
   font-size: 14px;
+  flex-wrap: wrap;
 }
 
 .actions span {
   cursor: pointer;
+}
+
+.actions span:hover {
+  color: #fff;
 }
 
 .small {
@@ -59,21 +81,213 @@ button {
   font-size: 12px;
 }
 
-img {
+.post-image {
   width: 100%;
   margin-top: 8px;
   border-radius: 10px;
+  display: block;
 }
-</style>
-</head>
 
-<body>
+/* ログイン */
 
-<div class="container">
+#loginScreen {
+  max-width: 400px;
+  margin: 80px auto;
+  padding: 20px;
+}
 
-<h2>野獣撲滅委員会ニガ支部</h2>
+#loginScreen h1 {
+  text-align: center;
+}
 
-<style>
+#loginScreen .box {
+  background: #111;
+  padding: 20px;
+  border-radius: 15px;
+}
+
+#loginMessage {
+  color: #ff6b6b;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+#appScreen {
+  display: none;
+}
+
+/* ナビゲーション */
+
+.topButtons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.topButtons button {
+  margin-top: 0;
+}
+
+/* プロフィール */
+
+.profileHeader {
+  background: #111;
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 15px;
+}
+
+.profileTop {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.profileAvatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #333;
+  margin: 0;
+}
+
+.profileInfo {
+  flex: 1;
+}
+
+.profileName {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.profileUsername {
+  color: #777;
+  font-size: 14px;
+  margin-top: 3px;
+}
+
+.profileBio {
+  margin-top: 15px;
+  color: #ddd;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.profileEdit {
+  margin-top: 15px;
+}
+
+.profileEdit input,
+.profileEdit button {
+  margin-top: 8px;
+}
+
+.profileEdit img {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  margin: 10px 0;
+}
+
+/* フォロー */
+
+.followArea {
+  margin-top: 15px;
+}
+
+.followButton {
+  width: auto;
+  min-width: 120px;
+  padding: 8px 18px;
+  margin-top: 0;
+}
+
+.followStats {
+  margin-top: 10px;
+  color: #aaa;
+  font-size: 14px;
+}
+
+/* 投稿ユーザー */
+
+.postUser {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.postAvatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #333;
+  margin: 0;
+}
+
+.postUserInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.postUserName {
+  font-weight: bold;
+}
+
+.postUserId {
+  color: #777;
+  font-size: 12px;
+}
+
+/* 返信 */
+
+.replyBox {
+  margin-top: 10px;
+  display: none;
+  padding: 10px;
+  background: #0b0b0b;
+  border-radius: 10px;
+}
+
+.replyBox input {
+  margin-top: 5px;
+}
+
+.replyBox button {
+  margin-top: 5px;
+}
+
+.replyTarget {
+  color: #777;
+  font-size: 13px;
+  margin-top: 8px;
+  padding: 8px;
+  background: #111;
+  border-radius: 8px;
+}
+
+.replyLabel {
+  color: #aaa;
+  font-size: 13px;
+}
+
+/* 画面 */
+
+#profileScreen {
+  display: none;
+}
+
+#homeScreen {
+  display: block;
+}
+
+/* FC2カウンター */
+
 .fc2-counter img {
   width: auto !important;
   height: 16px !important;
@@ -81,43 +295,343 @@ img {
   vertical-align: middle;
 }
 </style>
+</head>
 
-<div style="margin-bottom:15px; padding:10px; background:#111; border-radius:12px; color:#aaa; font-size:14px;">
+<body>
 
-📊 累計アクセス：
-<span class="fc2-counter">
-<script type="text/javascript"
-src="https://counter1.fc2.com/counter.php?id=89517152"></script>
-</span>
+<!-- ======================
+     ログイン画面
+====================== -->
 
-<br>
+<div id="loginScreen">
 
-👀 現在の閲覧者数：
-<span class="fc2-counter">
-<script type="text/javascript"
-src="https://counter1.fc2.com/views.php?id=89517152"></script>
-</span>
+  <h1>野獣撲滅委員会ニガ支部</h1>
+
+  <div class="box">
+
+    <h3>ログイン</h3>
+
+    <input
+      id="loginId"
+      placeholder="ID"
+      autocomplete="username"
+    >
+
+    <input
+      id="loginPassword"
+      type="password"
+      placeholder="パスワード"
+      autocomplete="current-password"
+    >
+
+    <button onclick="login()">
+      ログイン
+    </button>
+
+    <hr style="border-color:#222; margin:20px 0;">
+
+    <h3>新規登録</h3>
+
+    <input
+      id="registerId"
+      placeholder="好きなID"
+      autocomplete="username"
+    >
+
+    <input
+      id="registerPassword"
+      type="password"
+      placeholder="パスワード（6文字以上）"
+      autocomplete="new-password"
+    >
+
+    <button onclick="register()">
+      新規登録
+    </button>
+
+    <div id="loginMessage"></div>
+
+  </div>
 
 </div>
 
-<h3>プロフィール</h3>
-<input id="profileName" placeholder="名前">
-<input id="profileBio" placeholder="自己紹介">
-<button onclick="saveProfile()">保存</button>
 
-<hr>
+<!-- ======================
+     SNS本体
+====================== -->
 
-<input id="text" placeholder="投稿内容">
-<input type="file" id="imgFile">
-<button onclick="post()">投稿</button>
+<div id="appScreen">
 
-<div id="posts"></div>
+<div class="container">
+
+  <div class="topButtons">
+
+    <button onclick="showHome()">
+      🏠 ホーム
+    </button>
+
+    <button onclick="showMyProfile()">
+      👤 プロフィール
+    </button>
+
+    <button
+      class="logout"
+      onclick="logout()"
+    >
+      🚪 ログアウト
+    </button>
+
+  </div>
+
+
+  <!-- ======================
+       ホーム
+  ======================= -->
+
+  <div id="homeScreen">
+
+    <h2>野獣撲滅委員会ニガ支部</h2>
+　　<button onclick="showDM()">
+  　　💬 DM
+　　</button>
+    <div
+      style="
+        margin-bottom:15px;
+        padding:10px;
+        background:#111;
+        border-radius:12px;
+        color:#aaa;
+        font-size:14px;
+      "
+    >
+
+      📊 累計アクセス：
+      <span class="fc2-counter">
+        <script
+          type="text/javascript"
+          src="https://counter1.fc2.com/counter.php?id=89517152"
+        ></script>
+      </span>
+
+      <br>
+
+      👀 現在の閲覧者数：
+      <span class="fc2-counter">
+        <script
+          type="text/javascript"
+          src="https://counter1.fc2.com/views.php?id=89517152"
+        ></script>
+      </span>
+
+    </div>
+
+
+    <input
+      id="text"
+      placeholder="投稿内容"
+      maxlength="1000"
+    >
+
+    <input
+      type="file"
+      id="imgFile"
+      accept="image/*"
+    >
+
+    <button onclick="post()">
+      投稿
+    </button>
+
+    <div id="posts"></div>
+
+  </div>
+
+
+  <!-- ======================
+       プロフィール
+  ======================= -->
+
+  <div id="profileScreen">
+
+    <button
+      class="back"
+      onclick="showHome()"
+    >
+      ← ホームに戻る
+    </button>
+
+
+    <div class="profileHeader">
+
+      <div class="profileTop">
+
+        <img
+          id="viewProfileImage"
+          class="profileAvatar"
+          src=""
+        >
+
+        <div class="profileInfo">
+
+          <div
+            id="viewProfileName"
+            class="profileName"
+          >
+            名無し
+          </div>
+
+          <div
+            id="viewProfileUsername"
+            class="profileUsername"
+          >
+            @
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div
+        id="viewProfileBio"
+        class="profileBio"
+      ></div>
+
+
+      <!-- フォロー -->
+
+      <div
+        id="followArea"
+        class="followArea"
+      >
+
+        <button
+          id="followButton"
+          class="followButton"
+          onclick="toggleFollow()"
+        >
+          👥 フォロー
+        </button>
+
+        <div
+          id="followStats"
+          class="followStats"
+        >
+          フォロワー 0　フォロー中 0
+        </div>
+
+      </div>
+
+
+      <!-- プロフィール編集 -->
+
+      <div
+        id="profileEditArea"
+        class="profileEdit"
+        style="display:none;"
+      >
+
+        <hr style="border-color:#222; margin:20px 0;">
+
+        <h3>プロフィールを編集</h3>
+
+        <input
+          id="editProfileName"
+          placeholder="名前"
+        >
+
+        <input
+          id="editProfileBio"
+          placeholder="自己紹介"
+        >
+
+        <p style="color:#777; font-size:13px;">
+          プロフィール画像
+        </p>
+
+        <img
+          id="editProfilePreview"
+          src=""
+        >
+
+        <input
+          type="file"
+          id="profileImageFile"
+          accept="image/*"
+          onchange="previewProfileImage()"
+        >
+
+        <button onclick="saveProfile()">
+          💾 保存
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <h3>投稿</h3>
+
+    <div id="profilePosts"></div>
+
+  </div>
 
 </div>
+
+<!-- ======================
+     DM
+======================= -->
+
+<div id="dmScreen" style="display:none;">
+
+  <button
+    class="back"
+    onclick="showHome()"
+  >
+    ← ホームに戻る
+  </button>
+
+  <h2>💬 DM</h2>
+
+  <input
+  id="dmUserId"
+  placeholder="DMする相手のユーザーID"
+>
+
+<button onclick="openDM()">
+  DMを開く
+</button>
+
+<div id="dmChat"></div>
+
+<div id="dmInputArea" style="display:none;">
+
+  <input
+    id="dmMessage"
+    placeholder="メッセージを入力..."
+    maxlength="1000"
+  >
+
+  <button onclick="sendDM()">
+    送信
+  </button>
+
+</div>
+
+  <div id="dmList"></div>
+
+</div>
+
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+/* ======================
+   Firebase
+====================== */
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+
 import {
   getFirestore,
   collection,
@@ -125,221 +639,2858 @@ import {
   onSnapshot,
   doc,
   updateDoc,
+  setDoc,
   arrayUnion,
   arrayRemove,
   deleteDoc,
   getDoc,
   query,
+  where,
   orderBy
-} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+}
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 import {
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL
-} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-storage.js";
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+}
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+
+
+/* ======================
+   Firebase設定
+====================== */
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAR70h...",
-  authDomain: "schoolsns-9d994.firebaseapp.com",
-  projectId: "schoolsns-9d994",
-  storageBucket: "schoolsns-9d994.firebasestorage.app",
-  messagingSenderId: "1047321126149",
-  appId: "1:1047321126149:web:9a495d5d74dfb0ea15836c"
+
+  apiKey: "AIzaSyAR70h-R2ZvqIM5WZ-z5Dov3aXqasR6P2I",
+
+  authDomain:
+    "schoolsns-9d994.firebaseapp.com",
+
+  projectId:
+    "schoolsns-9d994",
+
+  storageBucket:
+    "schoolsns-9d994.firebasestorage.app",
+
+  messagingSenderId:
+    "1047321126149",
+
+  appId:
+    "1:1047321126149:web:9a495d5d74dfb0ea15836c"
+
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const storage = getStorage(app);
 
-// ======================
-// UID（ログインなし）
-// ======================
-let uid = localStorage.getItem("uid");
-if (!uid) {
-  uid = Math.random().toString(36).substring(2) + Date.now();
-  localStorage.setItem("uid", uid);
+const app =
+  initializeApp(firebaseConfig);
+
+const db =
+  getFirestore(app);
+
+const auth =
+  getAuth(app);
+
+
+/* ======================
+   Cloudinary設定
+====================== */
+
+const CLOUDINARY_CLOUD_NAME =
+  "njoysfml";
+
+const CLOUDINARY_UPLOAD_PRESET =
+  "myyajuu";
+
+
+/* ======================
+   Cloudinary画像アップロード
+====================== */
+
+async function uploadToCloudinary(
+  file,
+  maxSize = 800
+) {
+
+  if (!file) {
+
+    throw new Error(
+      "画像ファイルがありません"
+    );
+
+  }
+
+
+  if (!file.type.startsWith("image/")) {
+
+    throw new Error(
+      "画像ファイルを選択してください"
+    );
+
+  }
+
+
+  const compressed =
+    await resizeImage(
+      file,
+      maxSize
+    );
+
+
+  const formData =
+    new FormData();
+
+
+  formData.append(
+    "file",
+    compressed,
+    "image.jpg"
+  );
+
+
+  formData.append(
+    "upload_preset",
+    CLOUDINARY_UPLOAD_PRESET
+  );
+
+
+  const response =
+    await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+      {
+        method: "POST",
+        body: formData
+      }
+    );
+
+
+  if (!response.ok) {
+
+    let errorMessage =
+      "Cloudinaryへの画像アップロードに失敗しました";
+
+    try {
+
+      const errorData =
+        await response.json();
+
+      console.error(
+        "Cloudinary error:",
+        errorData
+      );
+
+
+      if (
+        errorData?.error?.message
+      ) {
+
+        errorMessage +=
+          "\n" +
+          errorData.error.message;
+
+      }
+
+    } catch (e) {
+
+      console.error(e);
+
+    }
+
+
+    throw new Error(
+      errorMessage
+    );
+
+  }
+
+
+  const data =
+    await response.json();
+
+
+  if (!data.secure_url) {
+
+    throw new Error(
+      "Cloudinaryから画像URLを取得できませんでした"
+    );
+
+  }
+
+
+  return data.secure_url;
+
 }
 
-// ======================
-// プロフィール
-// ======================
-window.saveProfile = async function () {
-  const name = document.getElementById("profileName").value;
-  const bio = document.getElementById("profileBio").value;
 
-  await updateDoc(doc(db, "users", uid), {
-    name,
-    bio
-  });
+/* ======================
+   ID → 内部メール
+====================== */
 
-  alert("保存完了");
+function idToEmail(id) {
+
+  return id.toLowerCase() +
+    "@schoolsns.local";
+
+}
+
+
+/* ======================
+   IDチェック
+====================== */
+
+function validId(id) {
+
+  return /^[a-zA-Z0-9_.-]{3,20}$/.test(id);
+
+}
+
+
+/* ======================
+   パスワードチェック
+====================== */
+
+function validPassword(password) {
+
+  return password.length >= 6;
+
+}
+
+
+/* ======================
+   メッセージ
+====================== */
+
+function showMessage(message) {
+
+  document.getElementById(
+    "loginMessage"
+  ).textContent =
+    message;
+
+}
+
+
+/* ======================
+   新規登録
+====================== */
+
+window.register =
+async function () {
+
+  const id =
+    document.getElementById(
+      "registerId"
+    ).value.trim();
+
+
+  const password =
+    document.getElementById(
+      "registerPassword"
+    ).value;
+
+
+  if (!validId(id)) {
+
+    showMessage(
+      "IDは3〜20文字の英数字・_・-・.で入力してください"
+    );
+
+    return;
+
+  }
+
+
+  if (!validPassword(password)) {
+
+    showMessage(
+      "パスワードは6文字以上にしてください"
+    );
+
+    return;
+
+  }
+
+
+  try {
+
+    const email =
+      idToEmail(id);
+
+
+    const userCredential =
+      await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+
+    const user =
+      userCredential.user;
+
+
+    await setDoc(
+      doc(db, "users", user.uid),
+      {
+        uid: user.uid,
+        username: id,
+        name: id,
+        bio: "",
+        profileImage: "",
+        followers: [],
+        following: [],
+        createdAt: Date.now()
+      }
+    );
+
+
+    showMessage(
+      "登録完了！ログインしています..."
+    );
+
+
+  } catch (error) {
+
+    console.error(error);
+
+
+    if (
+      error.code ===
+      "auth/email-already-in-use"
+    ) {
+
+      showMessage(
+        "そのIDはすでに使われています"
+      );
+
+    } else {
+
+      showMessage(
+        "登録に失敗しました：" +
+        error.message
+      );
+
+    }
+
+  }
+
 };
+
+
+/* ======================
+   ログイン
+====================== */
+
+window.login =
+async function () {
+
+  const id =
+    document.getElementById(
+      "loginId"
+    ).value.trim();
+
+
+  const password =
+    document.getElementById(
+      "loginPassword"
+    ).value;
+
+
+  if (!id || !password) {
+
+    showMessage(
+      "IDとパスワードを入力してください"
+    );
+
+    return;
+
+  }
+
+
+  try {
+
+    const email =
+      idToEmail(id);
+
+
+    await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+
+    showMessage(
+      "ログインしました"
+    );
+
+
+  } catch (error) {
+
+    console.error(error);
+
+
+    showMessage(
+      "IDまたはパスワードが違います"
+    );
+
+  }
+
+};
+
+
+/* ======================
+   ログアウト
+====================== */
+
+window.logout =
+async function () {
+
+  await signOut(auth);
+
+};
+
+
+/* ======================
+   現在のUID
+====================== */
+
+let uid = null;
+
+
+/* ======================
+   現在表示しているプロフィール
+====================== */
+
+let viewingProfileUserId =
+  null;
+
+
+/* ======================
+   プロフィールキャッシュ
+====================== */
+
+const profileCache = {};
+
+
+/* ======================
+   認証状態
+====================== */
+
+onAuthStateChanged(
+  auth,
+  async (user) => {
+
+    if (user) {
+
+      uid =
+        user.uid;
+
+
+      document.getElementById(
+        "loginScreen"
+      ).style.display =
+        "none";
+
+
+      document.getElementById(
+        "appScreen"
+      ).style.display =
+        "block";
+
+
+      await loadProfile();
+
+
+      showHome();
+
+
+    } else {
+
+      uid = null;
+
+
+      viewingProfileUserId =
+        null;
+
+
+      document.getElementById(
+        "loginScreen"
+      ).style.display =
+        "block";
+
+
+      document.getElementById(
+        "appScreen"
+      ).style.display =
+        "none";
+
+    }
+
+  }
+);
+
+
+/* ======================
+   自分のプロフィール読み込み
+====================== */
 
 async function loadProfile() {
-  const refDoc = doc(db, "users", uid);
-  const snap = await getDoc(refDoc);
 
-  if (snap.exists()) {
-    const d = snap.data();
-    document.getElementById("profileName").value = d.name || "";
-    document.getElementById("profileBio").value = d.bio || "";
-  }
-}
-loadProfile();
+  if (!uid) return;
 
-// ======================
-// 圧縮（超軽量）
-// ======================
-async function resizeImage(file, maxSize = 800) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
 
-    reader.onload = (e) => {
-      const img = new Image();
+  const profileRef =
+    doc(
+      db,
+      "users",
+      uid
+    );
 
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
 
-        let w = img.width;
-        let h = img.height;
+  const snap =
+    await getDoc(
+      profileRef
+    );
 
-        if (w > h) {
-          if (w > maxSize) {
-            h *= maxSize / w;
-            w = maxSize;
-          }
-        } else {
-          if (h > maxSize) {
-            w *= maxSize / h;
-            h = maxSize;
-          }
-        }
 
-        canvas.width = w;
-        canvas.height = h;
+  if (!snap.exists()) {
 
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, w, h);
+    /* 古いユーザー用 */
 
-        canvas.toBlob(resolve, "image/jpeg", 0.7);
-      };
+    await setDoc(
+      profileRef,
+      {
+        uid: uid,
+        followers: [],
+        following: []
+      },
+      {
+        merge: true
+      }
+    );
 
-      img.src = e.target.result;
+
+    profileCache[uid] = {
+
+      uid: uid,
+      followers: [],
+      following: []
+
     };
 
-    reader.readAsDataURL(file);
-  });
+
+    return;
+
+  }
+
+
+  const d =
+    snap.data();
+
+
+  profileCache[uid] =
+    d;
+
+
+  /* 古いユーザーに
+     フォロー情報がない場合 */
+
+  if (
+    !Array.isArray(d.followers) ||
+    !Array.isArray(d.following)
+  ) {
+
+    await setDoc(
+      profileRef,
+      {
+        followers:
+          Array.isArray(d.followers)
+            ? d.followers
+            : [],
+
+        following:
+          Array.isArray(d.following)
+            ? d.following
+            : []
+
+      },
+      {
+        merge: true
+      }
+    );
+
+
+    profileCache[uid] = {
+
+      ...d,
+
+      followers:
+        Array.isArray(d.followers)
+          ? d.followers
+          : [],
+
+      following:
+        Array.isArray(d.following)
+          ? d.following
+          : []
+
+    };
+
+  }
+
 }
 
-// ======================
-// 投稿（高速版）
-// ======================
-window.post = async function () {
 
-  const profileName = document.getElementById("profileName").value || "名無し";
-  const text = document.getElementById("text").value;
-  const file = document.getElementById("imgFile").files[0];
+/* ======================
+   プロフィール取得
+====================== */
 
-  if (!text) return alert("内容入れて");
+async function getProfile(userId) {
 
-  // 👉 画像なしは即投稿（超高速）
-  if (!file) {
-    await addDoc(collection(db, "posts"), {
-      name: profileName,
-      text,
-      img: "",
-      owner: uid,
-      likes: [],
-      createdAt: Date.now()
-    });
+  if (!userId) return null;
 
-    document.getElementById("text").value = "";
-    return;
+
+  if (profileCache[userId]) {
+
+    return profileCache[userId];
+
   }
 
-  // 👉 画像あり
-  const compressed = await resizeImage(file);
 
-  const imgRef = ref(storage, "images/" + Date.now());
-  await uploadBytes(imgRef, compressed);
+  const snap =
+    await getDoc(
+      doc(
+        db,
+        "users",
+        userId
+      )
+    );
 
-  const url = await getDownloadURL(imgRef);
 
-  await addDoc(collection(db, "posts"), {
-    name: profileName,
-    text,
-    img: url,
-    owner: uid,
-    likes: [],
-    createdAt: Date.now()
-  });
+  if (!snap.exists()) {
 
-  document.getElementById("text").value = "";
-};
+    return null;
 
-// ======================
-// いいね
-// ======================
-window.like = async function (id) {
-  const refDoc = doc(db, "posts", id);
-  const snap = await getDoc(refDoc);
+  }
 
-  const likes = snap.data().likes || [];
 
-  if (likes.includes(uid)) {
-    await updateDoc(refDoc, { likes: arrayRemove(uid) });
+  const data =
+    snap.data();
+
+
+  profileCache[userId] =
+    data;
+
+
+  return data;
+
+}
+
+
+/* ======================
+   フォローUI
+====================== */
+
+async function updateFollowUI(
+  userId
+) {
+
+  console.time("プロフィール取得");
+
+　const profile =
+    await getProfile(
+      userId
+    );
+
+　console.timeEnd("プロフィール取得");
+
+  if (!profile) return;
+
+
+  const followers =
+    Array.isArray(
+      profile.followers
+    )
+      ? profile.followers
+      : [];
+
+
+  const following =
+    Array.isArray(
+      profile.following
+    )
+      ? profile.following
+      : [];
+
+
+  const followButton =
+    document.getElementById(
+      "followButton"
+    );
+
+
+  const followStats =
+    document.getElementById(
+      "followStats"
+    );
+
+
+  if (!followButton) return;
+
+
+  if (userId === uid) {
+
+    followButton.style.display =
+      "none";
+
   } else {
-    await updateDoc(refDoc, { likes: arrayUnion(uid) });
+
+    followButton.style.display =
+      "inline-block";
+
+
+    const isFollowing =
+      followers.includes(uid);
+
+
+    if (isFollowing) {
+
+      followButton.textContent =
+        "✓ フォロー中";
+
+      followButton.style.background =
+        "#333";
+
+    } else {
+
+      followButton.textContent =
+        "👥 フォロー";
+
+      followButton.style.background =
+        "#1d9bf0";
+
+    }
+
   }
+
+
+  followStats.textContent =
+    `フォロワー ${followers.length}　フォロー中 ${following.length}`;
+
+}
+
+
+/* ======================
+   フォロー / フォロー解除
+====================== */
+
+window.toggleFollow =
+async function () {
+
+  if (!uid) return;
+
+
+  if (!viewingProfileUserId) return;
+
+
+  if (
+    viewingProfileUserId === uid
+  ) {
+
+    return;
+
+  }
+
+
+  const targetId =
+    viewingProfileUserId;
+
+
+  const myRef =
+    doc(
+      db,
+      "users",
+      uid
+    );
+
+
+  const targetRef =
+    doc(
+      db,
+      "users",
+      targetId
+    );
+
+
+  const mySnap =
+    await getDoc(
+      myRef
+    );
+
+
+  const targetSnap =
+    await getDoc(
+      targetRef
+    );
+
+
+  if (
+    !mySnap.exists() ||
+    !targetSnap.exists()
+  ) {
+
+    alert(
+      "ユーザーが見つかりません"
+    );
+
+    return;
+
+  }
+
+
+  const myData =
+    mySnap.data();
+
+
+  const targetData =
+    targetSnap.data();
+
+
+  const following =
+    Array.isArray(
+      myData.following
+    )
+      ? myData.following
+      : [];
+
+
+  const followers =
+    Array.isArray(
+      targetData.followers
+    )
+      ? targetData.followers
+      : [];
+
+
+  const isFollowing =
+    following.includes(
+      targetId
+    );
+
+
+  const button =
+    document.getElementById(
+      "followButton"
+    );
+
+
+  if (button) {
+
+    button.disabled =
+      true;
+
+  }
+
+
+  try {
+
+    if (isFollowing) {
+
+      /* ======================
+         フォロー解除
+      ====================== */
+
+      await updateDoc(
+        myRef,
+        {
+          following:
+            arrayRemove(
+              targetId
+            )
+        }
+      );
+
+
+      await updateDoc(
+        targetRef,
+        {
+          followers:
+            arrayRemove(
+              uid
+            )
+        }
+      );
+
+
+      profileCache[uid] = {
+
+        ...(profileCache[uid] || {}),
+
+        following:
+          following.filter(
+            id =>
+              id !== targetId
+          )
+
+      };
+
+
+      profileCache[targetId] = {
+
+        ...(profileCache[targetId] || {}),
+
+        followers:
+          followers.filter(
+            id =>
+              id !== uid
+          )
+
+      };
+
+
+    } else {
+
+      /* ======================
+         フォロー
+      ====================== */
+
+      await updateDoc(
+        myRef,
+        {
+          following:
+            arrayUnion(
+              targetId
+            )
+        }
+      );
+
+
+      await updateDoc(
+        targetRef,
+        {
+          followers:
+            arrayUnion(
+              uid
+            )
+        }
+      );
+
+
+      profileCache[uid] = {
+
+        ...(profileCache[uid] || {}),
+
+        following: [
+          ...following,
+          targetId
+        ]
+
+      };
+
+
+      profileCache[targetId] = {
+
+        ...(profileCache[targetId] || {}),
+
+        followers: [
+          ...followers,
+          uid
+        ]
+
+      };
+
+    }
+
+
+    await updateFollowUI(
+      targetId
+    );
+
+
+  } catch (error) {
+
+    console.error(error);
+
+
+    alert(
+      "フォロー処理に失敗しました：\n" +
+      error.message
+    );
+
+
+  } finally {
+
+    if (button) {
+
+      button.disabled =
+        false;
+
+    }
+
+  }
+
 };
 
-// ======================
-// 削除
-// ======================
-window.removePost = async function (id, owner) {
+
+/* ======================
+   プロフィール画面
+====================== */
+
+window.showProfile =
+async function (userId) {
+
+  if (!userId) return;
+
+
+  viewingProfileUserId =
+    userId;
+
+
+  document.getElementById(
+    "homeScreen"
+  ).style.display =
+    "none";
+
+
+  document.getElementById(
+    "profileScreen"
+  ).style.display =
+    "block";
+
+
+  const profile =
+    await getProfile(
+      userId
+    );
+
+
+  if (!profile) {
+
+    document.getElementById(
+      "viewProfileName"
+    ).textContent =
+      "名無し";
+
+
+    document.getElementById(
+      "viewProfileUsername"
+    ).textContent =
+      "";
+
+
+    document.getElementById(
+      "viewProfileBio"
+    ).textContent =
+      "プロフィールがありません";
+
+
+    return;
+
+  }
+
+
+  document.getElementById(
+    "viewProfileName"
+  ).textContent =
+    profile.name ||
+    "名無し";
+
+
+  document.getElementById(
+    "viewProfileUsername"
+  ).textContent =
+    "@" +
+    (
+      profile.username ||
+      ""
+    );
+
+
+  document.getElementById(
+    "viewProfileBio"
+  ).textContent =
+    profile.bio ||
+    "自己紹介はありません";
+
+
+  const image =
+    document.getElementById(
+      "viewProfileImage"
+    );
+
+
+  if (profile.profileImage) {
+
+    image.src =
+      profile.profileImage;
+
+  } else {
+
+    image.src =
+      createDefaultAvatar(
+        profile.name ||
+        "?"
+      );
+
+  }
+
+
+  /* ======================
+     フォロー表示
+  ====================== */
+
+  await updateFollowUI(
+    userId
+  );
+
+
+  /* ======================
+     編集エリア
+  ====================== */
+
+  const editArea =
+    document.getElementById(
+      "profileEditArea"
+    );
+
+
+  if (userId === uid) {
+
+    editArea.style.display =
+      "block";
+
+
+    document.getElementById(
+      "editProfileName"
+    ).value =
+      profile.name ||
+      "";
+
+
+    document.getElementById(
+      "editProfileBio"
+    ).value =
+      profile.bio ||
+      "";
+
+
+    const preview =
+      document.getElementById(
+        "editProfilePreview"
+      );
+
+
+    if (profile.profileImage) {
+
+      preview.src =
+        profile.profileImage;
+
+    } else {
+
+      preview.src =
+        createDefaultAvatar(
+          profile.name ||
+          "?"
+        );
+
+    }
+
+  } else {
+
+    editArea.style.display =
+      "none";
+
+  }
+
+
+  await loadProfilePosts(
+    userId
+  );
+
+};
+
+
+/* ======================
+   自分のプロフィール
+====================== */
+
+window.showMyProfile =
+function () {
+
+  if (!uid) return;
+
+  showProfile(uid);
+
+};
+
+
+/* ======================
+   ホーム
+====================== */
+
+window.showHome =
+function () {
+
+  viewingProfileUserId =
+    null;
+
+  document.getElementById(
+    "profileScreen"
+  ).style.display =
+    "none";
+
+  document.getElementById(
+    "dmScreen"
+  ).style.display =
+    "none";
+
+  document.getElementById(
+    "homeScreen"
+  ).style.display =
+    "block";
+
+};
+
+
+/* ======================
+   DM画面
+====================== */
+
+window.showDM =
+function () {
+
+  viewingProfileUserId =
+    null;
+
+  document.getElementById(
+    "profileScreen"
+  ).style.display =
+    "none";
+
+  document.getElementById(
+    "homeScreen"
+  ).style.display =
+    "none";
+
+  document.getElementById(
+    "dmScreen"
+  ).style.display =
+    "block";
+
+};
+
+
+/* ======================
+   DMを開く
+====================== */
+
+let dmTargetUserId =
+  null;
+
+window.openDM =
+async function () {
+
+  const input =
+    document.getElementById(
+      "dmUserId"
+    );
+
+  if (!input) return;
+
+  const targetId =
+    input.value.trim();
+
+  if (!targetId) {
+
+    alert(
+      "DMする相手のユーザーIDを入力してください"
+    );
+
+    return;
+
+  }
+
+  if (!uid) {
+
+    alert(
+      "ログインしてください"
+    );
+
+    return;
+
+  }
+
+  if (targetId === uid) {
+
+    alert(
+      "自分にはDMできません"
+    );
+
+    return;
+
+  }
+
+  const profile =
+    await getProfile(
+      targetId
+    );
+
+  if (!profile) {
+
+    alert(
+      "そのユーザーIDは見つかりません"
+    );
+
+    return;
+
+  }
+
+  dmTargetUserId =
+    targetId;
+
+/* ======================
+   DMリアルタイム受信
+====================== */
+
+if (dmUnsubscribe) {
+
+  dmUnsubscribe();
+
+  dmUnsubscribe =
+    null;
+
+}
+
+const conversationId =
+  [uid, dmTargetUserId]
+    .sort()
+    .join("_");
+
+const messagesQuery =
+  query(
+    collection(
+      db,
+      "messages"
+    ),
+    where(
+      "conversationId",
+      "==",
+      conversationId
+    )
+  );
+
+dmUnsubscribe =
+  onSnapshot(
+    messagesQuery,
+    (snapshot) => {
+
+      const messages =
+        snapshot.docs
+          .map(
+            (docSnap) => ({
+              id:
+                docSnap.id,
+
+              ...docSnap.data()
+            })
+          )
+          .sort(
+            (a, b) =>
+              a.createdAt -
+              b.createdAt
+          );
+
+      const dmChat =
+        document.getElementById(
+          "dmChat"
+        );
+
+      if (!dmChat) return;
+
+      dmChat.innerHTML =
+  `<p style="color:#aaa;">
+    ${escapeHTML(
+      profile.name ||
+      "名無し"
+    )} さんとのDM
+  </p>` +
+  messages
+    .map(
+      (message) => {
+              const isMine =
+                message.senderId === uid;
+
+              return `
+                <div
+                  style="
+                    text-align:${isMine ? "right" : "left"};
+                    margin:8px 0;
+                  "
+                >
+                  <span
+                    style="
+                      display:inline-block;
+                      max-width:80%;
+                      padding:9px 12px;
+                      border-radius:12px;
+                      background:${isMine ? "#1d9bf0" : "#222"};
+                      word-break:break-word;
+                    "
+                  >
+                    ${escapeHTML(
+                      message.text || ""
+                    )}
+                  </span>
+                </div>
+              `;
+
+            }
+          )
+          .join("");
+
+      dmChat.scrollTop =
+        dmChat.scrollHeight;
+
+    },
+    (error) => {
+
+      console.error(
+        "DM受信エラー:",
+        error
+      );
+
+    }
+  );
+
+  const dmChat =
+    document.getElementById(
+      "dmChat"
+    );
+
+  if (dmChat) {
+
+  dmChat.innerHTML =
+    `<p style="color:#aaa;">
+      ${escapeHTML(
+        profile.name ||
+        "名無し"
+      )} さんとのDM
+    </p>`;
+
+}
+
+
+const dmInputArea =
+  document.getElementById(
+    "dmInputArea"
+  );
+
+if (dmInputArea) {
+
+  dmInputArea.style.display =
+    "block";
+
+}
+
+};
+
+/* ======================
+   DM送信
+====================== */
+
+window.sendDM =
+async function () {
+
+  if (!uid) {
+
+    alert(
+      "ログインしてください"
+    );
+
+    return;
+
+  }
+
+
+  if (!dmTargetUserId) {
+
+    alert(
+      "先にDMする相手を選んでください"
+    );
+
+    return;
+
+  }
+
+
+  const input =
+    document.getElementById(
+      "dmMessage"
+    );
+
+
+  if (!input) return;
+
+
+  const text =
+    input.value.trim();
+
+
+  if (!text) {
+
+    alert(
+      "メッセージを入力してください"
+    );
+
+    return;
+
+  }
+
+
+  try {
+
+    const conversationId =
+      [uid, dmTargetUserId]
+        .sort()
+        .join("_");
+
+
+    await addDoc(
+      collection(
+        db,
+        "messages"
+      ),
+      {
+
+        conversationId:
+          conversationId,
+
+        senderId:
+          uid,
+
+        receiverId:
+          dmTargetUserId,
+
+        text:
+          text,
+
+        createdAt:
+          Date.now()
+
+      }
+    );
+
+
+    input.value =
+      "";
+
+
+  } catch (error) {
+
+    console.error(
+      "DM送信エラー:",
+      error
+    );
+
+
+    alert(
+      "DMの送信に失敗しました：\n" +
+      error.message
+    );
+
+  }
+
+};
+
+
+/* ======================
+   デフォルトアイコン
+====================== */
+
+function createDefaultAvatar(
+  name
+) {
+
+  const letter =
+    (name || "?")
+    .charAt(0)
+    .toUpperCase();
+
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg"
+         width="200"
+         height="200">
+
+      <rect
+        width="200"
+        height="200"
+        fill="#333"/>
+
+      <text
+        x="100"
+        y="125"
+        text-anchor="middle"
+        font-size="90"
+        fill="white"
+        font-family="Arial">
+
+        ${escapeHTML(letter)}
+
+      </text>
+
+    </svg>
+  `;
+
+
+  return (
+    "data:image/svg+xml;charset=UTF-8," +
+    encodeURIComponent(svg)
+  );
+
+}
+
+
+/* ======================
+   プロフィール画像プレビュー
+====================== */
+
+window.previewProfileImage =
+function () {
+
+  const file =
+    document.getElementById(
+      "profileImageFile"
+    ).files[0];
+
+
+  if (!file) return;
+
+
+  const reader =
+    new FileReader();
+
+
+  reader.onload =
+    function (e) {
+
+      document.getElementById(
+        "editProfilePreview"
+      ).src =
+        e.target.result;
+
+    };
+
+
+  reader.readAsDataURL(
+    file
+  );
+
+};
+
+
+/* ======================
+   プロフィール保存
+====================== */
+
+window.saveProfile =
+async function () {
+
+  if (!uid) return;
+
+
+  const saveButton =
+    document.querySelector(
+      "#profileEditArea button"
+    );
+
+
+  try {
+
+    const name =
+      document.getElementById(
+        "editProfileName"
+      ).value.trim();
+
+
+    const bio =
+      document.getElementById(
+        "editProfileBio"
+      ).value.trim();
+
+
+    if (!name) {
+
+      alert(
+        "名前を入力してください"
+      );
+
+      return;
+
+    }
+
+
+    if (saveButton) {
+
+      saveButton.disabled =
+        true;
+
+      saveButton.textContent =
+        "☁️ 画像をアップロード中...";
+
+    }
+
+
+    const currentProfile =
+      await getProfile(
+        uid
+      );
+
+
+    let profileImage =
+      currentProfile?.profileImage ||
+      "";
+
+
+    const file =
+      document.getElementById(
+        "profileImageFile"
+      ).files[0];
+
+
+    if (file) {
+
+      profileImage =
+        await uploadToCloudinary(
+          file,
+          500
+        );
+
+    }
+
+
+    await setDoc(
+      doc(
+        db,
+        "users",
+        uid
+      ),
+      {
+        uid: uid,
+        name: name,
+        bio: bio,
+        profileImage:
+          profileImage
+      },
+      {
+        merge: true
+      }
+    );
+
+
+    profileCache[uid] = {
+
+      ...(profileCache[uid] || {}),
+
+      uid: uid,
+      name: name,
+      bio: bio,
+      profileImage:
+        profileImage
+
+    };
+
+
+    document.getElementById(
+      "profileImageFile"
+    ).value =
+      "";
+
+
+    alert(
+      "プロフィールを保存しました！"
+    );
+
+
+    await showProfile(
+      uid
+    );
+
+
+  } catch (error) {
+
+    console.error(error);
+
+
+    alert(
+      "プロフィール保存に失敗しました：\n" +
+      error.message
+    );
+
+
+  } finally {
+
+    if (saveButton) {
+
+      saveButton.disabled =
+        false;
+
+      saveButton.textContent =
+        "💾 保存";
+
+    }
+
+  }
+
+};
+
+
+/* ======================
+   画像圧縮
+====================== */
+
+async function resizeImage(
+  file,
+  maxSize = 800
+) {
+
+  return new Promise(
+    (resolve, reject) => {
+
+      const reader =
+        new FileReader();
+
+
+      reader.onerror =
+        reject;
+
+
+      reader.onload =
+        (e) => {
+
+          const img =
+            new Image();
+
+
+          img.onerror =
+            reject;
+
+
+          img.onload =
+            () => {
+
+              const canvas =
+                document.createElement(
+                  "canvas"
+                );
+
+
+              let w =
+                img.width;
+
+              let h =
+                img.height;
+
+
+              if (w > h) {
+
+                if (w > maxSize) {
+
+                  h *=
+                    maxSize / w;
+
+                  w =
+                    maxSize;
+
+                }
+
+              } else {
+
+                if (h > maxSize) {
+
+                  w *=
+                    maxSize / h;
+
+                  h =
+                    maxSize;
+
+                }
+
+              }
+
+
+              canvas.width =
+                Math.round(w);
+
+              canvas.height =
+                Math.round(h);
+
+
+              const ctx =
+                canvas.getContext(
+                  "2d"
+                );
+
+
+              ctx.drawImage(
+                img,
+                0,
+                0,
+                canvas.width,
+                canvas.height
+              );
+
+
+              canvas.toBlob(
+                (blob) => {
+
+                  if (blob) {
+
+                    resolve(
+                      blob
+                    );
+
+                  } else {
+
+                    reject(
+                      new Error(
+                        "画像の圧縮に失敗しました"
+                      )
+                    );
+
+                  }
+
+                },
+                "image/jpeg",
+                0.8
+              );
+
+            };
+
+
+          img.src =
+            e.target.result;
+
+        };
+
+
+      reader.readAsDataURL(
+        file
+      );
+
+    }
+  );
+
+}
+
+
+/* ======================
+   投稿
+====================== */
+
+window.post =
+async function () {
+
+  if (!uid) {
+
+    alert(
+      "ログインしてください"
+    );
+
+    return;
+
+  }
+
+
+  const button =
+    document.querySelector(
+      "#homeScreen > button"
+    );
+
+
+  try {
+
+    const profile =
+      await getProfile(
+        uid
+      );
+
+
+    const profileName =
+      profile?.name ||
+      "名無し";
+
+
+    const text =
+      document.getElementById(
+        "text"
+      ).value.trim();
+
+
+    const file =
+      document.getElementById(
+        "imgFile"
+      ).files[0];
+
+
+    if (!text) {
+
+      alert(
+        "内容入れて"
+      );
+
+      return;
+
+    }
+
+
+    if (button) {
+
+      button.disabled =
+        true;
+
+    }
+
+
+    let imageUrl =
+      "";
+
+
+    if (file) {
+
+      if (button) {
+
+        button.textContent =
+          "☁️ 画像をアップロード中...";
+
+      }
+
+
+      imageUrl =
+        await uploadToCloudinary(
+          file,
+          800
+        );
+
+    }
+
+
+    await addDoc(
+      collection(
+        db,
+        "posts"
+      ),
+      {
+
+        name:
+          profileName,
+
+        text:
+          text,
+
+        img:
+          imageUrl,
+
+        owner:
+          uid,
+
+        likes:
+          [],
+
+        createdAt:
+          Date.now(),
+
+        replyTo:
+          null,
+
+        replyToOwner:
+          null,
+
+        replyToName:
+          null
+
+      }
+    );
+
+
+    document.getElementById(
+      "text"
+    ).value =
+      "";
+
+
+    document.getElementById(
+      "imgFile"
+    ).value =
+      "";
+
+
+  } catch (error) {
+
+    console.error(error);
+
+
+    alert(
+      "投稿に失敗しました：\n" +
+      error.message
+    );
+
+
+  } finally {
+
+    if (button) {
+
+      button.disabled =
+        false;
+
+      button.textContent =
+        "投稿";
+
+    }
+
+  }
+
+};
+
+
+/* ======================
+   いいね
+====================== */
+
+window.like =
+async function (id) {
+
+  if (!uid) return;
+
+
+  const refDoc =
+    doc(
+      db,
+      "posts",
+      id
+    );
+
+
+  const snap =
+    await getDoc(
+      refDoc
+    );
+
+
+  if (!snap.exists()) return;
+
+
+  const likes =
+    snap.data().likes ||
+    [];
+
+
+  if (
+    likes.includes(uid)
+  ) {
+
+    await updateDoc(
+      refDoc,
+      {
+        likes:
+          arrayRemove(uid)
+      }
+    );
+
+  } else {
+
+    await updateDoc(
+      refDoc,
+      {
+        likes:
+          arrayUnion(uid)
+      }
+    );
+
+  }
+
+};
+
+
+/* ======================
+   返信入力欄
+====================== */
+
+window.showReplyBox =
+function (id) {
+
+  const box =
+    document.getElementById(
+      `replyBox-${id}`
+    );
+
+
+  if (!box) return;
+
+
+  if (
+    box.style.display ===
+    "block"
+  ) {
+
+    box.style.display =
+      "none";
+
+  } else {
+
+    box.style.display =
+      "block";
+
+
+    const input =
+      document.getElementById(
+        `replyInput-${id}`
+      );
+
+
+    if (input) {
+
+      input.focus();
+
+    }
+
+  }
+
+};
+
+
+/* ======================
+   返信投稿
+====================== */
+
+window.reply =
+async function (
+  id,
+  originalOwner,
+  originalName
+) {
+
+  if (!uid) {
+
+    alert(
+      "ログインしてください"
+    );
+
+    return;
+
+  }
+
+
+  const input =
+    document.getElementById(
+      `replyInput-${id}`
+    );
+
+
+  if (!input) return;
+
+
+  const text =
+    input.value.trim();
+
+
+  if (!text) {
+
+    alert(
+      "返信内容を入力してください"
+    );
+
+    return;
+
+  }
+
+
+  try {
+
+    const profile =
+      await getProfile(
+        uid
+      );
+
+
+    const profileName =
+      profile?.name ||
+      "名無し";
+
+
+    await addDoc(
+      collection(
+        db,
+        "posts"
+      ),
+      {
+
+        name:
+          profileName,
+
+        text:
+          text,
+
+        img:
+          "",
+
+        owner:
+          uid,
+
+        likes:
+          [],
+
+        createdAt:
+          Date.now(),
+
+        replyTo:
+          id,
+
+        replyToOwner:
+          originalOwner,
+
+        replyToName:
+          originalName
+
+      }
+    );
+
+
+    input.value =
+      "";
+
+
+    const box =
+      document.getElementById(
+        `replyBox-${id}`
+      );
+
+
+    if (box) {
+
+      box.style.display =
+        "none";
+
+    }
+
+
+  } catch (error) {
+
+    console.error(error);
+
+
+    alert(
+      "返信に失敗しました：\n" +
+      error.message
+    );
+
+  }
+
+};
+
+
+/* ======================
+   投稿削除
+====================== */
+
+window.removePost =
+async function (
+  id,
+  owner
+) {
+
+  if (!uid) return;
+
+
   if (owner !== uid) return;
-  await deleteDoc(doc(db, "posts", id));
+
+
+  const confirmed =
+    confirm(
+      "この投稿を削除しますか？"
+    );
+
+
+  if (!confirmed) return;
+
+
+  try {
+
+    await deleteDoc(
+      doc(
+        db,
+        "posts",
+        id
+      )
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+
+    alert(
+      "投稿の削除に失敗しました：\n" +
+      error.message
+    );
+
+  }
+
 };
 
-// ======================
-// タイムライン（即表示）
-// ======================
-const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
 
-onSnapshot(q, (snapshot) => {
-  const postsDiv = document.getElementById("posts");
-  postsDiv.innerHTML = "";
+/* ======================
+   投稿HTML
+====================== */
 
-  snapshot.forEach(docSnap => {
-    const p = docSnap.data();
-    const id = docSnap.id;
+async function createPostHTML(
+  p,
+  id
+) {
 
-    postsDiv.innerHTML += `
-      <div class="post">
+  const profile =
+    await getProfile(
+      p.owner
+    );
 
-        <b>${p.name}</b>
-        <div class="small">@${p.owner.slice(0,6)}</div>
 
-        <div>${p.text}</div>
+  const name =
+    profile?.name ||
+    p.name ||
+    "名無し";
 
-        ${p.img ? `<img src="${p.img}">` : ""}
 
-<div class="actions">
-  <span onclick="like('${id}')">❤️ ${(p.likes || []).length}</span>
+  const username =
+    profile?.username ||
+    "";
 
-  ${p.owner === uid ? `
-    <span onclick="removePost('${id}', '${p.owner}')">
-      🗑️ 削除
-    </span>
-  ` : ""}
-</div>
+
+  const image =
+    profile?.profileImage ||
+    createDefaultAvatar(
+      name
+    );
+
+
+  /* ======================
+     返信元
+  ====================== */
+
+  let replyHTML =
+    "";
+
+
+  if (p.replyTo) {
+
+    const replyProfile =
+      await getProfile(
+        p.replyToOwner
+      );
+
+
+    const replyUsername =
+      replyProfile?.username ||
+      "";
+
+
+    const replyName =
+      replyProfile?.name ||
+      p.replyToName ||
+      "名無し";
+
+
+    replyHTML = `
+
+      <div class="replyTarget">
+
+        ↪️
+        ${escapeHTML(replyName)}
+
+        ${
+          replyUsername
+          ? `
+            @${escapeHTML(
+              replyUsername
+            )}
+          `
+          : ""
+        }
+
+        への返信
 
       </div>
+
     `;
-  });
-});
+
+  }
+
+
+  return `
+
+    <div class="post">
+
+      <div
+        class="postUser"
+        onclick="showProfile('${escapeHTML(p.owner)}')"
+      >
+
+        <img
+          class="postAvatar"
+          src="${image}"
+        >
+
+        <div class="postUserInfo">
+
+          <div class="postUserName">
+            ${escapeHTML(name)}
+          </div>
+
+          <div class="postUserId">
+            ${
+              username
+              ? "@" +
+                escapeHTML(username)
+              : ""
+            }
+          </div>
+
+        </div>
+
+      </div>
+
+
+      ${replyHTML}
+
+
+      <div style="margin-top:10px;">
+        ${escapeHTML(
+          p.text || ""
+        )}
+      </div>
+
+
+      ${
+        p.img
+        ? `
+          <img
+            class="post-image"
+            src="${p.img}"
+            loading="lazy"
+          >
+        `
+        : ""
+      }
+
+
+      <div class="actions">
+
+        <span
+          onclick="like('${escapeHTML(id)}')"
+        >
+          ❤️ ${
+            (p.likes || [])
+              .length
+          }
+        </span>
+
+
+        <span
+          onclick="showReplyBox('${escapeHTML(id)}')"
+        >
+          💬 返信
+        </span>
+
+
+        ${
+          p.owner === uid
+          ? `
+            <span
+              onclick="removePost(
+                '${escapeHTML(id)}',
+                '${escapeHTML(p.owner)}'
+              )"
+            >
+              🗑️ 削除
+            </span>
+          `
+          : ""
+        }
+
+      </div>
+
+
+      <!-- ======================
+           返信入力
+      ====================== -->
+
+      <div
+        id="replyBox-${escapeHTML(id)}"
+        class="replyBox"
+      >
+
+        <div class="replyLabel">
+
+          ${escapeHTML(name)}
+          さんに返信
+
+        </div>
+
+
+        <input
+ 　　　　 id="replyInput-${escapeHTML(id)}"
+  　　　　class="replyInput"
+  　　　　type="text"
+  　　　　inputmode="text"
+  　　　　autocomplete="off"
+ 　　　　 placeholder="返信を書く..."
+ 　　　　 maxlength="500"
+　　　　>
+
+        <button
+          onclick="reply(
+            '${escapeHTML(id)}',
+            '${escapeHTML(p.owner)}',
+            '${escapeHTML(name)}'
+          )"
+        >
+          💬 返信する
+        </button>
+
+      </div>
+
+    </div>
+
+  `;
+
+}
+
+
+/* ======================
+   HTMLエスケープ
+====================== */
+
+function escapeHTML(
+  value
+) {
+
+  return String(
+    value
+  )
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
+
+}
+
+
+/* ======================
+   タイムライン
+====================== */
+
+const q =
+  query(
+    collection(
+      db,
+      "posts"
+    ),
+    orderBy(
+      "createdAt",
+      "desc"
+    )
+  );
+
+
+onSnapshot(
+  q,
+  async (snapshot) => {
+
+    const postsDiv =
+      document.getElementById(
+        "posts"
+      );
+
+    postsDiv.innerHTML =
+      "";
+
+    const htmlList =
+      await Promise.all(
+        snapshot.docs.map(
+          async (docSnap) => {
+
+            const p =
+              docSnap.data();
+
+            const id =
+              docSnap.id;
+
+            return await createPostHTML(
+              p,
+              id
+            );
+
+          }
+        )
+      );
+
+    postsDiv.innerHTML =
+      htmlList.join("");
+
+  },
+  (error) => {
+
+    console.error(
+      "タイムラインエラー:",
+      error
+    );
+
+  }
+);
+
+/* ======================
+   プロフィールの投稿
+====================== */
+
+async function loadProfilePosts(
+  userId
+) {
+
+  const profilePosts =
+    document.getElementById(
+      "profilePosts"
+    );
+
+
+  profilePosts.innerHTML =
+    "読み込み中...";
+
+
+  const posts =
+    [];
+
+
+  const snapshot =
+    await new Promise(
+      (resolve) => {
+
+        onSnapshot(
+          q,
+          (snap) => {
+
+            resolve(
+              snap
+            );
+
+          },
+
+          () => {
+
+            resolve(
+              null
+            );
+
+          }
+        );
+
+      }
+    );
+
+
+  if (!snapshot) {
+
+    profilePosts.innerHTML =
+      "投稿を読み込めませんでした";
+
+    return;
+
+  }
+
+
+  snapshot.forEach(
+    (docSnap) => {
+
+      const p =
+        docSnap.data();
+
+
+      if (
+        p.owner === userId
+      ) {
+
+        posts.push({
+
+          data:
+            p,
+
+          id:
+            docSnap.id
+
+        });
+
+      }
+
+    }
+  );
+
+
+  if (
+    posts.length === 0
+  ) {
+
+    profilePosts.innerHTML =
+      `
+        <div style="color:#777;">
+          まだ投稿がありません
+        </div>
+      `;
+
+    return;
+
+  }
+
+
+  profilePosts.innerHTML =
+    "";
+
+
+  for (
+    const item of posts
+  ) {
+
+    const html =
+      await createPostHTML(
+        item.data,
+        item.id
+      );
+
+
+    profilePosts.innerHTML +=
+      html;
+
+  }
+
+}
 
 </script>
 
