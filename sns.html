@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>野獣撲滅委員会ニガ支部</title>
+<title>iroironote</title>
 
 <style>
 body {
@@ -305,7 +305,7 @@ button.back {
 
 <div id="loginScreen">
 
-  <h1>野獣撲滅委員会ニガ支部</h1>
+  <h1>Welcome!</h1>
 
   <div class="box">
 
@@ -394,6 +394,15 @@ button.back {
 　　<button onclick="showDM()">
   　　💬 DM
 　　</button>
+
+<button
+  id="adminButton"
+  onclick="showAdmin()"
+  style="display:none;"
+>
+  🛠 管理者画面
+</button>
+
     <div
       style="
         margin-bottom:15px;
@@ -579,6 +588,34 @@ button.back {
 </div>
 
 <!-- ======================
+     管理者画面
+======================= -->
+
+<div
+  id="adminScreen"
+  style="display:none;"
+>
+
+  <button
+    class="back"
+    onclick="showHome()"
+  >
+    ← ホームに戻る
+  </button>
+
+  <h2>🛠 管理者画面</h2>
+
+  <p>
+    管理者専用ページ
+  </p>
+
+<h3>👥 ユーザー管理</h3>
+
+<div id="adminUsers"></div>
+
+</div>
+
+<!-- ======================
      DM
 ======================= -->
 
@@ -644,6 +681,7 @@ import {
   arrayRemove,
   deleteDoc,
   getDoc,
+  getDocs,
   query,
   where,
   orderBy
@@ -1085,38 +1123,80 @@ onAuthStateChanged(
   auth,
   async (user) => {
 
-    if (user) {
+  if (user) {
 
-      uid =
-        user.uid;
+  uid =
+    user.uid;
 
+  // BAN確認
+  const userSnap =
+    await getDoc(
+      doc(
+        db,
+        "users",
+        uid
+      )
+    );
 
-      document.getElementById(
-        "loginScreen"
-      ).style.display =
-        "none";
+  if (
+    userSnap.exists() &&
+    userSnap.data().banned === true
+  ) {
 
+    alert(
+      "🚫 このアカウントはBANされています。"
+    );
 
-      document.getElementById(
-        "appScreen"
-      ).style.display =
-        "block";
+    await signOut(auth);
 
+    return;
 
-      await loadProfile();
+  }
 
+  await checkAdmin();
 
-      showHome();
+if (latestPostsSnapshot) {
 
+  await renderTimeline(
+    latestPostsSnapshot
+  );
 
-    } else {
+}
 
-      uid = null;
+const adminButton =
+  document.getElementById(
+    "adminButton"
+  );
 
+if (adminButton) {
 
-      viewingProfileUserId =
-        null;
+  adminButton.style.display =
+    isAdmin
+      ? "inline-block"
+      : "none";
 
+}
+
+document.getElementById(
+  "loginScreen"
+).style.display =
+  "none";
+
+document.getElementById(
+  "appScreen"
+).style.display =
+  "block";
+
+await loadProfile();
+
+showHome();
+
+} else {
+
+  uid = null;
+
+  viewingProfileUserId =
+    null;
 
       document.getElementById(
         "loginScreen"
@@ -1252,6 +1332,7 @@ async function loadProfile() {
 
 async function getProfile(userId) {
 
+
   if (!userId) return null;
 
 
@@ -1289,6 +1370,49 @@ async function getProfile(userId) {
 
   return data;
 
+}
+
+/* ======================
+   管理者判定
+====================== */
+
+let isAdmin = false;
+
+async function checkAdmin() {
+
+  if (!uid) {
+    isAdmin = false;
+    return false;
+  }
+
+  try {
+
+    const snap =
+      await getDoc(
+        doc(db, "users", uid)
+      );
+
+    if (!snap.exists()) {
+      isAdmin = false;
+      return false;
+    }
+
+    isAdmin =
+      snap.data().role === "admin";
+
+    return isAdmin;
+
+  } catch (error) {
+
+    console.error(
+      "管理者判定エラー:",
+      error
+    );
+
+    isAdmin = false;
+
+    return false;
+  }
 }
 
 
@@ -1884,218 +2008,430 @@ function () {
 
 };
 
+/* ======================
+   管理者画面
+====================== */
+
+window.showAdmin =
+function () {
+
+  if (!isAdmin) {
+
+    alert(
+      "管理者権限がありません"
+    );
+
+    return;
+
+  }
+
+  document.getElementById(
+    "homeScreen"
+  ).style.display =
+    "none";
+
+  document.getElementById(
+    "profileScreen"
+  ).style.display =
+    "none";
+
+  document.getElementById(
+    "dmScreen"
+  ).style.display =
+    "none";
+
+  document.getElementById(
+    "adminScreen"
+  ).style.display =
+    "block";
+
+  loadAdminUsers();
+
+};
 
 /* ======================
-   DMを開く
+   管理者：ユーザー一覧
+====================== */
+
+async function loadAdminUsers() {
+
+  const adminUsers =
+    document.getElementById(
+      "adminUsers"
+    );
+
+  if (!adminUsers) return;
+
+  adminUsers.innerHTML =
+    "<p>ユーザー一覧を読み込み中...</p>";
+
+  try {
+
+    const snapshot =
+      await getDocs(
+        collection(
+          db,
+          "users"
+        )
+      );
+
+    if (snapshot.empty) {
+
+      adminUsers.innerHTML =
+        "<p>ユーザーがいません。</p>";
+
+      return;
+
+    }
+
+    adminUsers.innerHTML = "";
+
+    snapshot.forEach(
+      (docSnap) => {
+
+        const user =
+          docSnap.data();
+
+        const userId =
+          docSnap.id;
+
+        const name =
+          user.name ||
+          "名無し";
+
+        const role =
+          user.role ||
+          "user";
+
+        const banned =
+          user.banned === true;
+
+        const userDiv =
+          document.createElement(
+            "div"
+          );
+
+        userDiv.style.cssText = `
+          padding:12px;
+          margin:8px 0;
+          background:#181818;
+          border:1px solid #333;
+          border-radius:10px;
+        `;
+
+        userDiv.innerHTML = `
+          <strong>
+            ${escapeHTML(name)}
+          </strong>
+
+          <div style="
+            color:#888;
+            font-size:12px;
+            margin-top:4px;
+            word-break:break-all;
+          ">
+            UID: ${escapeHTML(userId)}
+          </div>
+
+          <div style="
+            margin-top:5px;
+            font-size:13px;
+          ">
+            権限：
+            ${role === "admin"
+              ? "🛠 管理者"
+              : "👤 一般ユーザー"}
+            <br>
+            状態：
+            ${banned
+              ? "🚫 BAN中"
+              : "✅ 通常"}
+          </div>
+        `;
+
+const banButton =
+  document.createElement("button");
+
+banButton.textContent =
+  banned
+    ? "✅ BAN解除"
+    : "🚫 BAN";
+
+banButton.style.marginTop =
+  "8px";
+
+banButton.onclick =
+  async function () {
+
+    try {
+
+      await updateDoc(
+        doc(
+          db,
+          "users",
+          userId
+        ),
+        {
+          banned:
+            !banned
+        }
+      );
+
+      alert(
+        banned
+          ? "BANを解除しました"
+          : "ユーザーをBANしました"
+      );
+
+      loadAdminUsers();
+
+    } catch (error) {
+
+      console.error(
+        "BAN変更エラー:",
+        error
+      );
+
+      alert(
+        "変更に失敗しました：\n" +
+        error.message
+      );
+
+    }
+
+  };
+
+userDiv.appendChild(
+  banButton
+);
+
+        adminUsers.appendChild(
+          userDiv
+        );
+
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      "ユーザー一覧取得エラー:",
+      error
+    );
+
+    adminUsers.innerHTML =
+      `<p style="color:red;">
+        ユーザー一覧の取得に失敗しました
+      </p>`;
+
+  }
+
+}
+
+/* ======================
+   DM
 ====================== */
 
 let dmTargetUserId =
   null;
 
-window.openDM =
-async function () {
+let dmUnsubscribe =
+  null;
+
+window.openDM = async function () {
 
   const input =
-    document.getElementById(
-      "dmUserId"
-    );
+    document.getElementById("dmUserId");
 
   if (!input) return;
 
-  const targetId =
+  let username =
     input.value.trim();
 
-  if (!targetId) {
-
-    alert(
-      "DMする相手のユーザーIDを入力してください"
-    );
-
+  if (!username) {
+    alert("DMする相手のユーザー名を入力してください");
     return;
-
   }
+
+  // @ が付いていてもOK
+  username =
+    username.replace(/^@/, "");
 
   if (!uid) {
-
-    alert(
-      "ログインしてください"
-    );
-
+    alert("ログインしてください");
     return;
-
   }
 
-  if (targetId === uid) {
+  try {
 
-    alert(
-      "自分にはDMできません"
-    );
+    // username からユーザーを検索
+    const userQuery =
+      query(
+        collection(db, "users"),
+        where("username", "==", username)
+      );
 
-    return;
+    const snapshot =
+      await getDocs(userQuery);
 
-  }
+    if (snapshot.empty) {
+      alert("そのユーザーが見つかりません");
+      return;
+    }
 
-  const profile =
-    await getProfile(
-      targetId
-    );
+    const targetDoc =
+      snapshot.docs[0];
 
-  if (!profile) {
+    const targetId =
+      targetDoc.id;
 
-    alert(
-      "そのユーザーIDは見つかりません"
-    );
+    if (targetId === uid) {
+      alert("自分にはDMできません");
+      return;
+    }
 
-    return;
+    const profile =
+      targetDoc.data();
 
-  }
+    dmTargetUserId =
+      targetId;
 
-  dmTargetUserId =
-    targetId;
+    if (dmUnsubscribe) {
+      dmUnsubscribe();
+      dmUnsubscribe = null;
+    }
 
-/* ======================
-   DMリアルタイム受信
-====================== */
+    const conversationId =
+      [uid, dmTargetUserId]
+        .sort()
+        .join("_");
 
-if (dmUnsubscribe) {
+    const messagesQuery =
+      query(
+        collection(db, "messages"),
+        where(
+          "conversationId",
+          "==",
+          conversationId
+        )
+      );
 
-  dmUnsubscribe();
+    dmUnsubscribe =
+      onSnapshot(
+        messagesQuery,
+        (snapshot) => {
 
-  dmUnsubscribe =
-    null;
+          const messages =
+            snapshot.docs
+              .map((docSnap) => ({
+                id: docSnap.id,
+                ...docSnap.data()
+              }))
+              .sort(
+                (a, b) =>
+                  a.createdAt - b.createdAt
+              );
 
-}
+          const dmChat =
+            document.getElementById(
+              "dmChat"
+            );
 
-const conversationId =
-  [uid, dmTargetUserId]
-    .sort()
-    .join("_");
+          if (!dmChat) return;
 
-const messagesQuery =
-  query(
-    collection(
-      db,
-      "messages"
-    ),
-    where(
-      "conversationId",
-      "==",
-      conversationId
-    )
-  );
+          dmChat.innerHTML =
+            `<p style="color:#aaa;">
+              ${escapeHTML(
+                profile.name ||
+                username ||
+                "名無し"
+              )} さんとのDM
+            </p>` +
 
-dmUnsubscribe =
-  onSnapshot(
-    messagesQuery,
-    (snapshot) => {
+            messages.map(
+              (message) => {
 
-      const messages =
-        snapshot.docs
-          .map(
-            (docSnap) => ({
-              id:
-                docSnap.id,
+                const isMine =
+                  message.senderId === uid;
 
-              ...docSnap.data()
-            })
-          )
-          .sort(
-            (a, b) =>
-              a.createdAt -
-              b.createdAt
-          );
-
-      const dmChat =
-        document.getElementById(
-          "dmChat"
-        );
-
-      if (!dmChat) return;
-
-      dmChat.innerHTML =
-  `<p style="color:#aaa;">
-    ${escapeHTML(
-      profile.name ||
-      "名無し"
-    )} さんとのDM
-  </p>` +
-  messages
-    .map(
-      (message) => {
-              const isMine =
-                message.senderId === uid;
-
-              return `
-                <div
-                  style="
+                return `
+                  <div style="
                     text-align:${isMine ? "right" : "left"};
                     margin:8px 0;
-                  "
-                >
-                  <span
-                    style="
+                  ">
+                    <span style="
                       display:inline-block;
                       max-width:80%;
                       padding:9px 12px;
                       border-radius:12px;
                       background:${isMine ? "#1d9bf0" : "#222"};
                       word-break:break-word;
-                    "
-                  >
-                    ${escapeHTML(
-                      message.text || ""
-                    )}
-                  </span>
-                </div>
-              `;
+                    ">
+                      ${escapeHTML(
+                        message.text || ""
+                      )}
+                    </span>
+                  </div>
+                `;
 
-            }
-          )
-          .join("");
+              }
+            ).join("");
 
-      dmChat.scrollTop =
-        dmChat.scrollHeight;
+          dmChat.scrollTop =
+            dmChat.scrollHeight;
 
-    },
-    (error) => {
+        },
+        (error) => {
 
-      console.error(
-        "DM受信エラー:",
-        error
+          console.error(
+            "DM受信エラー:",
+            error
+          );
+
+        }
       );
 
-    }
-  );
+    const dmChat =
+      document.getElementById(
+        "dmChat"
+      );
 
-  const dmChat =
-    document.getElementById(
-      "dmChat"
+    if (dmChat) {
+
+      dmChat.innerHTML =
+        `<p style="color:#aaa;">
+          ${escapeHTML(
+            profile.name ||
+            username ||
+            "名無し"
+          )} さんとのDM
+        </p>`;
+
+    }
+
+    const dmInputArea =
+      document.getElementById(
+        "dmInputArea"
+      );
+
+    if (dmInputArea) {
+      dmInputArea.style.display =
+        "block";
+    }
+
+  } catch (error) {
+
+    console.error(
+      "DMユーザー検索エラー:",
+      error
     );
 
-  if (dmChat) {
+    alert(
+      "DMユーザーの検索に失敗しました：\n" +
+      error.message
+    );
 
-  dmChat.innerHTML =
-    `<p style="color:#aaa;">
-      ${escapeHTML(
-        profile.name ||
-        "名無し"
-      )} さんとのDM
-    </p>`;
-
-}
-
-
-const dmInputArea =
-  document.getElementById(
-    "dmInputArea"
-  );
-
-if (dmInputArea) {
-
-  dmInputArea.style.display =
-    "block";
-
-}
+  }
 
 };
 
@@ -3004,22 +3340,29 @@ async function (
   owner
 ) {
 
-  if (!uid) return;
+  if (!uid) {
+    alert("ログインしてください");
+    return;
+  }
 
-
-  if (owner !== uid) return;
-
+  if (owner !== uid && !isAdmin) {
+    alert("削除する権限がありません");
+    return;
+  }
 
   const confirmed =
     confirm(
       "この投稿を削除しますか？"
     );
 
-
   if (!confirmed) return;
 
-
   try {
+
+    console.log(
+      "投稿削除開始:",
+      id
+    );
 
     await deleteDoc(
       doc(
@@ -3029,10 +3372,16 @@ async function (
       )
     );
 
+    alert(
+      "🗑️ 投稿を削除しました"
+    );
+
   } catch (error) {
 
-    console.error(error);
-
+    console.error(
+      "投稿削除エラー:",
+      error
+    );
 
     alert(
       "投稿の削除に失敗しました：\n" +
@@ -3042,7 +3391,6 @@ async function (
   }
 
 };
-
 
 /* ======================
    投稿HTML
@@ -3207,20 +3555,19 @@ async function createPostHTML(
 
 
         ${
-          p.owner === uid
-          ? `
-            <span
-              onclick="removePost(
-                '${escapeHTML(id)}',
-                '${escapeHTML(p.owner)}'
-              )"
-            >
-              🗑️ 削除
-            </span>
-          `
-          : ""
-        }
-
+  p.owner === uid || isAdmin
+  ? `
+    <span
+      onclick="removePost(
+        '${escapeHTML(id)}',
+        '${escapeHTML(p.owner)}'
+      )"
+    >
+      🗑️ 削除
+    </span>
+  `
+  : ""
+}
       </div>
 
 
@@ -3321,41 +3668,69 @@ const q =
     )
   );
 
+let latestPostsSnapshot =
+  null;
+
+
+/* ======================
+   タイムライン表示
+====================== */
+
+async function renderTimeline(
+  snapshot
+) {
+
+  const postsDiv =
+    document.getElementById(
+      "posts"
+    );
+
+  if (!postsDiv) return;
+
+  postsDiv.innerHTML =
+    "";
+
+  const htmlList =
+    await Promise.all(
+      snapshot.docs.map(
+        async (docSnap) => {
+
+          const p =
+            docSnap.data();
+
+          const id =
+            docSnap.id;
+
+          return await createPostHTML(
+            p,
+            id
+          );
+
+        }
+      )
+    );
+
+  postsDiv.innerHTML =
+    htmlList.join("");
+
+}
+
+
+/* ======================
+   タイムライン
+====================== */
+
 
 onSnapshot(
   q,
   async (snapshot) => {
 
-    const postsDiv =
-      document.getElementById(
-        "posts"
-      );
+    latestPostsSnapshot =
+      snapshot;
 
-    postsDiv.innerHTML =
-      "";
-
-    const htmlList =
-      await Promise.all(
-        snapshot.docs.map(
-          async (docSnap) => {
-
-            const p =
-              docSnap.data();
-
-            const id =
-              docSnap.id;
-
-            return await createPostHTML(
-              p,
-              id
-            );
-
-          }
-        )
-      );
-
-    postsDiv.innerHTML =
-      htmlList.join("");
+    await renderTimeline(
+      snapshot
+    );
 
   },
   (error) => {
@@ -3367,7 +3742,7 @@ onSnapshot(
 
   }
 );
-
+  
 /* ======================
    プロフィールの投稿
 ====================== */
