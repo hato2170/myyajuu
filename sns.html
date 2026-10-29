@@ -4881,8 +4881,8 @@ window.openSnowballHub = function () {
   window.hideAllScreens();
   document.getElementById("snowballScreen").style.display = "block";
   const iframe = document.getElementById("snowballOfficialIframe");
-  if (iframe && (!iframe.src || iframe.src === "about:blank")) {
-    iframe.src = "https://woodle87.github.io/snowball.io/";
+  if (iframe && (!iframe.src || iframe.src === "about:blank" || iframe.src.includes("woodle87"))) {
+    iframe.src = "https://games.crazygames.com/en_US/snowball-io/index.html";
   }
 };
 
