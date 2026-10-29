@@ -4326,6 +4326,10 @@ window.panicEscape = function () {
     othelloUnsub();
     othelloUnsub = null;
   }
+  if (typeof unoUnsub !== "undefined" && unoUnsub) {
+    unoUnsub();
+    unoUnsub = null;
+  }
   window.location.href = "https://www.google.com/search?q=" + encodeURIComponent("数学 一次関数");
 };
 
@@ -4334,7 +4338,13 @@ window.addEventListener("keydown", function (e) {
     const oArea = document.getElementById("othelloGameArea");
     const gCorner = document.getElementById("gameCornerScreen");
     const oScreen = document.getElementById("othelloScreen");
-    if ((oArea && oArea.style.display !== "none") || (gCorner && gCorner.style.display !== "none") || (oScreen && oScreen.style.display !== "none")) {
+    const uScreen = document.getElementById("unoScreen");
+    const sbScreen = document.getElementById("snowballScreen");
+    if ((oArea && oArea.style.display !== "none") ||
+        (gCorner && gCorner.style.display !== "none") ||
+        (oScreen && oScreen.style.display !== "none") ||
+        (uScreen && uScreen.style.display !== "none") ||
+        (sbScreen && sbScreen.style.display !== "none")) {
       window.panicEscape();
     }
   }
