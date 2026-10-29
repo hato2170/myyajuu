@@ -787,9 +787,19 @@ button.back {
         <div style="display:flex; align-items:center; justify-content:space-between;">
           <div>
             <h3 style="margin:0 0 6px 0; color:#38bdf8; font-size:18px;">❄️ snowball.io（雪玉バトル）</h3>
-            <p style="margin:0; color:#8b949e; font-size:13px;">雪玉を転がして巨大化！敵をステージから落とせ！</p>
+            <p style="margin:0; color:#8b949e; font-size:13px;">雪玉を転がして巨大化！本家3D版＆2D軽量版に対応！</p>
           </div>
           <span style="font-size:20px; color:#38bdf8;">▶</span>
+        </div>
+      </div>
+
+      <div style="background:#161b22; border:1px solid #30363d; border-radius:12px; padding:16px; cursor:pointer;" onclick="openUnoHub()">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <h3 style="margin:0 0 6px 0; color:#ef4444; font-size:18px;">🎴 UNO（ウノ対戦）</h3>
+            <p style="margin:0; color:#8b949e; font-size:13px;">合言葉・URL招待・自由参加・AI対戦に対応！目指せ手札ゼロ！</p>
+          </div>
+          <span style="font-size:20px; color:#ef4444;">▶</span>
         </div>
       </div>
     </div>
@@ -886,8 +896,60 @@ button.back {
 
   <div id="snowballScreen" style="display:none;">
 
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+      <div style="display:flex; gap:8px;">
+        <button class="back" onclick="leaveSnowballGame()" style="margin:0; width:auto; padding:6px 14px;">
+          ← コーナーへ
+        </button>
+        <button id="sbModeToggleBtn" onclick="toggleSnowballMode()" style="background:#1e293b; color:#38bdf8; width:auto; padding:6px 12px; font-size:12px; border-radius:8px; border:1px solid #334155;">
+          🎮 2D軽量版に切替
+        </button>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button onclick="toggleSnowballFullscreen()" style="background:#1e293b; color:#f1f5f9; width:auto; padding:6px 12px; font-size:12px; border-radius:8px; border:1px solid #334155;">
+          ⛶ 全画面
+        </button>
+        <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 14px; font-weight:bold; border-radius:8px;">
+          🚨 緊急回避 (数学)
+        </button>
+      </div>
+    </div>
+
+    <!-- 本家3D版 (WebGL) -->
+    <div id="snowballOfficialContainer" style="width:100%; height:75vh; max-height:680px; position:relative; background:#000; border-radius:12px; overflow:hidden; border:2px solid #334155; box-shadow:0 4px 20px rgba(0,0,0,0.6);">
+      <iframe id="snowballOfficialIframe" src="about:blank" style="width:100%; height:100%; border:none; display:block;" allow="autoplay; fullscreen" allowfullscreen></iframe>
+    </div>
+
+    <!-- 2D軽量版 (Canvas) -->
+    <div id="snowball2DContainer" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; background:#161b22; padding:10px 14px; border-radius:10px; margin-bottom:10px; font-size:14px;">
+        <div style="color:#38bdf8; font-weight:bold;">❄️ snowball.io (2D)</div>
+        <div>撃破数: <span id="snowballKills" style="color:#facc15; font-weight:bold;">0</span>　生存: <span id="snowballAlive" style="color:#4ade80; font-weight:bold;">6</span></div>
+      </div>
+
+      <div style="position:relative; width:100%; max-width:400px; margin:0 auto; display:flex; justify-content:center;">
+        <canvas id="snowballCanvas" width="400" height="400" style="background:#071a2f; border-radius:12px; width:100%; max-width:400px; aspect-ratio:1/1; touch-action:none; display:block; border:2px solid #1e293b; box-shadow:0 4px 15px rgba(0,0,0,0.6);"></canvas>
+
+        <div id="snowballOverlay" style="position:absolute; inset:0; background:rgba(0,0,0,0.8); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; z-index:10;">
+          <h3 id="snowballOverlayTitle" style="color:#fff; margin:0; font-size:22px;">❄️ 雪玉バトルロイヤル</h3>
+          <p id="snowballOverlayMsg" style="color:#94a3b8; margin:0; font-size:13px; text-align:center; padding:0 15px;">画面をドラッグ（指でなぞる）して移動！<br>雪玉を大きく転がして、相手にぶつけてステージから落とせ！</p>
+          <button onclick="startSnowballGame()" style="background:linear-gradient(135deg, #0284c7, #0369a1); width:auto; padding:10px 24px; font-weight:bold; border-radius:20px; font-size:15px;">バトル開始！</button>
+        </div>
+      </div>
+
+      <p style="color:#64748b; font-size:12px; text-align:center; margin-top:8px;">操作: 画面をドラッグで移動 / 指を離すと雪玉シュート！</p>
+    </div>
+
+  </div>
+
+  <!-- ======================
+       UNO (ウノ) 画面
+  ======================= -->
+
+  <div id="unoScreen" style="display:none;">
+
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <button class="back" onclick="leaveSnowballGame()" style="margin:0; width:auto; padding:6px 14px;">
+      <button class="back" onclick="showGameCorner()" style="margin:0; width:auto; padding:6px 14px;">
         ← コーナーへ
       </button>
       <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 14px; font-weight:bold; border-radius:8px;">
@@ -895,22 +957,121 @@ button.back {
       </button>
     </div>
 
-    <div style="display:flex; justify-content:space-between; align-items:center; background:#161b22; padding:10px 14px; border-radius:10px; margin-bottom:10px; font-size:14px;">
-      <div style="color:#38bdf8; font-weight:bold;">❄️ snowball.io</div>
-      <div>撃破数: <span id="snowballKills" style="color:#facc15; font-weight:bold;">0</span>　生存: <span id="snowballAlive" style="color:#4ade80; font-weight:bold;">6</span></div>
-    </div>
+    <!-- ロビー画面 -->
+    <div id="unoLobby">
+      <h3 style="margin-top:0; color:#ef4444;">🎴 UNO（ウノ対戦ルーム）</h3>
+      <p style="color:#8b949e; font-size:13px; margin-top:-6px; margin-bottom:16px;">色と数字を合わせてカードを出そう！目指せ手札ゼロ！</p>
 
-    <div style="position:relative; width:100%; max-width:400px; margin:0 auto; display:flex; justify-content:center;">
-      <canvas id="snowballCanvas" width="400" height="400" style="background:#071a2f; border-radius:12px; width:100%; max-width:400px; aspect-ratio:1/1; touch-action:none; display:block; border:2px solid #1e293b; box-shadow:0 4px 15px rgba(0,0,0,0.6);"></canvas>
+      <div style="background:#1c2128; padding:14px; border-radius:10px; margin-bottom:12px; border:1px solid #30363d;">
+        <h4 style="margin:0 0 6px 0; color:#38bdf8;">🤖 AI対戦（ひとりで練習）</h4>
+        <p style="margin:0 0 10px 0; color:#94a3b8; font-size:13px;">今すぐサクサク遊べる！AIボット3人との4人バトルロイヤル対戦。</p>
+        <button onclick="startUnoAI()" style="background:#0284c7; padding:8px;">AIと対戦開始</button>
+      </div>
 
-      <div id="snowballOverlay" style="position:absolute; inset:0; background:rgba(0,0,0,0.8); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; z-index:10;">
-        <h3 id="snowballOverlayTitle" style="color:#fff; margin:0; font-size:22px;">❄️ 雪玉バトルロイヤル</h3>
-        <p id="snowballOverlayMsg" style="color:#94a3b8; margin:0; font-size:13px; text-align:center; padding:0 15px;">画面をドラッグ（指でなぞる）して移動！<br>雪玉を大きく転がして、相手にぶつけてステージから落とせ！</p>
-        <button onclick="startSnowballGame()" style="background:linear-gradient(135deg, #0284c7, #0369a1); width:auto; padding:10px 24px; font-weight:bold; border-radius:20px; font-size:15px;">バトル開始！</button>
+      <div style="background:#1c2128; padding:14px; border-radius:10px; margin-bottom:12px; border:1px solid #30363d;">
+        <h4 style="margin:0 0 6px 0; color:#4ade80;">🌍 自由参加（誰でも対戦）</h4>
+        <p style="margin:0 0 10px 0; color:#94a3b8; font-size:13px;">待機中の部屋に参加、または新しい公開部屋を作って誰かを待ちます。</p>
+        <button onclick="startUnoRandom()" style="background:#16a34a; padding:8px;">対戦相手を探す / 部屋作成</button>
+      </div>
+
+      <div style="background:#1c2128; padding:14px; border-radius:10px; margin-bottom:12px; border:1px solid #30363d;">
+        <h4 style="margin:0 0 6px 0; color:#facc15;">🔑 合言葉で友達と対戦</h4>
+        <p style="margin:0 0 10px 0; color:#94a3b8; font-size:13px;">友達と同じ合言葉（例: 777, uno）を入力して入室！</p>
+        <div style="display:flex; gap:8px;">
+          <input id="unoPassInput" placeholder="合言葉 (例: 777)" style="margin-top:0; flex:1;">
+          <button onclick="joinUnoPassphrase()" style="background:#ca8a04; width:auto; padding:0 16px; margin-top:0;">入室</button>
+        </div>
+      </div>
+
+      <div style="background:#1c2128; padding:14px; border-radius:10px; margin-bottom:12px; border:1px solid #30363d;">
+        <h4 style="margin:0 0 6px 0; color:#c084fc;">🔗 招待URLを作成</h4>
+        <p style="margin:0 0 10px 0; color:#94a3b8; font-size:13px;">友達にリンクを送って、開くだけで即対戦できるルームを作ります。</p>
+        <button onclick="createUnoInviteUrl()" style="background:#9333ea; padding:8px;">招待URLを発行してコピー</button>
       </div>
     </div>
 
-    <p style="color:#64748b; font-size:12px; text-align:center; margin-top:8px;">操作: 画面をドラッグで移動 / 指を離すと雪玉シュート！</p>
+    <!-- ゲームプレイ画面 -->
+    <div id="unoGameArea" style="display:none;">
+      <div style="background:#161b22; padding:10px; border-radius:8px; margin-bottom:10px; font-size:14px; display:flex; justify-content:space-between; align-items:center;">
+        <div id="unoRoomTitle" style="color:#ef4444; font-weight:bold;">ルーム: ---</div>
+        <div id="unoCopyUrlBtn" style="cursor:pointer; color:#a5d6ff; font-size:12px; display:none;" onclick="copyCurrentUnoRoomUrl()">📋 招待URLコピー</div>
+      </div>
+
+      <div id="unoStatusBanner" style="background:#21262d; padding:8px 12px; border-radius:6px; margin-bottom:10px; text-align:center; font-size:14px; color:#f0f6fc; min-height:22px; font-weight:bold;">
+        対戦待機中...
+      </div>
+
+      <!-- 対戦相手エリア -->
+      <div id="unoOpponentsArea" style="display:flex; justify-content:space-around; gap:8px; margin-bottom:12px; overflow-x:auto; padding:4px 0;">
+      </div>
+
+      <!-- 中央テーブル（山札・場札・現在色・進行方向） -->
+      <div style="background:linear-gradient(145deg, #064e3b, #022c22); border:2px solid #047857; border-radius:16px; padding:14px; margin-bottom:14px; box-shadow:inset 0 2px 10px rgba(0,0,0,0.5);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <div id="unoActiveColorBadge" style="display:inline-flex; align-items:center; gap:6px; background:#111; padding:4px 12px; border-radius:20px; font-size:13px; font-weight:bold; color:#fff; border:1px solid #444;">
+            <span>現在の色:</span> <span id="unoActiveColorText">🔴 赤</span>
+          </div>
+          <div id="unoDirectionBadge" style="font-size:13px; color:#a7f3d0; background:#065f46; padding:4px 10px; border-radius:12px; font-weight:bold;">
+            ↻ 時計回り
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:center; align-items:center; gap:24px;">
+          <!-- 山札 -->
+          <div onclick="onUnoDrawClick()" style="cursor:pointer; text-align:center;">
+            <div id="unoDrawPileCard" style="width:68px; height:98px; background:linear-gradient(135deg, #1e293b, #0f172a); border:2px solid #94a3b8; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#f8fafc; font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.6); transition:transform 0.1s;">
+              <div style="font-size:11px; color:#94a3b8;">山札</div>
+              <div style="font-size:22px; margin:2px 0;">🎴</div>
+              <div id="unoDeckCount" style="font-size:11px; background:#334155; padding:2px 6px; border-radius:8px;">残り 80</div>
+            </div>
+            <div style="font-size:11px; color:#cbd5e1; margin-top:4px;">タップで引く</div>
+          </div>
+
+          <!-- 場札 -->
+          <div style="text-align:center;">
+            <div id="unoTopCardContainer" style="display:flex; justify-content:center; align-items:center; min-width:68px; min-height:98px;">
+            </div>
+            <div style="font-size:11px; color:#cbd5e1; margin-top:4px;">場札</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- プレイヤーの手札エリア -->
+      <div style="background:#161b22; border:1px solid #30363d; border-radius:12px; padding:12px; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="font-size:14px; font-weight:bold; color:#f0f6fc;">
+            あなたの手札 (<span id="unoMyCardCount">0</span>枚)
+          </div>
+          <button id="unoShoutBtn" onclick="onUnoShoutClick()" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:#fff; width:auto; padding:4px 12px; font-size:12px; font-weight:bold; border-radius:16px; margin:0; border:none; box-shadow:0 0 10px rgba(245,158,11,0.5);">
+            📢 UNO宣言！
+          </button>
+        </div>
+
+        <div id="unoHandContainer" style="display:flex; gap:8px; overflow-x:auto; padding:8px 4px 14px 4px; min-height:115px; scrollbar-width:thin;">
+        </div>
+      </div>
+
+      <!-- 下部ボタン -->
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button id="unoDrawBtn" onclick="onUnoDrawClick()" style="background:#0284c7; flex:1; padding:8px; font-size:13px; margin:0;">🎴 山札を1枚引く</button>
+        <button id="unoPassBtn" onclick="onUnoPassClick()" style="background:#475569; flex:1; padding:8px; font-size:13px; margin:0; display:none;">⏩ パスする</button>
+        <button onclick="leaveUnoGame()" style="background:#30363d; flex:1; padding:8px; font-size:13px; margin:0;">ゲーム終了</button>
+        <button id="unoRestartBtn" onclick="restartUnoGame()" style="background:#238636; flex:1; padding:8px; font-size:13px; margin:0; display:none;">もう一度遊ぶ</button>
+      </div>
+    </div>
+
+    <!-- ワイルド色選択モーダル -->
+    <div id="unoColorModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center; padding:20px;">
+      <div style="background:#161b22; border:1px solid #30363d; border-radius:16px; padding:20px; width:100%; max-width:320px; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.9);">
+        <h3 style="margin:0 0 14px 0; color:#f0f6fc; font-size:18px;">🎨 次の色を選んでください</h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <button onclick="selectUnoWildColor('red')" style="background:#ef4444; color:#fff; font-weight:bold; font-size:16px; padding:14px; border-radius:10px; border:none; cursor:pointer;">🔴 赤</button>
+          <button onclick="selectUnoWildColor('blue')" style="background:#3b82f6; color:#fff; font-weight:bold; font-size:16px; padding:14px; border-radius:10px; border:none; cursor:pointer;">🔵 青</button>
+          <button onclick="selectUnoWildColor('green')" style="background:#22c55e; color:#fff; font-weight:bold; font-size:16px; padding:14px; border-radius:10px; border:none; cursor:pointer;">🟢 緑</button>
+          <button onclick="selectUnoWildColor('yellow')" style="background:#eab308; color:#000; font-weight:bold; font-size:16px; padding:14px; border-radius:10px; border:none; cursor:pointer;">🟡 黄</button>
+        </div>
+      </div>
+    </div>
 
   </div>
 
@@ -2216,7 +2377,8 @@ window.hideAllScreens = function () {
     "adminScreen",
     "gameCornerScreen",
     "othelloScreen",
-    "snowballScreen"
+    "snowballScreen",
+    "unoScreen"
   ];
   ids.forEach((id) => {
     const el = document.getElementById(id);
@@ -4640,7 +4802,15 @@ async function enterOthelloRoom(roomId, isPublic = false) {
 // URLパラメータによる自動参加
 const urlParams = new URLSearchParams(window.location.search);
 const autoRoom = urlParams.get("room") || urlParams.get("sheet");
-if (autoRoom) {
+const autoUno = urlParams.get("uno") || urlParams.get("unoroom");
+
+if (autoUno) {
+  setTimeout(() => {
+    showGameCorner();
+    openUnoHub();
+    enterUnoOnlineRoom("uno_inv_" + autoUno);
+  }, 1000);
+} else if (autoRoom) {
   setTimeout(() => {
     showGameCorner();
     openOthelloHub();
@@ -4700,15 +4870,48 @@ window.addAdminDirectly = async function () {
 window.openSnowballHub = function () {
   window.hideAllScreens();
   document.getElementById("snowballScreen").style.display = "block";
-  document.getElementById("snowballOverlay").style.display = "flex";
-  document.getElementById("snowballOverlayTitle").textContent = "❄️ 雪玉バトルロイヤル";
-  document.getElementById("snowballOverlayMsg").innerHTML = "画面をドラッグ（指でなぞる）して移動！<br>雪玉を大きく転がして、相手にぶつけてステージから落とせ！";
-  initSnowballCanvas();
+  const iframe = document.getElementById("snowballOfficialIframe");
+  if (iframe && (!iframe.src || iframe.src === "about:blank")) {
+    iframe.src = "https://woodle87.github.io/snowball.io/";
+  }
 };
 
 window.leaveSnowballGame = function () {
   stopSnowballLoop();
   showGameCorner();
+};
+
+window.toggleSnowballMode = function () {
+  const official = document.getElementById("snowballOfficialContainer");
+  const d2 = document.getElementById("snowball2DContainer");
+  const btn = document.getElementById("sbModeToggleBtn");
+  if (official.style.display !== "none") {
+    official.style.display = "none";
+    d2.style.display = "block";
+    btn.textContent = "🌐 本家3D版に切替";
+    initSnowballCanvas();
+  } else {
+    stopSnowballLoop();
+    d2.style.display = "none";
+    official.style.display = "block";
+    btn.textContent = "🎮 2D軽量版に切替";
+  }
+};
+
+window.toggleSnowballFullscreen = function () {
+  const container = document.getElementById("snowballOfficialContainer");
+  if (!container) return;
+  if (!document.fullscreenElement) {
+    if (container.requestFullscreen) {
+      container.requestFullscreen();
+    } else if (container.webkitRequestFullscreen) {
+      container.webkitRequestFullscreen();
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
 };
 
 let sbCanvas, sbCtx;
@@ -5066,6 +5269,929 @@ function drawSnowballArena() {
     sbCtx.fillText(ent.name, ent.x, ent.y - ent.radius - 4);
   });
 }
+
+/* ======================
+   UNO ゲームエンジン
+====================== */
+
+let currentUnoMode = null; // "ai" | "online"
+let currentUnoRoomId = null;
+let unoUnsub = null;
+let unoPendingWild = null; // { cardIndex, isOnline }
+let unoHasDrawn = false;
+let unoOnlineCurrentData = null;
+let unoOnlineMyUid = null;
+
+// カード定義とデッキ生成
+function createUnoDeck() {
+  const colors = ["red", "blue", "green", "yellow"];
+  const deck = [];
+  let idCounter = 0;
+
+  colors.forEach((color) => {
+    deck.push({ id: `c_${idCounter++}`, color, value: "0" });
+    for (let i = 1; i <= 9; i++) {
+      deck.push({ id: `c_${idCounter++}`, color, value: String(i) });
+      deck.push({ id: `c_${idCounter++}`, color, value: String(i) });
+    }
+    ["skip", "reverse", "draw2"].forEach((act) => {
+      deck.push({ id: `c_${idCounter++}`, color, value: act });
+      deck.push({ id: `c_${idCounter++}`, color, value: act });
+    });
+  });
+
+  for (let i = 0; i < 4; i++) {
+    deck.push({ id: `c_${idCounter++}`, color: "wild", value: "wild" });
+    deck.push({ id: `c_${idCounter++}`, color: "wild", value: "wild4" });
+  }
+
+  return shuffleUnoDeck(deck);
+}
+
+function shuffleUnoDeck(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function isUnoPlayable(card, topCard, activeColor) {
+  if (!topCard) return true;
+  if (card.color === "wild") return true;
+  const targetColor = activeColor || topCard.color;
+  if (card.color === targetColor) return true;
+  if (card.value === topCard.value) return true;
+  return false;
+}
+
+function unoColorName(c) {
+  switch (c) {
+    case "red": return "🔴 赤";
+    case "blue": return "🔵 青";
+    case "green": return "🟢 緑";
+    case "yellow": return "🟡 黄";
+    case "wild": return "🌈 ワイルド";
+    default: return c || "赤";
+  }
+}
+
+function unoCardLabel(v) {
+  switch (v) {
+    case "skip": return "スキップ ⊘";
+    case "reverse": return "リバース ⇄";
+    case "draw2": return "ドロー2 (+2)";
+    case "wild": return "ワイルド";
+    case "wild4": return "ワイルド+4";
+    default: return v;
+  }
+}
+
+function createUnoCardDOM(card, isPlayable, onClickHandler) {
+  let bg = "";
+  let text = "";
+  let textColor = "#fff";
+
+  if (card.color === "red") bg = "linear-gradient(135deg, #ef4444, #dc2626)";
+  else if (card.color === "blue") bg = "linear-gradient(135deg, #3b82f6, #2563eb)";
+  else if (card.color === "green") bg = "linear-gradient(135deg, #22c55e, #16a34a)";
+  else if (card.color === "yellow") {
+    bg = "linear-gradient(135deg, #facc15, #eab308)";
+    textColor = "#000";
+  } else if (card.color === "wild") {
+    bg = "conic-gradient(#ef4444 0deg 90deg, #3b82f6 90deg 180deg, #22c55e 180deg 270deg, #eab308 270deg 360deg)";
+  } else {
+    bg = "#333";
+  }
+
+  if (card.value === "skip") text = "⊘";
+  else if (card.value === "reverse") text = "⇄";
+  else if (card.value === "draw2") text = "+2";
+  else if (card.value === "wild") text = "★";
+  else if (card.value === "wild4") text = "+4";
+  else text = card.value;
+
+  const cardDiv = document.createElement("div");
+  cardDiv.style.cssText = `
+    width: 64px;
+    height: 94px;
+    background: ${bg};
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: ${textColor};
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    flex-shrink: 0;
+    user-select: none;
+    position: relative;
+    border: 2px solid ${isPlayable ? '#fbbf24' : 'rgba(255,255,255,0.2)'};
+    ${isPlayable ? 'cursor: pointer; transform: translateY(-4px); box-shadow: 0 0 10px #fbbf24;' : 'opacity: 0.75;'}
+    transition: transform 0.15s, box-shadow 0.15s;
+  `;
+
+  const oval = document.createElement("div");
+  oval.style.cssText = `
+    width: 48px;
+    height: 68px;
+    background: ${card.color === 'wild' ? '#111' : '#fff'};
+    border-radius: 50% / 60%;
+    transform: rotate(-20deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: ${card.color === 'wild' ? '#fff' : (card.color === 'yellow' ? '#ca8a04' : (card.color === 'red' ? '#dc2626' : (card.color === 'blue' ? '#2563eb' : '#16a34a')))};
+    font-size: ${text.length > 2 ? '17px' : '24px'};
+    font-style: italic;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+  `;
+  oval.textContent = text;
+  cardDiv.appendChild(oval);
+
+  if (isPlayable && onClickHandler) {
+    cardDiv.onclick = onClickHandler;
+  }
+  return cardDiv;
+}
+
+// AI対戦ステート
+let unoAIState = {
+  status: "idle",
+  players: [],
+  turnIndex: 0,
+  direction: 1,
+  topCard: null,
+  activeColor: "red",
+  deck: [],
+  discardPile: [],
+  lastAction: ""
+};
+
+window.openUnoHub = function () {
+  window.hideAllScreens();
+  document.getElementById("unoScreen").style.display = "block";
+  document.getElementById("unoLobby").style.display = "block";
+  document.getElementById("unoGameArea").style.display = "none";
+};
+
+window.leaveUnoGame = function () {
+  if (unoUnsub) {
+    unoUnsub();
+    unoUnsub = null;
+  }
+  currentUnoMode = null;
+  currentUnoRoomId = null;
+  unoOnlineCurrentData = null;
+  showGameCorner();
+};
+
+window.startUnoAI = function () {
+  currentUnoMode = "ai";
+  currentUnoRoomId = null;
+  if (unoUnsub) { unoUnsub(); unoUnsub = null; }
+
+  document.getElementById("unoLobby").style.display = "none";
+  document.getElementById("unoGameArea").style.display = "block";
+  document.getElementById("unoRoomTitle").textContent = "ルーム: 🤖 AI対戦 (4人バトル)";
+  document.getElementById("unoCopyUrlBtn").style.display = "none";
+  document.getElementById("unoRestartBtn").style.display = "none";
+
+  let myName = "あなた";
+  if (uid && profileCache[uid] && profileCache[uid].name) {
+    myName = profileCache[uid].name;
+  }
+
+  const deck = createUnoDeck();
+  const players = [
+    { id: "human", name: myName, isHuman: true, hand: [] },
+    { id: "bot1", name: "はるとBot", isHuman: false, hand: [] },
+    { id: "bot2", name: "AIにゃんこ", isHuman: false, hand: [] },
+    { id: "bot3", name: "つよつよBot", isHuman: false, hand: [] }
+  ];
+
+  for (let i = 0; i < 7; i++) {
+    players.forEach(p => p.hand.push(deck.pop()));
+  }
+
+  let top = deck.pop();
+  while (top.color === "wild") {
+    deck.unshift(top);
+    top = deck.pop();
+  }
+
+  unoAIState = {
+    status: "playing",
+    players,
+    turnIndex: 0,
+    direction: 1,
+    topCard: top,
+    activeColor: top.color,
+    deck,
+    discardPile: [top],
+    lastAction: "ゲーム開始！あなたの手番です"
+  };
+  unoHasDrawn = false;
+
+  renderUnoAIUI();
+};
+
+function renderUnoAIUI() {
+  document.getElementById("unoActiveColorText").textContent = unoColorName(unoAIState.activeColor);
+  document.getElementById("unoDirectionBadge").textContent = unoAIState.direction === 1 ? "↻ 時計回り" : "↺ 反時計回り";
+  document.getElementById("unoDeckCount").textContent = `残り ${unoAIState.deck.length}`;
+
+  const topCont = document.getElementById("unoTopCardContainer");
+  topCont.innerHTML = "";
+  if (unoAIState.topCard) {
+    topCont.appendChild(createUnoCardDOM(unoAIState.topCard, false, null));
+  }
+
+  const banner = document.getElementById("unoStatusBanner");
+  banner.textContent = unoAIState.lastAction;
+
+  if (unoAIState.status === "finished") {
+    banner.textContent = `🏆 ${unoAIState.winnerName} さんの勝利です！おめでとうございます！🎉`;
+    document.getElementById("unoRestartBtn").style.display = "block";
+    document.getElementById("unoDrawBtn").style.display = "none";
+    document.getElementById("unoPassBtn").style.display = "none";
+  } else {
+    document.getElementById("unoRestartBtn").style.display = "none";
+  }
+
+  const oppArea = document.getElementById("unoOpponentsArea");
+  oppArea.innerHTML = "";
+  unoAIState.players.filter(p => !p.isHuman).forEach((bot) => {
+    const isBotTurn = (unoAIState.status === "playing" && unoAIState.players[unoAIState.turnIndex]?.id === bot.id);
+    const box = document.createElement("div");
+    box.style.cssText = `
+      background: ${isBotTurn ? '#1f2937' : '#161b22'};
+      border: 2px solid ${isBotTurn ? '#38bdf8' : '#30363d'};
+      border-radius: 10px;
+      padding: 8px 12px;
+      text-align: center;
+      min-width: 85px;
+      flex-shrink: 0;
+      box-shadow: ${isBotTurn ? '0 0 10px rgba(56,189,248,0.5)' : 'none'};
+    `;
+    box.innerHTML = `
+      <div style="font-size:12px; color:#cbd5e1; font-weight:bold; margin-bottom:4px;">🤖 ${escapeHTML(bot.name)}</div>
+      <div style="font-size:14px; color:#facc15; font-weight:bold;">🎴 ${bot.hand.length}枚</div>
+      ${bot.hand.length === 1 ? '<span style="font-size:10px; background:#dc2626; color:#fff; padding:1px 4px; border-radius:4px; font-weight:bold;">UNO!</span>' : ''}
+    `;
+    oppArea.appendChild(box);
+  });
+
+  const human = unoAIState.players[0];
+  document.getElementById("unoMyCardCount").textContent = human.hand.length;
+  const handCont = document.getElementById("unoHandContainer");
+  handCont.innerHTML = "";
+
+  const isMyTurn = (unoAIState.status === "playing" && unoAIState.turnIndex === 0);
+
+  human.hand.forEach((card, idx) => {
+    const playable = isMyTurn && isUnoPlayable(card, unoAIState.topCard, unoAIState.activeColor);
+    const cEl = createUnoCardDOM(card, playable, () => {
+      if (!playable) return;
+      if (card.color === "wild") {
+        unoPendingWild = { cardIndex: idx, isOnline: false };
+        document.getElementById("unoColorModal").style.display = "flex";
+      } else {
+        playUnoAICard(idx, card.color);
+      }
+    });
+    handCont.appendChild(cEl);
+  });
+
+  const drawBtn = document.getElementById("unoDrawBtn");
+  const passBtn = document.getElementById("unoPassBtn");
+  if (unoAIState.status === "playing") {
+    drawBtn.style.display = "block";
+    if (isMyTurn && unoHasDrawn) {
+      passBtn.style.display = "block";
+    } else {
+      passBtn.style.display = "none";
+    }
+  }
+}
+
+function playUnoAICard(cardIndex, chosenWildColor) {
+  const p = unoAIState.players[unoAIState.turnIndex];
+  const card = p.hand.splice(cardIndex, 1)[0];
+
+  unoAIState.discardPile.push(unoAIState.topCard);
+  unoAIState.topCard = card;
+
+  let activeC = card.color;
+  if (card.color === "wild") {
+    activeC = chosenWildColor || "red";
+  }
+  unoAIState.activeColor = activeC;
+
+  const cardName = `${unoColorName(activeC)}の${unoCardLabel(card.value)}`;
+  let actionMsg = `${p.name}が${cardName}を出しました！`;
+
+  if (p.hand.length === 1) {
+    actionMsg = `📢 ${p.name}「UNO！」残り1枚！ (${cardName})`;
+  }
+
+  if (p.hand.length === 0) {
+    unoAIState.status = "finished";
+    unoAIState.winnerName = p.name;
+    unoAIState.lastAction = `🎉 ${p.name}の勝利！手札がゼロになりました！`;
+    renderUnoAIUI();
+    return;
+  }
+
+  let skipNext = false;
+  let drawCount = 0;
+
+  if (card.value === "reverse") {
+    if (unoAIState.players.length === 2) {
+      skipNext = true;
+    } else {
+      unoAIState.direction = -unoAIState.direction;
+      actionMsg += "【回り順逆転！】";
+    }
+  } else if (card.value === "skip") {
+    skipNext = true;
+    actionMsg += "【スキップ発動！】";
+  } else if (card.value === "draw2") {
+    skipNext = true;
+    drawCount = 2;
+    actionMsg += "【次の人が2枚ドロー＆スキップ！】";
+  } else if (card.value === "wild4") {
+    skipNext = true;
+    drawCount = 4;
+    actionMsg += "【次の人が4枚ドロー＆スキップ！】";
+  }
+
+  unoAIState.lastAction = actionMsg;
+
+  const N = unoAIState.players.length;
+  let nextIdx = (unoAIState.turnIndex + unoAIState.direction + N) % N;
+
+  if (drawCount > 0) {
+    drawCardsFromUnoDeck(unoAIState.players[nextIdx], drawCount);
+  }
+
+  if (skipNext) {
+    nextIdx = (nextIdx + unoAIState.direction + N) % N;
+  }
+
+  unoAIState.turnIndex = nextIdx;
+  unoHasDrawn = false;
+  renderUnoAIUI();
+
+  if (unoAIState.status === "playing" && !unoAIState.players[unoAIState.turnIndex].isHuman) {
+    triggerUnoBotTurn();
+  }
+}
+
+function drawCardsFromUnoDeck(player, count) {
+  for (let i = 0; i < count; i++) {
+    if (unoAIState.deck.length === 0) {
+      if (unoAIState.discardPile.length > 0) {
+        unoAIState.deck = shuffleUnoDeck(unoAIState.discardPile);
+        unoAIState.discardPile = [];
+      }
+    }
+    if (unoAIState.deck.length > 0) {
+      player.hand.push(unoAIState.deck.pop());
+    }
+  }
+}
+
+function triggerUnoBotTurn() {
+  if (unoAIState.status !== "playing") return;
+  const bot = unoAIState.players[unoAIState.turnIndex];
+  if (!bot || bot.isHuman) return;
+
+  setTimeout(() => {
+    if (unoAIState.status !== "playing" || unoAIState.players[unoAIState.turnIndex]?.id !== bot.id) return;
+
+    let playableIndices = [];
+    bot.hand.forEach((c, idx) => {
+      if (isUnoPlayable(c, unoAIState.topCard, unoAIState.activeColor)) {
+        playableIndices.push(idx);
+      }
+    });
+
+    if (playableIndices.length > 0) {
+      let chosenIdx = playableIndices[0];
+      for (const idx of playableIndices) {
+        const val = bot.hand[idx].value;
+        if (val === "wild4" || val === "draw2") {
+          chosenIdx = idx;
+          break;
+        } else if (val === "skip" || val === "reverse") {
+          chosenIdx = idx;
+        }
+      }
+
+      const card = bot.hand[chosenIdx];
+      let chosenColor = null;
+      if (card.color === "wild") {
+        const counts = { red: 0, blue: 0, green: 0, yellow: 0 };
+        bot.hand.forEach(c => {
+          if (counts[c.color] !== undefined) counts[c.color]++;
+        });
+        chosenColor = Object.keys(counts).reduce((a, b) => counts[a] >= counts[b] ? a : b);
+      }
+
+      playUnoAICard(chosenIdx, chosenColor);
+    } else {
+      drawCardsFromUnoDeck(bot, 1);
+      const drawnCard = bot.hand[bot.hand.length - 1];
+
+      if (drawnCard && isUnoPlayable(drawnCard, unoAIState.topCard, unoAIState.activeColor)) {
+        let chosenColor = null;
+        if (drawnCard.color === "wild") {
+          chosenColor = "red";
+        }
+        playUnoAICard(bot.hand.length - 1, chosenColor);
+      } else {
+        unoAIState.lastAction = `${bot.name}が山札から引いてパスしました`;
+        const N = unoAIState.players.length;
+        unoAIState.turnIndex = (unoAIState.turnIndex + unoAIState.direction + N) % N;
+        renderUnoAIUI();
+
+        if (!unoAIState.players[unoAIState.turnIndex].isHuman) {
+          triggerUnoBotTurn();
+        }
+      }
+    }
+  }, 800);
+}
+
+// オンライン対戦機能
+window.startUnoRandom = async function () {
+  try {
+    const q = query(
+      collection(db, "sheet_sessions"),
+      where("status", "==", "waiting")
+    );
+    const snap = await getDocs(q);
+    let targetRoomId = null;
+    for (const d of snap.docs) {
+      const data = d.data();
+      if (data.game === "uno" && data.isPublic && data.players && data.players[0]?.uid !== uid) {
+        targetRoomId = d.id;
+        break;
+      }
+    }
+    if (targetRoomId) {
+      await enterUnoOnlineRoom(targetRoomId);
+    } else {
+      const code = Math.random().toString(36).slice(2, 8);
+      await enterUnoOnlineRoom("uno_rand_" + code, true);
+    }
+  } catch (err) {
+    console.error("UNO自由参加エラー:", err);
+    const code = Math.random().toString(36).slice(2, 8);
+    await enterUnoOnlineRoom("uno_rand_" + code, true);
+  }
+};
+
+window.joinUnoPassphrase = async function () {
+  const input = document.getElementById("unoPassInput");
+  const code = (input ? input.value.trim() : "");
+  if (!code) {
+    alert("合言葉を入力してください");
+    return;
+  }
+  const roomId = "uno_pass_" + encodeURIComponent(code);
+  await enterUnoOnlineRoom(roomId);
+};
+
+window.createUnoInviteUrl = async function () {
+  const code = Math.random().toString(36).slice(2, 8);
+  const roomId = "uno_inv_" + code;
+  await enterUnoOnlineRoom(roomId);
+  copyCurrentUnoRoomUrl();
+};
+
+window.copyCurrentUnoRoomUrl = function () {
+  if (!currentUnoRoomId) return;
+  const cleanId = currentUnoRoomId.replace(/^(uno_pass_|uno_inv_|uno_rand_)/, "");
+  const url = `${window.location.origin}${window.location.pathname}?uno=${cleanId}`;
+  navigator.clipboard.writeText(url).then(() => {
+    alert("招待URLをコピーしました！友達に送信してください：\n" + url);
+  }).catch(() => {
+    prompt("招待URLをコピーしてください：", url);
+  });
+};
+
+async function enterUnoOnlineRoom(roomId, isPublic = false) {
+  currentUnoMode = "online";
+  currentUnoRoomId = roomId;
+
+  document.getElementById("unoLobby").style.display = "none";
+  document.getElementById("unoGameArea").style.display = "block";
+  document.getElementById("unoRoomTitle").textContent = "ルーム: " + roomId.replace(/^(uno_pass_|uno_inv_|uno_rand_)/, "");
+  document.getElementById("unoCopyUrlBtn").style.display = "block";
+  document.getElementById("unoRestartBtn").style.display = "none";
+
+  const roomRef = doc(db, "sheet_sessions", roomId);
+  const snap = await getDoc(roomRef);
+
+  let myName = "プレイヤー";
+  if (uid && profileCache[uid] && profileCache[uid].name) {
+    myName = profileCache[uid].name;
+  }
+
+  const myUid = uid || ("guest_" + Math.random().toString(36).slice(2, 6));
+  unoOnlineMyUid = myUid;
+
+  if (!snap.exists()) {
+    const deck = createUnoDeck();
+    const myHand = [];
+    for (let i = 0; i < 7; i++) myHand.push(deck.pop());
+
+    let top = deck.pop();
+    while (top.color === "wild") {
+      deck.unshift(top);
+      top = deck.pop();
+    }
+
+    const initialData = {
+      game: "uno",
+      isPublic: !!isPublic,
+      status: "waiting",
+      players: [
+        { uid: myUid, name: myName, cardCount: 7 }
+      ],
+      hands: {
+        [myUid]: myHand
+      },
+      deck: deck,
+      discardPile: [top],
+      topCard: top,
+      activeColor: top.color,
+      turnIndex: 0,
+      direction: 1,
+      lastAction: "対戦相手の参加を待っています...",
+      winnerName: null,
+      updatedAt: Date.now()
+    };
+
+    await setDoc(roomRef, initialData);
+  } else {
+    const data = snap.data();
+    const alreadyJoined = (data.players || []).some(p => p.uid === myUid);
+
+    if (!alreadyJoined) {
+      if ((data.players || []).length >= 4) {
+        alert("このルームはすでに満員です。別の合言葉をお試しください。");
+        leaveUnoGame();
+        return;
+      }
+
+      const deck = [...(data.deck || [])];
+      const myHand = [];
+      for (let i = 0; i < 7; i++) {
+        if (deck.length > 0) myHand.push(deck.pop());
+      }
+
+      const updatedPlayers = [...(data.players || []), { uid: myUid, name: myName, cardCount: myHand.length }];
+      const updatedHands = { ...(data.hands || {}), [myUid]: myHand };
+
+      await updateDoc(roomRef, {
+        status: "playing",
+        players: updatedPlayers,
+        hands: updatedHands,
+        deck: deck,
+        lastAction: `🎉 ${myName} さんが参加しました！ゲーム開始！`,
+        updatedAt: Date.now()
+      });
+    }
+  }
+
+  if (unoUnsub) unoUnsub();
+  unoUnsub = onSnapshot(roomRef, (snapshot) => {
+    if (!snapshot.exists()) {
+      alert("ルームが削除されました");
+      leaveUnoGame();
+      return;
+    }
+    const data = snapshot.data();
+    unoOnlineCurrentData = data;
+    renderOnlineUnoUI(data, myUid);
+  });
+}
+
+function renderOnlineUnoUI(data, myUid) {
+  document.getElementById("unoActiveColorText").textContent = unoColorName(data.activeColor);
+  document.getElementById("unoDirectionBadge").textContent = data.direction === 1 ? "↻ 時計回り" : "↺ 反時計回り";
+  document.getElementById("unoDeckCount").textContent = `残り ${data.deck ? data.deck.length : 0}`;
+
+  const topCont = document.getElementById("unoTopCardContainer");
+  topCont.innerHTML = "";
+  if (data.topCard) {
+    topCont.appendChild(createUnoCardDOM(data.topCard, false, null));
+  }
+
+  const banner = document.getElementById("unoStatusBanner");
+  banner.textContent = data.lastAction || "進行中...";
+
+  if (data.status === "finished") {
+    banner.textContent = `🏆 ${data.winnerName} さんの勝利です！🎉`;
+    document.getElementById("unoRestartBtn").style.display = "block";
+    document.getElementById("unoDrawBtn").style.display = "none";
+    document.getElementById("unoPassBtn").style.display = "none";
+  } else {
+    document.getElementById("unoRestartBtn").style.display = "none";
+  }
+
+  const oppArea = document.getElementById("unoOpponentsArea");
+  oppArea.innerHTML = "";
+  const players = data.players || [];
+  players.filter(p => p.uid !== myUid).forEach((p) => {
+    const isTheirTurn = (data.status === "playing" && players[data.turnIndex]?.uid === p.uid);
+    const box = document.createElement("div");
+    box.style.cssText = `
+      background: ${isTheirTurn ? '#1f2937' : '#161b22'};
+      border: 2px solid ${isTheirTurn ? '#38bdf8' : '#30363d'};
+      border-radius: 10px;
+      padding: 8px 12px;
+      text-align: center;
+      min-width: 85px;
+      flex-shrink: 0;
+      box-shadow: ${isTheirTurn ? '0 0 10px rgba(56,189,248,0.5)' : 'none'};
+    `;
+    box.innerHTML = `
+      <div style="font-size:12px; color:#cbd5e1; font-weight:bold; margin-bottom:4px;">👤 ${escapeHTML(p.name)}</div>
+      <div style="font-size:14px; color:#facc15; font-weight:bold;">🎴 ${p.cardCount}枚</div>
+      ${p.cardCount === 1 ? '<span style="font-size:10px; background:#dc2626; color:#fff; padding:1px 4px; border-radius:4px; font-weight:bold;">UNO!</span>' : ''}
+    `;
+    oppArea.appendChild(box);
+  });
+
+  const myHand = (data.hands && data.hands[myUid]) || [];
+  document.getElementById("unoMyCardCount").textContent = myHand.length;
+  const handCont = document.getElementById("unoHandContainer");
+  handCont.innerHTML = "";
+
+  const isMyTurn = (data.status === "playing" && players[data.turnIndex]?.uid === myUid);
+
+  myHand.forEach((card, idx) => {
+    const playable = isMyTurn && isUnoPlayable(card, data.topCard, data.activeColor);
+    const cEl = createUnoCardDOM(card, playable, () => {
+      if (!playable) return;
+      if (card.color === "wild") {
+        unoPendingWild = { cardIndex: idx, isOnline: true };
+        document.getElementById("unoColorModal").style.display = "flex";
+      } else {
+        playOnlineUnoCard(idx, card.color);
+      }
+    });
+    handCont.appendChild(cEl);
+  });
+
+  const drawBtn = document.getElementById("unoDrawBtn");
+  const passBtn = document.getElementById("unoPassBtn");
+  if (data.status === "playing") {
+    drawBtn.style.display = "block";
+    passBtn.style.display = (isMyTurn && unoHasDrawn) ? "block" : "none";
+  }
+}
+
+async function playOnlineUnoCard(cardIndex, chosenWildColor) {
+  if (!currentUnoRoomId || !unoOnlineCurrentData || !unoOnlineMyUid) return;
+  const data = unoOnlineCurrentData;
+  const myUid = unoOnlineMyUid;
+  const players = [...(data.players || [])];
+  const hands = { ...(data.hands || {}) };
+  const myHand = [...(hands[myUid] || [])];
+  const card = myHand.splice(cardIndex, 1)[0];
+  hands[myUid] = myHand;
+
+  const pIdx = players.findIndex(p => p.uid === myUid);
+  if (pIdx !== -1) {
+    players[pIdx] = { ...players[pIdx], cardCount: myHand.length };
+  }
+
+  let deck = [...(data.deck || [])];
+  let discardPile = [...(data.discardPile || [])];
+  discardPile.push(data.topCard);
+
+  let activeC = card.color;
+  if (card.color === "wild") {
+    activeC = chosenWildColor || "red";
+  }
+
+  const pName = players[pIdx]?.name || "プレイヤー";
+  const cardName = `${unoColorName(activeC)}の${unoCardLabel(card.value)}`;
+  let actionMsg = `${pName}が${cardName}を出しました！`;
+
+  if (myHand.length === 1) {
+    actionMsg = `📢 ${pName}「UNO！」残り1枚！ (${cardName})`;
+  }
+
+  if (myHand.length === 0) {
+    await updateDoc(doc(db, "sheet_sessions", currentUnoRoomId), {
+      status: "finished",
+      winnerName: pName,
+      lastAction: `🎉 ${pName}の勝利！手札がゼロになりました！`,
+      topCard: card,
+      activeColor: activeC,
+      hands,
+      players,
+      updatedAt: Date.now()
+    });
+    return;
+  }
+
+  let skipNext = false;
+  let drawCount = 0;
+  let direction = data.direction || 1;
+
+  if (card.value === "reverse") {
+    if (players.length === 2) {
+      skipNext = true;
+    } else {
+      direction = -direction;
+      actionMsg += "【回り順逆転！】";
+    }
+  } else if (card.value === "skip") {
+    skipNext = true;
+    actionMsg += "【スキップ発動！】";
+  } else if (card.value === "draw2") {
+    skipNext = true;
+    drawCount = 2;
+    actionMsg += "【次の人が2枚ドロー＆スキップ！】";
+  } else if (card.value === "wild4") {
+    skipNext = true;
+    drawCount = 4;
+    actionMsg += "【次の人が4枚ドロー＆スキップ！】";
+  }
+
+  const N = players.length;
+  let nextTurnIdx = (data.turnIndex + direction + N) % N;
+
+  if (drawCount > 0) {
+    const targetUid = players[nextTurnIdx].uid;
+    const targetHand = [...(hands[targetUid] || [])];
+    for (let i = 0; i < drawCount; i++) {
+      if (deck.length === 0 && discardPile.length > 0) {
+        deck = shuffleUnoDeck(discardPile);
+        discardPile = [];
+      }
+      if (deck.length > 0) targetHand.push(deck.pop());
+    }
+    hands[targetUid] = targetHand;
+    players[nextTurnIdx] = { ...players[nextTurnIdx], cardCount: targetHand.length };
+  }
+
+  if (skipNext) {
+    nextTurnIdx = (nextTurnIdx + direction + N) % N;
+  }
+
+  unoHasDrawn = false;
+  await updateDoc(doc(db, "sheet_sessions", currentUnoRoomId), {
+    topCard: card,
+    activeColor: activeC,
+    turnIndex: nextTurnIdx,
+    direction,
+    players,
+    hands,
+    deck,
+    discardPile,
+    lastAction: actionMsg,
+    updatedAt: Date.now()
+  });
+}
+
+async function onOnlineUnoDraw() {
+  if (!currentUnoRoomId || !unoOnlineCurrentData || !unoOnlineMyUid) return;
+  const data = unoOnlineCurrentData;
+  const myUid = unoOnlineMyUid;
+  const isMyTurn = (data.status === "playing" && data.players[data.turnIndex]?.uid === myUid);
+  if (!isMyTurn) return;
+
+  if (unoHasDrawn) {
+    alert("すでに山札を引いています。パスするかカードを出してください。");
+    return;
+  }
+
+  let deck = [...(data.deck || [])];
+  let discardPile = [...(data.discardPile || [])];
+  const hands = { ...(data.hands || {}) };
+  const myHand = [...(hands[myUid] || [])];
+
+  if (deck.length === 0 && discardPile.length > 0) {
+    deck = shuffleUnoDeck(discardPile);
+    discardPile = [];
+  }
+
+  if (deck.length === 0) {
+    alert("山札がありません。");
+    return;
+  }
+
+  const drawnCard = deck.pop();
+  myHand.push(drawnCard);
+  hands[myUid] = myHand;
+
+  const players = [...(data.players || [])];
+  const pIdx = players.findIndex(p => p.uid === myUid);
+  if (pIdx !== -1) {
+    players[pIdx] = { ...players[pIdx], cardCount: myHand.length };
+  }
+
+  unoHasDrawn = true;
+  await updateDoc(doc(db, "sheet_sessions", currentUnoRoomId), {
+    deck,
+    discardPile,
+    hands,
+    players,
+    lastAction: `${players[pIdx]?.name || "プレイヤー"}が山札を1枚引きました`,
+    updatedAt: Date.now()
+  });
+}
+
+async function onOnlineUnoPass() {
+  if (!currentUnoRoomId || !unoOnlineCurrentData || !unoOnlineMyUid) return;
+  const data = unoOnlineCurrentData;
+  const myUid = unoOnlineMyUid;
+  const isMyTurn = (data.status === "playing" && data.players[data.turnIndex]?.uid === myUid);
+  if (!isMyTurn || !unoHasDrawn) return;
+
+  unoHasDrawn = false;
+  const N = data.players.length;
+  const nextIdx = (data.turnIndex + data.direction + N) % N;
+
+  await updateDoc(doc(db, "sheet_sessions", currentUnoRoomId), {
+    turnIndex: nextIdx,
+    lastAction: `${data.players[data.turnIndex]?.name || "プレイヤー"}がパスしました`,
+    updatedAt: Date.now()
+  });
+}
+
+window.onUnoDrawClick = function () {
+  if (currentUnoMode === "ai") {
+    if (unoAIState.status !== "playing" || unoAIState.turnIndex !== 0) return;
+    if (unoHasDrawn) {
+      alert("すでに山札を引いています。パスするかカードを出してください。");
+      return;
+    }
+    drawCardsFromUnoDeck(unoAIState.players[0], 1);
+    unoHasDrawn = true;
+    const drawnCard = unoAIState.players[0].hand[unoAIState.players[0].hand.length - 1];
+    if (drawnCard && isUnoPlayable(drawnCard, unoAIState.topCard, unoAIState.activeColor)) {
+      unoAIState.lastAction = "引いたカードを出すか、パスを選択してください。";
+    } else {
+      unoAIState.lastAction = "出せるカードがありませんでした。パスボタンを押してください。";
+    }
+    renderUnoAIUI();
+  } else if (currentUnoMode === "online") {
+    onOnlineUnoDraw();
+  }
+};
+
+window.onUnoPassClick = function () {
+  if (currentUnoMode === "ai") {
+    if (unoAIState.status !== "playing" || unoAIState.turnIndex !== 0 || !unoHasDrawn) return;
+    unoHasDrawn = false;
+    unoAIState.lastAction = "パスしました。";
+    const N = unoAIState.players.length;
+    unoAIState.turnIndex = (unoAIState.turnIndex + unoAIState.direction + N) % N;
+    renderUnoAIUI();
+    if (!unoAIState.players[unoAIState.turnIndex].isHuman) {
+      triggerUnoBotTurn();
+    }
+  } else if (currentUnoMode === "online") {
+    onOnlineUnoPass();
+  }
+};
+
+window.onUnoShoutClick = function () {
+  alert("🎉「UNO！」を宣言しました！残り1枚でアピール！");
+};
+
+window.selectUnoWildColor = function (color) {
+  document.getElementById("unoColorModal").style.display = "none";
+  if (!unoPendingWild) return;
+
+  if (currentUnoMode === "ai") {
+    playUnoAICard(unoPendingWild.cardIndex, color);
+    unoPendingWild = null;
+  } else if (currentUnoMode === "online") {
+    playOnlineUnoCard(unoPendingWild.cardIndex, color);
+    unoPendingWild = null;
+  }
+};
+
+window.restartUnoGame = function () {
+  if (currentUnoMode === "ai") {
+    window.startUnoAI();
+  } else if (currentUnoMode === "online" && currentUnoRoomId) {
+    enterUnoOnlineRoom(currentUnoRoomId);
+  }
+};
+
 </script>
 
 </body>
