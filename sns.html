@@ -505,426 +505,7 @@ button.back {
         <script
           type="text/javascript"
           src="https://counter1.fc2.com/counter.php?id=89517152"
-        >
-/* ======================
-   管理者直接追加
-====================== */
-window.addAdminDirectly = async function () {
-  const input = document.getElementById("newAdminInput");
-  if (!input) return;
-  let qVal = input.value.trim();
-  if (!qVal) {
-    alert("ユーザー名またはUIDを入力してください");
-    return;
-  }
-  if (qVal.startsWith("@")) qVal = qVal.slice(1);
-
-  try {
-    const uq = query(collection(db, "users"), where("username", "==", qVal));
-    const uSnap = await getDocs(uq);
-    let targetDocId = null;
-    let targetName = qVal;
-
-    if (!uSnap.empty) {
-      targetDocId = uSnap.docs[0].id;
-      targetName = uSnap.docs[0].data().name || qVal;
-    } else {
-      const directSnap = await getDoc(doc(db, "users", qVal));
-      if (directSnap.exists()) {
-        targetDocId = qVal;
-        targetName = directSnap.data().name || qVal;
-      }
-    }
-
-    if (!targetDocId) {
-      alert("該当するユーザーが見つかりませんでした: " + qVal);
-      return;
-    }
-
-    await updateDoc(doc(db, "users", targetDocId), { role: "admin" });
-    alert(`🎉 ${targetName} さんを管理者に任命しました！`);
-    input.value = "";
-    loadAdminUsers();
-  } catch (err) {
-    console.error(err);
-    alert("管理者の追加に失敗しました: " + err.message);
-  }
-};
-
-/* ======================
-   snowball.io ゲームエンジン
-====================== */
-window.openSnowballHub = function () {
-  window.hideAllScreens();
-  document.getElementById("snowballScreen").style.display = "block";
-  document.getElementById("snowballOverlay").style.display = "flex";
-  document.getElementById("snowballOverlayTitle").textContent = "❄️ 雪玉バトルロイヤル";
-  document.getElementById("snowballOverlayMsg").innerHTML = "画面をドラッグ（指でなぞる）して移動！<br>雪玉を大きく転がして、相手にぶつけてステージから落とせ！";
-  initSnowballCanvas();
-};
-
-window.leaveSnowballGame = function () {
-  stopSnowballLoop();
-  showGameCorner();
-};
-
-let sbCanvas, sbCtx;
-let sbAnimId = null;
-let sbRunning = false;
-let sbPlayer = null;
-let sbBots = [];
-let sbProjectiles = [];
-let sbArenaRadius = 175;
-let sbKills = 0;
-let sbInput = { active: false, x: 0, y: 0, startX: 0, startY: 0 };
-
-function initSnowballCanvas() {
-  sbCanvas = document.getElementById("snowballCanvas");
-  if (!sbCanvas) return;
-  sbCtx = sbCanvas.getContext("2d");
-
-  sbCanvas.onpointerdown = (e) => {
-    e.preventDefault();
-    const rect = sbCanvas.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 400;
-    const y = ((e.clientY - rect.top) / rect.height) * 400;
-    sbInput.active = true;
-    sbInput.startX = x;
-    sbInput.startY = y;
-    sbInput.x = x;
-    sbInput.y = y;
-  };
-
-  sbCanvas.onpointermove = (e) => {
-    if (!sbInput.active) return;
-    const rect = sbCanvas.getBoundingClientRect();
-    sbInput.x = ((e.clientX - rect.left) / rect.width) * 400;
-    sbInput.y = ((e.clientY - rect.top) / rect.height) * 400;
-  };
-
-  sbCanvas.onpointerup = (e) => {
-    if (sbInput.active && sbPlayer && sbPlayer.isAlive) {
-      shootSnowball(sbPlayer);
-    }
-    sbInput.active = false;
-  };
-
-  sbCanvas.onpointercancel = () => {
-    sbInput.active = false;
-  };
-
-  drawSnowballArena();
-}
-
-function shootSnowball(entity) {
-  if (entity.snowballSize < 4) return;
-  const speed = 7;
-  const pSize = entity.snowballSize;
-  const spawnDist = entity.radius + pSize + 4;
-  sbProjectiles.push({
-    x: entity.x + Math.cos(entity.angle) * spawnDist,
-    y: entity.y + Math.sin(entity.angle) * spawnDist,
-    vx: Math.cos(entity.angle) * speed,
-    vy: Math.sin(entity.angle) * speed,
-    radius: pSize,
-    owner: entity,
-    life: 75
-  });
-  entity.snowballSize = 2;
-}
-
-window.startSnowballGame = function () {
-  document.getElementById("snowballOverlay").style.display = "none";
-  sbKills = 0;
-  sbArenaRadius = 175;
-  document.getElementById("snowballKills").textContent = "0";
-
-  sbPlayer = {
-    x: 200,
-    y: 280,
-    vx: 0,
-    vy: 0,
-    angle: -Math.PI / 2,
-    radius: 13,
-    snowballSize: 3,
-    color: "#38bdf8",
-    name: "あなた",
-    isAlive: true,
-    isPlayer: true
-  };
-
-  const botNames = ["シロクマ", "ペンギン", "アザラシ", "ゆきだるま", "トナカイ"];
-  const botColors = ["#f43f5e", "#10b981", "#a855f7", "#f59e0b", "#ec4899"];
-  sbBots = [];
-
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2;
-    const dist = 100 + Math.random() * 30;
-    sbBots.push({
-      x: 200 + Math.cos(a) * dist,
-      y: 200 + Math.sin(a) * dist,
-      vx: 0,
-      vy: 0,
-      angle: a + Math.PI,
-      radius: 13,
-      snowballSize: 3,
-      color: botColors[i],
-      name: botNames[i],
-      isAlive: true,
-      isPlayer: false,
-      aiTimer: Math.random() * 60,
-      targetAngle: Math.random() * Math.PI * 2
-    });
-  }
-
-  sbProjectiles = [];
-  sbRunning = true;
-  stopSnowballLoop();
-  sbLoop();
-};
-
-function stopSnowballLoop() {
-  if (sbAnimId) {
-    cancelAnimationFrame(sbAnimId);
-    sbAnimId = null;
-  }
-  sbRunning = false;
-}
-
-function sbLoop() {
-  if (!sbRunning) return;
-  updateSnowball();
-  drawSnowballArena();
-  sbAnimId = requestAnimationFrame(sbLoop);
-}
-
-function updateSnowball() {
-  if (sbArenaRadius > 90) {
-    sbArenaRadius -= 0.015;
-  }
-
-  if (sbPlayer && sbPlayer.isAlive) {
-    if (sbInput.active) {
-      const dx = sbInput.x - sbInput.startX;
-      const dy = sbInput.y - sbInput.startY;
-      const dist = Math.hypot(dx, dy);
-      if (dist > 8) {
-        sbPlayer.angle = Math.atan2(dy, dx);
-        const speed = 2.4;
-        sbPlayer.vx = Math.cos(sbPlayer.angle) * speed;
-        sbPlayer.vy = Math.sin(sbPlayer.angle) * speed;
-        if (sbPlayer.snowballSize < 24) sbPlayer.snowballSize += 0.08;
-      }
-    } else {
-      sbPlayer.vx *= 0.85;
-      sbPlayer.vy *= 0.85;
-    }
-    moveEntity(sbPlayer);
-  }
-
-  sbBots.forEach((bot) => {
-    if (!bot.isAlive) return;
-
-    bot.aiTimer--;
-    if (bot.aiTimer <= 0) {
-      bot.aiTimer = 35 + Math.random() * 45;
-      let target = (sbPlayer && sbPlayer.isAlive) ? sbPlayer : null;
-      if (!target || Math.random() < 0.4) {
-        const others = sbBots.filter((b) => b !== bot && b.isAlive);
-        if (others.length > 0) target = others[Math.floor(Math.random() * others.length)];
-      }
-
-      if (target) {
-        const tAngle = Math.atan2(target.y - bot.y, target.x - bot.x);
-        bot.targetAngle = tAngle + (Math.random() - 0.5) * 0.4;
-      }
-
-      if (bot.snowballSize > 10 && Math.random() < 0.6) {
-        shootSnowball(bot);
-      }
-    }
-
-    const dCenter = Math.hypot(bot.x - 200, bot.y - 200);
-    if (dCenter > sbArenaRadius - 30) {
-      bot.targetAngle = Math.atan2(200 - bot.y, 200 - bot.x);
-    }
-
-    bot.angle += (bot.targetAngle - bot.angle) * 0.1;
-    const bSpeed = 2.0;
-    bot.vx = Math.cos(bot.angle) * bSpeed;
-    bot.vy = Math.sin(bot.angle) * bSpeed;
-    if (bot.snowballSize < 22) bot.snowballSize += 0.06;
-
-    moveEntity(bot);
-  });
-
-  const allEntities = [sbPlayer, ...sbBots].filter((e) => e && e.isAlive);
-  for (let i = 0; i < allEntities.length; i++) {
-    for (let j = i + 1; j < allEntities.length; j++) {
-      const e1 = allEntities[i];
-      const e2 = allEntities[j];
-      const dx = e2.x - e1.x;
-      const dy = e2.y - e1.y;
-      const dist = Math.hypot(dx, dy);
-      const minDist = e1.radius + e2.radius;
-      if (dist < minDist && dist > 0.01) {
-        const nx = dx / dist;
-        const ny = dy / dist;
-        const power = 3.5 + (e1.snowballSize + e2.snowballSize) * 0.15;
-        e1.vx -= nx * power;
-        e1.vy -= ny * power;
-        e2.vx += nx * power;
-        e2.vy += ny * power;
-      }
-    }
-  }
-
-  for (let i = sbProjectiles.length - 1; i >= 0; i--) {
-    const p = sbProjectiles[i];
-    p.x += p.vx;
-    p.y += p.vy;
-    p.life--;
-
-    let hit = false;
-    for (const ent of allEntities) {
-      if (ent === p.owner) continue;
-      const d = Math.hypot(ent.x - p.x, ent.y - p.y);
-      if (d < ent.radius + p.radius) {
-        const hitAngle = Math.atan2(p.vy, p.vx);
-        const knock = 4.5 + p.radius * 0.35;
-        ent.vx += Math.cos(hitAngle) * knock;
-        ent.vy += Math.sin(hitAngle) * knock;
-        hit = true;
-        break;
-      }
-    }
-
-    if (hit || p.life <= 0) {
-      sbProjectiles.splice(i, 1);
-    }
-  }
-
-  allEntities.forEach((ent) => {
-    const dCenter = Math.hypot(ent.x - 200, ent.y - 200);
-    if (dCenter > sbArenaRadius + ent.radius) {
-      ent.isAlive = false;
-      if (ent !== sbPlayer) {
-        sbKills++;
-        document.getElementById("snowballKills").textContent = String(sbKills);
-      }
-    }
-  });
-
-  const aliveCount = (sbPlayer && sbPlayer.isAlive ? 1 : 0) + sbBots.filter((b) => b.isAlive).length;
-  document.getElementById("snowballAlive").textContent = String(aliveCount);
-
-  if (sbPlayer && !sbPlayer.isAlive) {
-    showSnowballGameOver("🌊 落とされてしまった！", `スコア: 撃破数 ${sbKills}体`);
-  } else if (aliveCount === 1 && sbPlayer && sbPlayer.isAlive) {
-    showSnowballGameOver("🏆 優勝！ビクトリー！🎉", `全員を撃破しました！ (撃破数: ${sbKills})`);
-  }
-}
-
-function moveEntity(ent) {
-  ent.x += ent.vx;
-  ent.y += ent.vy;
-  ent.vx *= 0.94;
-  ent.vy *= 0.94;
-}
-
-function showSnowballGameOver(title, msg) {
-  stopSnowballLoop();
-  const overlay = document.getElementById("snowballOverlay");
-  overlay.style.display = "flex";
-  document.getElementById("snowballOverlayTitle").textContent = title;
-  document.getElementById("snowballOverlayMsg").textContent = msg;
-}
-
-function drawSnowballArena() {
-  if (!sbCtx) return;
-  sbCtx.clearRect(0, 0, 400, 400);
-
-  sbCtx.fillStyle = "#0c2340";
-  sbCtx.fillRect(0, 0, 400, 400);
-
-  sbCtx.save();
-  sbCtx.beginPath();
-  sbCtx.arc(200, 200, sbArenaRadius, 0, Math.PI * 2);
-  sbCtx.fillStyle = "#e0f2fe";
-  sbCtx.shadowColor = "rgba(56, 189, 248, 0.5)";
-  sbCtx.shadowBlur = 15;
-  sbCtx.fill();
-  sbCtx.lineWidth = 4;
-  sbCtx.strokeStyle = "#bae6fd";
-  sbCtx.stroke();
-  sbCtx.restore();
-
-  sbCtx.strokeStyle = "#7dd3fc";
-  sbCtx.lineWidth = 1;
-  sbCtx.beginPath();
-  sbCtx.arc(200, 200, sbArenaRadius * 0.65, 0.4, 2.8);
-  sbCtx.stroke();
-
-  sbProjectiles.forEach((p) => {
-    sbCtx.save();
-    sbCtx.beginPath();
-    sbCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-    sbCtx.fillStyle = "#ffffff";
-    sbCtx.shadowColor = "rgba(255,255,255,0.8)";
-    sbCtx.shadowBlur = 6;
-    sbCtx.fill();
-    sbCtx.strokeStyle = "#93c5fd";
-    sbCtx.lineWidth = 1.5;
-    sbCtx.stroke();
-    sbCtx.restore();
-  });
-
-  const allEntities = [sbPlayer, ...sbBots].filter((e) => e && e.isAlive);
-  allEntities.forEach((ent) => {
-    if (ent.snowballSize > 2) {
-      const sbX = ent.x + Math.cos(ent.angle) * (ent.radius + ent.snowballSize * 0.7);
-      const sbY = ent.y + Math.sin(ent.angle) * (ent.radius + ent.snowballSize * 0.7);
-      sbCtx.save();
-      sbCtx.beginPath();
-      sbCtx.arc(sbX, sbY, ent.snowballSize, 0, Math.PI * 2);
-      sbCtx.fillStyle = "#ffffff";
-      sbCtx.shadowColor = "rgba(0,0,0,0.3)";
-      sbCtx.shadowBlur = 4;
-      sbCtx.fill();
-      sbCtx.strokeStyle = "#cbd5e1";
-      sbCtx.lineWidth = 1.5;
-      sbCtx.stroke();
-      sbCtx.restore();
-    }
-
-    sbCtx.save();
-    sbCtx.beginPath();
-    sbCtx.arc(ent.x, ent.y, ent.radius, 0, Math.PI * 2);
-    sbCtx.fillStyle = ent.color;
-    sbCtx.shadowColor = "rgba(0,0,0,0.4)";
-    sbCtx.shadowBlur = 5;
-    sbCtx.fill();
-    sbCtx.strokeStyle = "#ffffff";
-    sbCtx.lineWidth = ent.isPlayer ? 2.5 : 1.5;
-    sbCtx.stroke();
-
-    const eyeDist = 6;
-    const eyeAngle = ent.angle;
-    sbCtx.fillStyle = "#000";
-    sbCtx.beginPath();
-    sbCtx.arc(ent.x + Math.cos(eyeAngle + 0.5) * eyeDist, ent.y + Math.sin(eyeAngle + 0.5) * eyeDist, 2, 0, Math.PI * 2);
-    sbCtx.arc(ent.x + Math.cos(eyeAngle - 0.5) * eyeDist, ent.y + Math.sin(eyeAngle - 0.5) * eyeDist, 2, 0, Math.PI * 2);
-    sbCtx.fill();
-    sbCtx.restore();
-
-    sbCtx.fillStyle = ent.isPlayer ? "#38bdf8" : "#cbd5e1";
-    sbCtx.font = "10px sans-serif";
-    sbCtx.textAlign = "center";
-    sbCtx.fillText(ent.name, ent.x, ent.y - ent.radius - 4);
-  });
-}
-
-</script>
+        ></script>
       </span>
 
       <br>
@@ -4226,11 +3807,7 @@ async function createPostHTML(
       ${replyHTML}
 
 
-      <div style="margin-top:10px; word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">
-        ${escapeHTML(
-          p.text || ""
-        )}
-      </div>
+      <div style="margin-top:10px; word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;">${escapeHTML((p.text || "").trim())}</div>
 
 
       ${
@@ -5069,6 +4646,425 @@ if (autoRoom) {
     openOthelloHub();
     enterOthelloRoom(autoRoom);
   }, 1000);
+}
+
+
+/* ======================
+   管理者直接追加
+====================== */
+window.addAdminDirectly = async function () {
+  const input = document.getElementById("newAdminInput");
+  if (!input) return;
+  let qVal = input.value.trim();
+  if (!qVal) {
+    alert("ユーザー名またはUIDを入力してください");
+    return;
+  }
+  if (qVal.startsWith("@")) qVal = qVal.slice(1);
+
+  try {
+    const uq = query(collection(db, "users"), where("username", "==", qVal));
+    const uSnap = await getDocs(uq);
+    let targetDocId = null;
+    let targetName = qVal;
+
+    if (!uSnap.empty) {
+      targetDocId = uSnap.docs[0].id;
+      targetName = uSnap.docs[0].data().name || qVal;
+    } else {
+      const directSnap = await getDoc(doc(db, "users", qVal));
+      if (directSnap.exists()) {
+        targetDocId = qVal;
+        targetName = directSnap.data().name || qVal;
+      }
+    }
+
+    if (!targetDocId) {
+      alert("該当するユーザーが見つかりませんでした: " + qVal);
+      return;
+    }
+
+    await updateDoc(doc(db, "users", targetDocId), { role: "admin" });
+    alert(`🎉 ${targetName} さんを管理者に任命しました！`);
+    input.value = "";
+    loadAdminUsers();
+  } catch (err) {
+    console.error(err);
+    alert("管理者の追加に失敗しました: " + err.message);
+  }
+};
+
+/* ======================
+   snowball.io ゲームエンジン
+====================== */
+window.openSnowballHub = function () {
+  window.hideAllScreens();
+  document.getElementById("snowballScreen").style.display = "block";
+  document.getElementById("snowballOverlay").style.display = "flex";
+  document.getElementById("snowballOverlayTitle").textContent = "❄️ 雪玉バトルロイヤル";
+  document.getElementById("snowballOverlayMsg").innerHTML = "画面をドラッグ（指でなぞる）して移動！<br>雪玉を大きく転がして、相手にぶつけてステージから落とせ！";
+  initSnowballCanvas();
+};
+
+window.leaveSnowballGame = function () {
+  stopSnowballLoop();
+  showGameCorner();
+};
+
+let sbCanvas, sbCtx;
+let sbAnimId = null;
+let sbRunning = false;
+let sbPlayer = null;
+let sbBots = [];
+let sbProjectiles = [];
+let sbArenaRadius = 175;
+let sbKills = 0;
+let sbInput = { active: false, x: 0, y: 0, startX: 0, startY: 0 };
+
+function initSnowballCanvas() {
+  sbCanvas = document.getElementById("snowballCanvas");
+  if (!sbCanvas) return;
+  sbCtx = sbCanvas.getContext("2d");
+
+  sbCanvas.onpointerdown = (e) => {
+    e.preventDefault();
+    const rect = sbCanvas.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 400;
+    const y = ((e.clientY - rect.top) / rect.height) * 400;
+    sbInput.active = true;
+    sbInput.startX = x;
+    sbInput.startY = y;
+    sbInput.x = x;
+    sbInput.y = y;
+  };
+
+  sbCanvas.onpointermove = (e) => {
+    if (!sbInput.active) return;
+    const rect = sbCanvas.getBoundingClientRect();
+    sbInput.x = ((e.clientX - rect.left) / rect.width) * 400;
+    sbInput.y = ((e.clientY - rect.top) / rect.height) * 400;
+  };
+
+  sbCanvas.onpointerup = (e) => {
+    if (sbInput.active && sbPlayer && sbPlayer.isAlive) {
+      shootSnowball(sbPlayer);
+    }
+    sbInput.active = false;
+  };
+
+  sbCanvas.onpointercancel = () => {
+    sbInput.active = false;
+  };
+
+  drawSnowballArena();
+}
+
+function shootSnowball(entity) {
+  if (entity.snowballSize < 4) return;
+  const speed = 7;
+  const pSize = entity.snowballSize;
+  const spawnDist = entity.radius + pSize + 4;
+  sbProjectiles.push({
+    x: entity.x + Math.cos(entity.angle) * spawnDist,
+    y: entity.y + Math.sin(entity.angle) * spawnDist,
+    vx: Math.cos(entity.angle) * speed,
+    vy: Math.sin(entity.angle) * speed,
+    radius: pSize,
+    owner: entity,
+    life: 75
+  });
+  entity.snowballSize = 2;
+}
+
+window.startSnowballGame = function () {
+  document.getElementById("snowballOverlay").style.display = "none";
+  sbKills = 0;
+  sbArenaRadius = 175;
+  document.getElementById("snowballKills").textContent = "0";
+
+  sbPlayer = {
+    x: 200,
+    y: 280,
+    vx: 0,
+    vy: 0,
+    angle: -Math.PI / 2,
+    radius: 13,
+    snowballSize: 3,
+    color: "#38bdf8",
+    name: "あなた",
+    isAlive: true,
+    isPlayer: true
+  };
+
+  const botNames = ["シロクマ", "ペンギン", "アザラシ", "ゆきだるま", "トナカイ"];
+  const botColors = ["#f43f5e", "#10b981", "#a855f7", "#f59e0b", "#ec4899"];
+  sbBots = [];
+
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    const dist = 100 + Math.random() * 30;
+    sbBots.push({
+      x: 200 + Math.cos(a) * dist,
+      y: 200 + Math.sin(a) * dist,
+      vx: 0,
+      vy: 0,
+      angle: a + Math.PI,
+      radius: 13,
+      snowballSize: 3,
+      color: botColors[i],
+      name: botNames[i],
+      isAlive: true,
+      isPlayer: false,
+      aiTimer: Math.random() * 60,
+      targetAngle: Math.random() * Math.PI * 2
+    });
+  }
+
+  sbProjectiles = [];
+  sbRunning = true;
+  stopSnowballLoop();
+  sbLoop();
+};
+
+function stopSnowballLoop() {
+  if (sbAnimId) {
+    cancelAnimationFrame(sbAnimId);
+    sbAnimId = null;
+  }
+  sbRunning = false;
+}
+
+function sbLoop() {
+  if (!sbRunning) return;
+  updateSnowball();
+  drawSnowballArena();
+  sbAnimId = requestAnimationFrame(sbLoop);
+}
+
+function updateSnowball() {
+  if (sbArenaRadius > 90) {
+    sbArenaRadius -= 0.015;
+  }
+
+  if (sbPlayer && sbPlayer.isAlive) {
+    if (sbInput.active) {
+      const dx = sbInput.x - sbInput.startX;
+      const dy = sbInput.y - sbInput.startY;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 8) {
+        sbPlayer.angle = Math.atan2(dy, dx);
+        const speed = 2.4;
+        sbPlayer.vx = Math.cos(sbPlayer.angle) * speed;
+        sbPlayer.vy = Math.sin(sbPlayer.angle) * speed;
+        if (sbPlayer.snowballSize < 24) sbPlayer.snowballSize += 0.08;
+      }
+    } else {
+      sbPlayer.vx *= 0.85;
+      sbPlayer.vy *= 0.85;
+    }
+    moveEntity(sbPlayer);
+  }
+
+  sbBots.forEach((bot) => {
+    if (!bot.isAlive) return;
+
+    bot.aiTimer--;
+    if (bot.aiTimer <= 0) {
+      bot.aiTimer = 35 + Math.random() * 45;
+      let target = (sbPlayer && sbPlayer.isAlive) ? sbPlayer : null;
+      if (!target || Math.random() < 0.4) {
+        const others = sbBots.filter((b) => b !== bot && b.isAlive);
+        if (others.length > 0) target = others[Math.floor(Math.random() * others.length)];
+      }
+
+      if (target) {
+        const tAngle = Math.atan2(target.y - bot.y, target.x - bot.x);
+        bot.targetAngle = tAngle + (Math.random() - 0.5) * 0.4;
+      }
+
+      if (bot.snowballSize > 10 && Math.random() < 0.6) {
+        shootSnowball(bot);
+      }
+    }
+
+    const dCenter = Math.hypot(bot.x - 200, bot.y - 200);
+    if (dCenter > sbArenaRadius - 30) {
+      bot.targetAngle = Math.atan2(200 - bot.y, 200 - bot.x);
+    }
+
+    bot.angle += (bot.targetAngle - bot.angle) * 0.1;
+    const bSpeed = 2.0;
+    bot.vx = Math.cos(bot.angle) * bSpeed;
+    bot.vy = Math.sin(bot.angle) * bSpeed;
+    if (bot.snowballSize < 22) bot.snowballSize += 0.06;
+
+    moveEntity(bot);
+  });
+
+  const allEntities = [sbPlayer, ...sbBots].filter((e) => e && e.isAlive);
+  for (let i = 0; i < allEntities.length; i++) {
+    for (let j = i + 1; j < allEntities.length; j++) {
+      const e1 = allEntities[i];
+      const e2 = allEntities[j];
+      const dx = e2.x - e1.x;
+      const dy = e2.y - e1.y;
+      const dist = Math.hypot(dx, dy);
+      const minDist = e1.radius + e2.radius;
+      if (dist < minDist && dist > 0.01) {
+        const nx = dx / dist;
+        const ny = dy / dist;
+        const power = 3.5 + (e1.snowballSize + e2.snowballSize) * 0.15;
+        e1.vx -= nx * power;
+        e1.vy -= ny * power;
+        e2.vx += nx * power;
+        e2.vy += ny * power;
+      }
+    }
+  }
+
+  for (let i = sbProjectiles.length - 1; i >= 0; i--) {
+    const p = sbProjectiles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+
+    let hit = false;
+    for (const ent of allEntities) {
+      if (ent === p.owner) continue;
+      const d = Math.hypot(ent.x - p.x, ent.y - p.y);
+      if (d < ent.radius + p.radius) {
+        const hitAngle = Math.atan2(p.vy, p.vx);
+        const knock = 4.5 + p.radius * 0.35;
+        ent.vx += Math.cos(hitAngle) * knock;
+        ent.vy += Math.sin(hitAngle) * knock;
+        hit = true;
+        break;
+      }
+    }
+
+    if (hit || p.life <= 0) {
+      sbProjectiles.splice(i, 1);
+    }
+  }
+
+  allEntities.forEach((ent) => {
+    const dCenter = Math.hypot(ent.x - 200, ent.y - 200);
+    if (dCenter > sbArenaRadius + ent.radius) {
+      ent.isAlive = false;
+      if (ent !== sbPlayer) {
+        sbKills++;
+        document.getElementById("snowballKills").textContent = String(sbKills);
+      }
+    }
+  });
+
+  const aliveCount = (sbPlayer && sbPlayer.isAlive ? 1 : 0) + sbBots.filter((b) => b.isAlive).length;
+  document.getElementById("snowballAlive").textContent = String(aliveCount);
+
+  if (sbPlayer && !sbPlayer.isAlive) {
+    showSnowballGameOver("🌊 落とされてしまった！", `スコア: 撃破数 ${sbKills}体`);
+  } else if (aliveCount === 1 && sbPlayer && sbPlayer.isAlive) {
+    showSnowballGameOver("🏆 優勝！ビクトリー！🎉", `全員を撃破しました！ (撃破数: ${sbKills})`);
+  }
+}
+
+function moveEntity(ent) {
+  ent.x += ent.vx;
+  ent.y += ent.vy;
+  ent.vx *= 0.94;
+  ent.vy *= 0.94;
+}
+
+function showSnowballGameOver(title, msg) {
+  stopSnowballLoop();
+  const overlay = document.getElementById("snowballOverlay");
+  overlay.style.display = "flex";
+  document.getElementById("snowballOverlayTitle").textContent = title;
+  document.getElementById("snowballOverlayMsg").textContent = msg;
+}
+
+function drawSnowballArena() {
+  if (!sbCtx) return;
+  sbCtx.clearRect(0, 0, 400, 400);
+
+  sbCtx.fillStyle = "#0c2340";
+  sbCtx.fillRect(0, 0, 400, 400);
+
+  sbCtx.save();
+  sbCtx.beginPath();
+  sbCtx.arc(200, 200, sbArenaRadius, 0, Math.PI * 2);
+  sbCtx.fillStyle = "#e0f2fe";
+  sbCtx.shadowColor = "rgba(56, 189, 248, 0.5)";
+  sbCtx.shadowBlur = 15;
+  sbCtx.fill();
+  sbCtx.lineWidth = 4;
+  sbCtx.strokeStyle = "#bae6fd";
+  sbCtx.stroke();
+  sbCtx.restore();
+
+  sbCtx.strokeStyle = "#7dd3fc";
+  sbCtx.lineWidth = 1;
+  sbCtx.beginPath();
+  sbCtx.arc(200, 200, sbArenaRadius * 0.65, 0.4, 2.8);
+  sbCtx.stroke();
+
+  sbProjectiles.forEach((p) => {
+    sbCtx.save();
+    sbCtx.beginPath();
+    sbCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+    sbCtx.fillStyle = "#ffffff";
+    sbCtx.shadowColor = "rgba(255,255,255,0.8)";
+    sbCtx.shadowBlur = 6;
+    sbCtx.fill();
+    sbCtx.strokeStyle = "#93c5fd";
+    sbCtx.lineWidth = 1.5;
+    sbCtx.stroke();
+    sbCtx.restore();
+  });
+
+  const allEntities = [sbPlayer, ...sbBots].filter((e) => e && e.isAlive);
+  allEntities.forEach((ent) => {
+    if (ent.snowballSize > 2) {
+      const sbX = ent.x + Math.cos(ent.angle) * (ent.radius + ent.snowballSize * 0.7);
+      const sbY = ent.y + Math.sin(ent.angle) * (ent.radius + ent.snowballSize * 0.7);
+      sbCtx.save();
+      sbCtx.beginPath();
+      sbCtx.arc(sbX, sbY, ent.snowballSize, 0, Math.PI * 2);
+      sbCtx.fillStyle = "#ffffff";
+      sbCtx.shadowColor = "rgba(0,0,0,0.3)";
+      sbCtx.shadowBlur = 4;
+      sbCtx.fill();
+      sbCtx.strokeStyle = "#cbd5e1";
+      sbCtx.lineWidth = 1.5;
+      sbCtx.stroke();
+      sbCtx.restore();
+    }
+
+    sbCtx.save();
+    sbCtx.beginPath();
+    sbCtx.arc(ent.x, ent.y, ent.radius, 0, Math.PI * 2);
+    sbCtx.fillStyle = ent.color;
+    sbCtx.shadowColor = "rgba(0,0,0,0.4)";
+    sbCtx.shadowBlur = 5;
+    sbCtx.fill();
+    sbCtx.strokeStyle = "#ffffff";
+    sbCtx.lineWidth = ent.isPlayer ? 2.5 : 1.5;
+    sbCtx.stroke();
+
+    const eyeDist = 6;
+    const eyeAngle = ent.angle;
+    sbCtx.fillStyle = "#000";
+    sbCtx.beginPath();
+    sbCtx.arc(ent.x + Math.cos(eyeAngle + 0.5) * eyeDist, ent.y + Math.sin(eyeAngle + 0.5) * eyeDist, 2, 0, Math.PI * 2);
+    sbCtx.arc(ent.x + Math.cos(eyeAngle - 0.5) * eyeDist, ent.y + Math.sin(eyeAngle - 0.5) * eyeDist, 2, 0, Math.PI * 2);
+    sbCtx.fill();
+    sbCtx.restore();
+
+    sbCtx.fillStyle = ent.isPlayer ? "#38bdf8" : "#cbd5e1";
+    sbCtx.font = "10px sans-serif";
+    sbCtx.textAlign = "center";
+    sbCtx.fillText(ent.name, ent.x, ent.y - ent.radius - 4);
+  });
 }
 </script>
 
