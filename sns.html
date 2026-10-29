@@ -294,6 +294,45 @@ button.back {
   margin: 0 !important;
   vertical-align: middle;
 }
+
+/* ======================
+   ゲームコーナー & オセロ
+====================== */
+.othello-cell {
+  background: #2d6a4f;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  aspect-ratio: 1/1;
+}
+.othello-cell:hover {
+  background: #40916c;
+}
+.othello-cell.valid-move::after {
+  content: '';
+  width: 25%;
+  height: 25%;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+}
+.othello-disc {
+  width: 82%;
+  height: 82%;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.45);
+  transition: transform 0.2s;
+}
+.othello-disc.black {
+  background: radial-gradient(circle at 30% 30%, #555, #111);
+}
+.othello-disc.white {
+  background: radial-gradient(circle at 30% 30%, #ffffff, #d1d5db);
+}
+
 </style>
 </head>
 
@@ -393,6 +432,9 @@ button.back {
     <h2>野獣撲滅委員会ニガ支部</h2>
 　　<button onclick="showDM()">
   　　💬 DM
+　　</button>
+　　<button onclick="showGameCorner()" style="background:linear-gradient(135deg, #10b981, #059669); margin-top:5px; font-weight:bold;">
+  　　🎮 ゲームコーナー
 　　</button>
 
 <button
@@ -658,6 +700,133 @@ button.back {
   <div id="dmList"></div>
 
 </div>
+
+  <!-- ======================
+       ゲームコーナー
+  ======================= -->
+
+  <div id="gameCornerScreen" style="display:none;">
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+      <button class="back" onclick="showHome()" style="margin:0; width:auto; padding:8px 16px;">
+        ← ホームに戻る
+      </button>
+      <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:8px 16px; font-weight:bold; border-radius:8px;">
+        🚨 緊急回避
+      </button>
+    </div>
+
+    <h2>🎮 ゲームコーナー</h2>
+    <p style="color:#aaa; font-size:14px; margin-bottom:20px;">友達との対戦やソロ練習ができるゲーム広場です</p>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="background:#161b22; border:1px solid #30363d; border-radius:12px; padding:16px; cursor:pointer;" onclick="openOthelloHub()">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <h3 style="margin:0 0 6px 0; color:#58a6ff; font-size:18px;">⚫⚪ オセロ（リバーシ）</h3>
+            <p style="margin:0; color:#8b949e; font-size:13px;">合言葉・URL招待・自由参加・AI対戦に対応！</p>
+          </div>
+          <span style="font-size:20px; color:#58a6ff;">▶</span>
+        </div>
+      </div>
+
+      <div style="background:#161b22; border:1px solid #30363d; border-radius:12px; padding:16px; opacity:0.6;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <h3 style="margin:0 0 6px 0; color:#e6edf3; font-size:18px;">❄️ snowball.io 風対戦</h3>
+            <p style="margin:0; color:#8b949e; font-size:13px;">雪玉を転がしてぶつけ合うアクション（次回実装予定！）</p>
+          </div>
+          <span style="font-size:12px; background:#30363d; padding:4px 8px; border-radius:6px; color:#8b949e;">準備中</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- ======================
+       オセロ画面
+  ======================= -->
+
+  <div id="othelloScreen" style="display:none;">
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <button class="back" onclick="showGameCorner()" style="margin:0; width:auto; padding:6px 14px;">
+        ← コーナーへ
+      </button>
+      <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 14px; font-weight:bold; border-radius:8px;">
+        🚨 緊急回避 (数学)
+      </button>
+    </div>
+
+    <!-- ロビー画面 -->
+    <div id="othelloLobby">
+      <h3 style="margin-top:0;">⚫⚪ オセロ対戦ルーム</h3>
+
+      <div style="background:#1c2128; padding:14px; border-radius:10px; margin-bottom:12px; border:1px solid #30363d;">
+        <h4 style="margin:0 0 6px 0; color:#38bdf8;">🤖 AI対戦（ひとりで練習）</h4>
+        <p style="margin:0 0 10px 0; color:#94a3b8; font-size:13px;">相手がいなくても今すぐ遊べる！白石のAIと対戦します。</p>
+        <button onclick="startOthelloAI()" style="background:#0284c7; padding:8px;">AIと対戦開始</button>
+      </div>
+
+      <div style="background:#1c2128; padding:14px; border-radius:10px; margin-bottom:12px; border:1px solid #30363d;">
+        <h4 style="margin:0 0 6px 0; color:#4ade80;">🌍 自由参加（誰でも対戦）</h4>
+        <p style="margin:0 0 10px 0; color:#94a3b8; font-size:13px;">待機中の部屋に参加、または新しい部屋を作って待機します。</p>
+        <button onclick="startOthelloRandom()" style="background:#16a34a; padding:8px;">対戦相手を探す / 部屋作成</button>
+      </div>
+
+      <div style="background:#1c2128; padding:14px; border-radius:10px; margin-bottom:12px; border:1px solid #30363d;">
+        <h4 style="margin:0 0 6px 0; color:#facc15;">🔑 合言葉で友達と対戦</h4>
+        <p style="margin:0 0 10px 0; color:#94a3b8; font-size:13px;">友達と同じ合言葉（例: 1234, 3組）を入力して入室！</p>
+        <div style="display:flex; gap:8px;">
+          <input id="othelloPassInput" placeholder="合言葉 (例: 1234)" style="margin-top:0; flex:1;">
+          <button onclick="joinOthelloPassphrase()" style="background:#ca8a04; width:auto; padding:0 16px; margin-top:0;">入室</button>
+        </div>
+      </div>
+
+      <div style="background:#1c2128; padding:14px; border-radius:10px; margin-bottom:12px; border:1px solid #30363d;">
+        <h4 style="margin:0 0 6px 0; color:#c084fc;">🔗 招待URLを作成</h4>
+        <p style="margin:0 0 10px 0; color:#94a3b8; font-size:13px;">友達にリンクを送って、開くだけで即対戦できるルームを作ります。</p>
+        <button onclick="createOthelloInviteUrl()" style="background:#9333ea; padding:8px;">招待URLを発行してコピー</button>
+      </div>
+    </div>
+
+    <!-- ゲームプレイ画面 -->
+    <div id="othelloGameArea" style="display:none;">
+      <div style="background:#161b22; padding:10px; border-radius:8px; margin-bottom:10px; font-size:14px; display:flex; justify-content:space-between; align-items:center;">
+        <div id="othelloRoomTitle" style="color:#58a6ff; font-weight:bold;">ルーム: ---</div>
+        <div id="othelloCopyUrlBtn" style="cursor:pointer; color:#a5d6ff; font-size:12px; display:none;" onclick="copyCurrentRoomUrl()">📋 招待URLコピー</div>
+      </div>
+
+      <div id="othelloStatusBanner" style="background:#21262d; padding:8px 12px; border-radius:6px; margin-bottom:10px; text-align:center; font-size:14px; color:#f0f6fc;">
+        対戦待機中...
+      </div>
+
+      <div style="display:flex; justify-content:space-around; align-items:center; background:#161b22; padding:10px; border-radius:8px; margin-bottom:12px;">
+        <div id="othelloBlackBox" style="text-align:center; padding:6px 16px; border-radius:8px; border:2px solid transparent;">
+          <div style="font-size:18px;">⚫ <span id="othelloBlackCount">2</span></div>
+          <div id="othelloBlackName" style="font-size:11px; color:#8b949e;">先手 (黒)</div>
+        </div>
+        <div style="font-size:20px; color:#484f58;">VS</div>
+        <div id="othelloWhiteBox" style="text-align:center; padding:6px 16px; border-radius:8px; border:2px solid transparent;">
+          <div style="font-size:18px;">⚪ <span id="othelloWhiteCount">2</span></div>
+          <div id="othelloWhiteName" style="font-size:11px; color:#8b949e;">後手 (白)</div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:center; margin-bottom:12px;">
+        <div id="othelloBoardGrid" style="display:grid; grid-template-columns:repeat(8, 1fr); gap:2px; background:#1b4332; padding:6px; border-radius:8px; border:3px solid #081c15; box-shadow:0 4px 12px rgba(0,0,0,0.5); width:100%; max-width:360px; aspect-ratio:1/1;">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <button onclick="leaveOthelloGame()" style="background:#30363d; padding:8px; font-size:13px;">ゲームを終了して戻る</button>
+        <button id="othelloRestartBtn" onclick="restartOthelloGame()" style="background:#238636; padding:8px; font-size:13px; display:none;">もう一度遊ぶ</button>
+      </div>
+    </div>
+
+  </div>
+
 
 
 <script type="module">
@@ -1779,6 +1948,10 @@ async function (userId) {
     "homeScreen"
   ).style.display =
     "none";
+  if (document.getElementById("gameCornerScreen")) document.getElementById("gameCornerScreen").style.display = "none";
+  if (document.getElementById("othelloScreen")) document.getElementById("othelloScreen").style.display = "none";
+  if (document.getElementById("gameCornerScreen")) document.getElementById("gameCornerScreen").style.display = "none";
+  if (document.getElementById("othelloScreen")) document.getElementById("othelloScreen").style.display = "none";
 
 
   document.getElementById(
@@ -1972,6 +2145,8 @@ function () {
     "dmScreen"
   ).style.display =
     "none";
+  if (document.getElementById("gameCornerScreen")) document.getElementById("gameCornerScreen").style.display = "none";
+  if (document.getElementById("othelloScreen")) document.getElementById("othelloScreen").style.display = "none";
 
   document.getElementById(
     "homeScreen"
@@ -3867,6 +4042,502 @@ async function loadProfilePosts(
 
 }
 
+/* ======================
+   緊急回避 & ゲームコーナー & オセロ
+====================== */
+
+window.panicEscape = function () {
+  if (othelloUnsub) {
+    othelloUnsub();
+    othelloUnsub = null;
+  }
+  window.location.href = "https://www.google.com/search?q=" + encodeURIComponent("数学 一次関数");
+};
+
+window.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") {
+    const oArea = document.getElementById("othelloGameArea");
+    const gCorner = document.getElementById("gameCornerScreen");
+    const oScreen = document.getElementById("othelloScreen");
+    if ((oArea && oArea.style.display !== "none") || (gCorner && gCorner.style.display !== "none") || (oScreen && oScreen.style.display !== "none")) {
+      window.panicEscape();
+    }
+  }
+});
+
+window.showGameCorner = function () {
+  viewingProfileUserId = null;
+  document.getElementById("homeScreen").style.display = "none";
+  document.getElementById("profileScreen").style.display = "none";
+  document.getElementById("dmScreen").style.display = "none";
+  const adm = document.getElementById("adminScreen");
+  if (adm) adm.style.display = "none";
+  document.getElementById("othelloScreen").style.display = "none";
+  document.getElementById("gameCornerScreen").style.display = "block";
+};
+
+window.openOthelloHub = function () {
+  document.getElementById("gameCornerScreen").style.display = "none";
+  document.getElementById("othelloScreen").style.display = "block";
+  document.getElementById("othelloLobby").style.display = "block";
+  document.getElementById("othelloGameArea").style.display = "none";
+};
+
+window.leaveOthelloGame = function () {
+  if (othelloUnsub) {
+    othelloUnsub();
+    othelloUnsub = null;
+  }
+  document.getElementById("othelloGameArea").style.display = "none";
+  document.getElementById("othelloLobby").style.display = "block";
+  currentOthelloMode = null;
+  currentOthelloRoomId = null;
+};
+
+/* --- オセロロジック --- */
+const OTHELLO_DIRS = [
+  [-1, -1], [-1, 0], [-1, 1],
+  [0, -1],           [0, 1],
+  [1, -1],  [1, 0],  [1, 1]
+];
+
+function getOthelloFlips(board, r, c, player) {
+  if (board[r][c] !== 0) return [];
+  const opp = 3 - player;
+  const flips = [];
+  for (const [dr, dc] of OTHELLO_DIRS) {
+    let nr = r + dr;
+    let nc = c + dc;
+    const dirFlips = [];
+    while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && board[nr][nc] === opp) {
+      dirFlips.push([nr, nc]);
+      nr += dr;
+      nc += dc;
+    }
+    if (dirFlips.length > 0 && nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && board[nr][nc] === player) {
+      flips.push(...dirFlips);
+    }
+  }
+  return flips;
+}
+
+function getValidOthelloMoves(board, player) {
+  const moves = [];
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const flips = getOthelloFlips(board, r, c, player);
+      if (flips.length > 0) moves.push({ r, c, flips });
+    }
+  }
+  return moves;
+}
+
+function countOthelloDiscs(board) {
+  let b = 0, w = 0;
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (board[r][c] === 1) b++;
+      else if (board[r][c] === 2) w++;
+    }
+  }
+  return { b, w };
+}
+
+function createInitialOthelloBoard() {
+  const b = Array(8).fill(0).map(() => Array(8).fill(0));
+  b[3][3] = 2; b[3][4] = 1;
+  b[4][3] = 1; b[4][4] = 2;
+  return b;
+}
+
+let currentOthelloMode = null; // "ai" | "online"
+let currentOthelloRoomId = null;
+let myOthelloRole = 1; // 1: 黒, 2: 白
+let othelloUnsub = null;
+let localOthelloBoard = null;
+let localOthelloTurn = 1;
+let localOthelloStatus = "playing";
+
+function renderOthelloUI(board, turn, myRole, isMyTurn, isGameOver) {
+  const grid = document.getElementById("othelloBoardGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
+
+  const validMoves = (!isGameOver && isMyTurn) ? getValidOthelloMoves(board, turn) : [];
+  const validMap = new Map();
+  validMoves.forEach(m => validMap.set(`${m.r},${m.c}`, m.flips));
+
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const cell = document.createElement("div");
+      cell.className = "othello-cell";
+      const val = board[r][c];
+
+      if (val === 1) {
+        const disc = document.createElement("div");
+        disc.className = "othello-disc black";
+        cell.appendChild(disc);
+      } else if (val === 2) {
+        const disc = document.createElement("div");
+        disc.className = "othello-disc white";
+        cell.appendChild(disc);
+      } else if (validMap.has(`${r},${c}`)) {
+        cell.classList.add("valid-move");
+        const flips = validMap.get(`${r},${c}`);
+        cell.onclick = () => handleOthelloCellClick(r, c, flips);
+      }
+
+      grid.appendChild(cell);
+    }
+  }
+
+  const counts = countOthelloDiscs(board);
+  document.getElementById("othelloBlackCount").textContent = counts.b;
+  document.getElementById("othelloWhiteCount").textContent = counts.w;
+
+  const blackBox = document.getElementById("othelloBlackBox");
+  const whiteBox = document.getElementById("othelloWhiteBox");
+  if (turn === 1 && !isGameOver) {
+    blackBox.style.borderColor = "#38bdf8";
+    whiteBox.style.borderColor = "transparent";
+  } else if (turn === 2 && !isGameOver) {
+    whiteBox.style.borderColor = "#38bdf8";
+    blackBox.style.borderColor = "transparent";
+  } else {
+    blackBox.style.borderColor = "transparent";
+    whiteBox.style.borderColor = "transparent";
+  }
+}
+
+async function handleOthelloCellClick(r, c, flips) {
+  if (currentOthelloMode === "ai") {
+    if (localOthelloTurn !== 1 || localOthelloStatus === "finished") return;
+    localOthelloBoard[r][c] = 1;
+    for (const [fr, fc] of flips) {
+      localOthelloBoard[fr][fc] = 1;
+    }
+
+    const aiMoves = getValidOthelloMoves(localOthelloBoard, 2);
+    if (aiMoves.length > 0) {
+      localOthelloTurn = 2;
+      renderOthelloUI(localOthelloBoard, localOthelloTurn, 1, false, false);
+      runOthelloAIMove();
+    } else {
+      const p1MovesAgain = getValidOthelloMoves(localOthelloBoard, 1);
+      if (p1MovesAgain.length > 0) {
+        document.getElementById("othelloStatusBanner").textContent = "AIに置けるマスがないためパスされました。あなたの手番です！";
+        renderOthelloUI(localOthelloBoard, localOthelloTurn, 1, true, false);
+      } else {
+        finishAIGame();
+      }
+    }
+  } else if (currentOthelloMode === "online") {
+    const roomRef = doc(db, "sheet_sessions", currentOthelloRoomId);
+    const snap = await getDoc(roomRef);
+    if (!snap.exists()) return;
+    const data = snap.data();
+    if (data.turn !== myOthelloRole || data.status !== "playing") return;
+
+    const board = JSON.parse(data.board);
+    board[r][c] = myOthelloRole;
+    for (const [fr, fc] of flips) {
+      board[fr][fc] = myOthelloRole;
+    }
+
+    const nextRole = 3 - myOthelloRole;
+    const nextMoves = getValidOthelloMoves(board, nextRole);
+    let nextTurn = nextRole;
+    let newStatus = "playing";
+
+    if (nextMoves.length === 0) {
+      const myMovesAgain = getValidOthelloMoves(board, myOthelloRole);
+      if (myMovesAgain.length > 0) {
+        nextTurn = myOthelloRole; // pass
+      } else {
+        newStatus = "finished"; // game over
+      }
+    }
+
+    await updateDoc(roomRef, {
+      board: JSON.stringify(board),
+      turn: nextTurn,
+      status: newStatus,
+      updatedAt: Date.now()
+    });
+  }
+}
+
+function runOthelloAIMove() {
+  document.getElementById("othelloStatusBanner").textContent = "🤖 AIが思考中...";
+  setTimeout(() => {
+    if (localOthelloStatus === "finished" || localOthelloTurn !== 2) return;
+    const moves = getValidOthelloMoves(localOthelloBoard, 2);
+    if (moves.length === 0) {
+      const p1Moves = getValidOthelloMoves(localOthelloBoard, 1);
+      if (p1Moves.length > 0) {
+        localOthelloTurn = 1;
+        document.getElementById("othelloStatusBanner").textContent = "AIは置けるマスがありませんでした（パス）。あなたの手番です！";
+        renderOthelloUI(localOthelloBoard, localOthelloTurn, 1, true, false);
+      } else {
+        finishAIGame();
+      }
+      return;
+    }
+
+    // AI評価関数 (四隅重視 + 危険マス回避)
+    let bestMove = moves[0];
+    let bestScore = -9999;
+    for (const m of moves) {
+      let score = m.flips.length;
+      if ((m.r === 0 || m.r === 7) && (m.c === 0 || m.c === 7)) score += 100;
+      else if (m.r === 0 || m.r === 7 || m.c === 0 || m.c === 7) score += 15;
+
+      const isBadAdj = (
+        (m.r <= 1 && m.c <= 1 && localOthelloBoard[0][0] === 0) ||
+        (m.r <= 1 && m.c >= 6 && localOthelloBoard[0][7] === 0) ||
+        (m.r >= 6 && m.c <= 1 && localOthelloBoard[7][0] === 0) ||
+        (m.r >= 6 && m.c >= 6 && localOthelloBoard[7][7] === 0)
+      );
+      if (isBadAdj) score -= 30;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = m;
+      }
+    }
+
+    localOthelloBoard[bestMove.r][bestMove.c] = 2;
+    for (const [fr, fc] of bestMove.flips) {
+      localOthelloBoard[fr][fc] = 2;
+    }
+
+    const p1Moves = getValidOthelloMoves(localOthelloBoard, 1);
+    if (p1Moves.length > 0) {
+      localOthelloTurn = 1;
+      document.getElementById("othelloStatusBanner").textContent = "あなたの手番です（黒）";
+      renderOthelloUI(localOthelloBoard, localOthelloTurn, 1, true, false);
+    } else {
+      const aiMovesAgain = getValidOthelloMoves(localOthelloBoard, 2);
+      if (aiMovesAgain.length > 0) {
+        document.getElementById("othelloStatusBanner").textContent = "あなたの手番がパスされました。AIが続けて打ちます。";
+        renderOthelloUI(localOthelloBoard, localOthelloTurn, 1, false, false);
+        runOthelloAIMove();
+      } else {
+        finishAIGame();
+      }
+    }
+  }, 450);
+}
+
+function finishAIGame() {
+  localOthelloStatus = "finished";
+  const counts = countOthelloDiscs(localOthelloBoard);
+  let banner = `対局終了！ 黒: ${counts.b}石 - 白: ${counts.w}石で `;
+  if (counts.b > counts.w) banner += "あなたの勝ち！🎉";
+  else if (counts.w > counts.b) banner += "AIの勝ち！🤖";
+  else banner += "引き分け！🤝";
+  document.getElementById("othelloStatusBanner").textContent = banner;
+  document.getElementById("othelloRestartBtn").style.display = "block";
+  renderOthelloUI(localOthelloBoard, localOthelloTurn, 1, false, true);
+}
+
+window.startOthelloAI = function () {
+  currentOthelloMode = "ai";
+  currentOthelloRoomId = null;
+  myOthelloRole = 1;
+  localOthelloBoard = createInitialOthelloBoard();
+  localOthelloTurn = 1;
+  localOthelloStatus = "playing";
+
+  document.getElementById("othelloLobby").style.display = "none";
+  document.getElementById("othelloGameArea").style.display = "block";
+  document.getElementById("othelloRoomTitle").textContent = "🤖 AI対戦";
+  document.getElementById("othelloCopyUrlBtn").style.display = "none";
+  document.getElementById("othelloRestartBtn").style.display = "none";
+  document.getElementById("othelloBlackName").textContent = "あなた (黒)";
+  document.getElementById("othelloWhiteName").textContent = "AI (白)";
+  document.getElementById("othelloStatusBanner").textContent = "対局開始！あなたの手番です（黒）";
+
+  renderOthelloUI(localOthelloBoard, localOthelloTurn, 1, true, false);
+};
+
+window.restartOthelloGame = function () {
+  if (currentOthelloMode === "ai") {
+    startOthelloAI();
+  } else if (currentOthelloMode === "online" && currentOthelloRoomId) {
+    const initB = createInitialOthelloBoard();
+    updateDoc(doc(db, "sheet_sessions", currentOthelloRoomId), {
+      board: JSON.stringify(initB),
+      turn: 1,
+      status: "playing",
+      updatedAt: Date.now()
+    });
+  }
+};
+
+/* --- オンライン・合言葉・URL・自由参加 --- */
+window.joinOthelloPassphrase = async function () {
+  const input = document.getElementById("othelloPassInput");
+  const pass = input.value.trim();
+  if (!pass) {
+    alert("合言葉を入力してください");
+    return;
+  }
+  const roomId = "pass_" + encodeURIComponent(pass).replace(/%/g, "_");
+  await enterOthelloRoom(roomId);
+};
+
+window.createOthelloInviteUrl = async function () {
+  const code = Math.random().toString(36).slice(2, 8);
+  const roomId = "inv_" + code;
+  await enterOthelloRoom(roomId);
+  copyCurrentRoomUrl();
+};
+
+window.copyCurrentRoomUrl = function () {
+  if (!currentOthelloRoomId) return;
+  const url = `${window.location.origin}${window.location.pathname}?room=${currentOthelloRoomId}`;
+  navigator.clipboard.writeText(url).then(() => {
+    alert("招待URLをコピーしました！友達に送信してください：\n" + url);
+  }).catch(() => {
+    prompt("招待URLをコピーしてください：", url);
+  });
+};
+
+window.startOthelloRandom = async function () {
+  try {
+    const q = query(
+      collection(db, "sheet_sessions"),
+      where("isPublic", "==", true),
+      where("status", "==", "waiting")
+    );
+    const snap = await getDocs(q);
+    let targetRoomId = null;
+    for (const d of snap.docs) {
+      if (d.data().p1 !== uid) {
+        targetRoomId = d.id;
+        break;
+      }
+    }
+    if (targetRoomId) {
+      await enterOthelloRoom(targetRoomId);
+    } else {
+      const code = Math.random().toString(36).slice(2, 8);
+      await enterOthelloRoom("rand_" + code, true);
+    }
+  } catch (err) {
+    console.error(err);
+    alert("自由参加のマッチングでエラーが発生しました。合言葉をお試しください。");
+  }
+};
+
+async function enterOthelloRoom(roomId, isPublic = false) {
+  currentOthelloMode = "online";
+  currentOthelloRoomId = roomId;
+
+  document.getElementById("othelloLobby").style.display = "none";
+  document.getElementById("othelloGameArea").style.display = "block";
+  document.getElementById("othelloRoomTitle").textContent = "ルーム: " + roomId.replace(/^(pass_|inv_|rand_)/, "");
+  document.getElementById("othelloCopyUrlBtn").style.display = "block";
+  document.getElementById("othelloRestartBtn").style.display = "none";
+
+  const roomRef = doc(db, "sheet_sessions", roomId);
+  const snap = await getDoc(roomRef);
+
+  let myName = "プレイヤー";
+  if (uid && profileCache[uid] && profileCache[uid].name) {
+    myName = profileCache[uid].name;
+  }
+
+  if (!snap.exists()) {
+    myOthelloRole = 1;
+    const initB = createInitialOthelloBoard();
+    await setDoc(roomRef, {
+      board: JSON.stringify(initB),
+      turn: 1,
+      p1: uid || "guest_" + Math.random().toString(36).slice(2, 6),
+      p1Name: myName,
+      p2: null,
+      p2Name: null,
+      status: "waiting",
+      isPublic: !!isPublic,
+      updatedAt: Date.now()
+    });
+  } else {
+    const data = snap.data();
+    if (data.p1 === uid) {
+      myOthelloRole = 1;
+    } else if (data.p2 === uid) {
+      myOthelloRole = 2;
+    } else if (!data.p2) {
+      myOthelloRole = 2;
+      await updateDoc(roomRef, {
+        p2: uid || "guest_" + Math.random().toString(36).slice(2, 6),
+        p2Name: myName,
+        status: "playing",
+        updatedAt: Date.now()
+      });
+    } else {
+      alert("このルームはすでに満員です。別の合言葉をお試しください。");
+      leaveOthelloGame();
+      return;
+    }
+  }
+
+  if (othelloUnsub) othelloUnsub();
+  othelloUnsub = onSnapshot(roomRef, (snapshot) => {
+    if (!snapshot.exists()) {
+      alert("ルームが削除されました");
+      leaveOthelloGame();
+      return;
+    }
+    const data = snapshot.data();
+    const board = JSON.parse(data.board);
+    const turn = data.turn;
+    const isGameOver = (data.status === "finished");
+
+    document.getElementById("othelloBlackName").textContent = (data.p1Name || "先手(黒)") + (myOthelloRole === 1 ? " (あなた)" : "");
+    document.getElementById("othelloWhiteName").textContent = (data.p2Name || "後手(白)") + (myOthelloRole === 2 ? " (あなた)" : "");
+
+    if (data.status === "waiting") {
+      document.getElementById("othelloStatusBanner").textContent = "相手の参加を待機中... (合言葉/URLを友達に共有してください)";
+      renderOthelloUI(board, turn, myOthelloRole, false, false);
+      return;
+    }
+
+    if (isGameOver) {
+      const counts = countOthelloDiscs(board);
+      let resText = `対局終了！ 黒: ${counts.b}石 - 白: ${counts.w}石で `;
+      if (counts.b > counts.w) resText += (myOthelloRole === 1 ? "あなたの勝ち！🎉" : "黒の勝利です！");
+      else if (counts.w > counts.b) resText += (myOthelloRole === 2 ? "あなたの勝ち！🎉" : "白の勝利です！");
+      else resText += "引き分けです！🤝";
+      document.getElementById("othelloStatusBanner").textContent = resText;
+      document.getElementById("othelloRestartBtn").style.display = "block";
+      renderOthelloUI(board, turn, myOthelloRole, false, true);
+      return;
+    }
+
+    const isMyTurn = (turn === myOthelloRole);
+    if (isMyTurn) {
+      document.getElementById("othelloStatusBanner").textContent = `あなたの手番です (${myOthelloRole === 1 ? "黒" : "白"})`;
+    } else {
+      document.getElementById("othelloStatusBanner").textContent = `相手の手番です (${turn === 1 ? "黒" : "白"})`;
+    }
+
+    renderOthelloUI(board, turn, myOthelloRole, isMyTurn, false);
+  });
+}
+
+// URLパラメータによる自動参加
+const urlParams = new URLSearchParams(window.location.search);
+const autoRoom = urlParams.get("room") || urlParams.get("sheet");
+if (autoRoom) {
+  setTimeout(() => {
+    showGameCorner();
+    openOthelloHub();
+    enterOthelloRoom(autoRoom);
+  }, 1000);
+}
 </script>
 
 </body>
