@@ -896,48 +896,76 @@ button.back {
 
   <div id="snowballScreen" style="display:none;">
 
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-      <div style="display:flex; gap:8px;">
-        <button class="back" onclick="leaveSnowballGame()" style="margin:0; width:auto; padding:6px 14px;">
-          ← コーナーへ
-        </button>
-        <button id="sbModeToggleBtn" onclick="toggleSnowballMode()" style="background:#1e293b; color:#38bdf8; width:auto; padding:6px 12px; font-size:12px; border-radius:8px; border:1px solid #334155;">
-          🎮 2D軽量版に切替
-        </button>
-      </div>
-      <div style="display:flex; gap:8px;">
-        <button onclick="toggleSnowballFullscreen()" style="background:#1e293b; color:#f1f5f9; width:auto; padding:6px 12px; font-size:12px; border-radius:8px; border:1px solid #334155;">
-          ⛶ 全画面
-        </button>
-        <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 14px; font-weight:bold; border-radius:8px;">
-          🚨 緊急回避 (数学)
-        </button>
-      </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <button class="back" onclick="leaveSnowballGame()" style="margin:0; width:auto; padding:6px 14px;">
+        ← コーナーへ
+      </button>
+      <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 14px; font-weight:bold; border-radius:8px;">
+        🚨 緊急回避 (数学)
+      </button>
     </div>
 
-    <!-- 本家3D版 (WebGL) -->
-    <div id="snowballOfficialContainer" style="width:100%; height:75vh; max-height:680px; position:relative; background:#000; border-radius:12px; overflow:hidden; border:2px solid #334155; box-shadow:0 4px 20px rgba(0,0,0,0.6);">
-      <iframe id="snowballOfficialIframe" src="about:blank" style="width:100%; height:100%; border:none; display:block;" allow="autoplay; fullscreen" allowfullscreen></iframe>
+    <!-- モード切替タブ -->
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <button id="sbTab2DBtn" onclick="switchSnowballTab('2d')" style="background:#0284c7; color:#fff; font-weight:bold; padding:8px 12px; border-radius:8px; flex:1; border:none; cursor:pointer; font-size:13px;">
+        🎮 2D版（学校iPad・ブロックなし）
+      </button>
+      <button id="sbTab3DBtn" onclick="switchSnowballTab('3d')" style="background:#1e293b; color:#94a3b8; font-weight:bold; padding:8px 12px; border-radius:8px; flex:1; border:1px solid #334155; cursor:pointer; font-size:13px;">
+        🌐 3D本家版
+      </button>
     </div>
 
     <!-- 2D軽量版 (Canvas) -->
-    <div id="snowball2DContainer" style="display:none;">
-      <div style="display:flex; justify-content:space-between; align-items:center; background:#161b22; padding:10px 14px; border-radius:10px; margin-bottom:10px; font-size:14px;">
-        <div style="color:#38bdf8; font-weight:bold;">❄️ snowball.io (2D)</div>
-        <div>撃破数: <span id="snowballKills" style="color:#facc15; font-weight:bold;">0</span>　生存: <span id="snowballAlive" style="color:#4ade80; font-weight:bold;">6</span></div>
+    <div id="snowball2DContainer">
+      <div style="display:flex; justify-content:space-between; align-items:center; background:#161b22; padding:8px 14px; border-radius:10px; margin-bottom:8px; font-size:13px;">
+        <div style="color:#38bdf8; font-weight:bold;">❄️ 雪玉バトルロイヤル (2D)</div>
+        <div>撃破: <span id="snowballKills" style="color:#facc15; font-weight:bold;">0</span>　生存: <span id="snowballAlive" style="color:#4ade80; font-weight:bold;">6</span></div>
       </div>
 
       <div style="position:relative; width:100%; max-width:400px; margin:0 auto; display:flex; justify-content:center;">
-        <canvas id="snowballCanvas" width="400" height="400" style="background:#071a2f; border-radius:12px; width:100%; max-width:400px; aspect-ratio:1/1; touch-action:none; display:block; border:2px solid #1e293b; box-shadow:0 4px 15px rgba(0,0,0,0.6);"></canvas>
+        <canvas id="snowballCanvas" width="400" height="400" style="background:#071a2f; border-radius:12px; width:100%; max-width:400px; aspect-ratio:1/1; touch-action:none; display:block; border:2px solid #1e293b; box-shadow:0 4px 15px rgba(0,0,0,0.6); -webkit-user-select:none; user-select:none;"></canvas>
 
         <div id="snowballOverlay" style="position:absolute; inset:0; background:rgba(0,0,0,0.8); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; z-index:10;">
           <h3 id="snowballOverlayTitle" style="color:#fff; margin:0; font-size:22px;">❄️ 雪玉バトルロイヤル</h3>
-          <p id="snowballOverlayMsg" style="color:#94a3b8; margin:0; font-size:13px; text-align:center; padding:0 15px;">画面をドラッグ（指でなぞる）して移動！<br>雪玉を大きく転がして、相手にぶつけてステージから落とせ！</p>
-          <button onclick="startSnowballGame()" style="background:linear-gradient(135deg, #0284c7, #0369a1); width:auto; padding:10px 24px; font-weight:bold; border-radius:20px; font-size:15px;">バトル開始！</button>
+          <p id="snowballOverlayMsg" style="color:#94a3b8; margin:0; font-size:13px; text-align:center; padding:0 15px;">画面ドラッグまたは下ボタンで移動！<br>雪玉を大きく転がして敵を弾き落とせ！</p>
+          <button onclick="startSnowballGame()" style="background:linear-gradient(135deg, #0284c7, #0369a1); width:auto; padding:10px 24px; font-weight:bold; border-radius:20px; font-size:15px; cursor:pointer;">バトル開始！</button>
         </div>
       </div>
 
-      <p style="color:#64748b; font-size:12px; text-align:center; margin-top:8px;">操作: 画面をドラッグで移動 / 指を離すと雪玉シュート！</p>
+      <!-- スマホ/iPad用コントローラー -->
+      <div style="display:flex; justify-content:center; align-items:center; gap:20px; margin-top:10px;">
+        <div style="display:grid; grid-template-columns:46px 46px 46px; grid-template-rows:44px 44px 44px; gap:4px;">
+          <div></div>
+          <button onpointerdown="sbPressDir(0, -1)" onpointerup="sbReleaseDir()" style="background:#1e293b; color:#fff; border-radius:8px; font-size:20px; border:1px solid #475569; padding:0; margin:0; touch-action:none; display:flex; align-items:center; justify-content:center;">⬆️</button>
+          <div></div>
+          <button onpointerdown="sbPressDir(-1, 0)" onpointerup="sbReleaseDir()" style="background:#1e293b; color:#fff; border-radius:8px; font-size:20px; border:1px solid #475569; padding:0; margin:0; touch-action:none; display:flex; align-items:center; justify-content:center;">⬅️</button>
+          <div style="background:#0f172a; border-radius:8px;"></div>
+          <button onpointerdown="sbPressDir(1, 0)" onpointerup="sbReleaseDir()" style="background:#1e293b; color:#fff; border-radius:8px; font-size:20px; border:1px solid #475569; padding:0; margin:0; touch-action:none; display:flex; align-items:center; justify-content:center;">➡️</button>
+          <div></div>
+          <button onpointerdown="sbPressDir(0, 1)" onpointerup="sbReleaseDir()" style="background:#1e293b; color:#fff; border-radius:8px; font-size:20px; border:1px solid #475569; padding:0; margin:0; touch-action:none; display:flex; align-items:center; justify-content:center;">⬇️</button>
+          <div></div>
+        </div>
+
+        <button onpointerdown="sbTriggerShoot()" style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#fff; border-radius:50%; width:82px; height:82px; font-size:13px; font-weight:bold; border:2px solid #38bdf8; box-shadow:0 0 15px rgba(56,189,248,0.5); display:flex; flex-direction:column; align-items:center; justify-content:center; touch-action:none; margin:0; cursor:pointer;">
+          <span style="font-size:24px;">💥</span>
+          <span>シュート</span>
+        </button>
+      </div>
+
+      <p style="color:#64748b; font-size:11px; text-align:center; margin-top:8px;">操作: 画面タッチ移動 / 矢印ボタン / PC矢印キー・WASD / スペースで発射</p>
+    </div>
+
+    <!-- 本家3D版 (WebGL) -->
+    <div id="snowballOfficialContainer" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="color:#94a3b8; font-size:12px;">※学校のi-フィルターでブロックされる場合は「2D版」をお使いください</span>
+        <button onclick="toggleSnowballFullscreen()" style="background:#1e293b; color:#f1f5f9; width:auto; padding:4px 10px; font-size:11px; border-radius:6px; border:1px solid #334155;">
+          ⛶ 全画面
+        </button>
+      </div>
+      <div style="width:100%; height:70vh; max-height:640px; position:relative; background:#000; border-radius:12px; overflow:hidden; border:2px solid #334155;">
+        <iframe id="snowballOfficialIframe" src="about:blank" style="width:100%; height:100%; border:none; display:block;" allow="autoplay; fullscreen; web-share" allowfullscreen></iframe>
+      </div>
     </div>
 
   </div>
@@ -4875,15 +4903,26 @@ window.addAdminDirectly = async function () {
 };
 
 /* ======================
-   snowball.io ゲームエンジン
+   snowball.io ゲームエンジン (2D & 3D)
 ====================== */
+
+let sbCanvas = null;
+let sbCtx = null;
+let sbAnimId = null;
+let sbRunning = false;
+let sbPlayer = null;
+let sbBots = [];
+let sbProjectiles = [];
+let sbArenaRadius = 175;
+let sbKills = 0;
+let sbInput = { active: false, x: 0, y: 0, startX: 0, startY: 0 };
+let sbDpadDir = { active: false, x: 0, y: 0 };
+let sbKeys = {};
+
 window.openSnowballHub = function () {
   window.hideAllScreens();
   document.getElementById("snowballScreen").style.display = "block";
-  const iframe = document.getElementById("snowballOfficialIframe");
-  if (iframe && (!iframe.src || iframe.src === "about:blank" || iframe.src.includes("woodle87"))) {
-    iframe.src = "https://games.crazygames.com/en_US/snowball-io/index.html";
-  }
+  window.switchSnowballTab("2d");
 };
 
 window.leaveSnowballGame = function () {
@@ -4891,20 +4930,38 @@ window.leaveSnowballGame = function () {
   showGameCorner();
 };
 
-window.toggleSnowballMode = function () {
-  const official = document.getElementById("snowballOfficialContainer");
-  const d2 = document.getElementById("snowball2DContainer");
-  const btn = document.getElementById("sbModeToggleBtn");
-  if (official.style.display !== "none") {
-    official.style.display = "none";
-    d2.style.display = "block";
-    btn.textContent = "🌐 本家3D版に切替";
+window.switchSnowballTab = function (mode) {
+  const d2Cont = document.getElementById("snowball2DContainer");
+  const offCont = document.getElementById("snowballOfficialContainer");
+  const t2d = document.getElementById("sbTab2DBtn");
+  const t3d = document.getElementById("sbTab3DBtn");
+
+  if (mode === "2d") {
+    d2Cont.style.display = "block";
+    offCont.style.display = "none";
+    t2d.style.background = "#0284c7";
+    t2d.style.color = "#fff";
+    t2d.style.border = "none";
+    t3d.style.background = "#1e293b";
+    t3d.style.color = "#94a3b8";
+    t3d.style.border = "1px solid #334155";
     initSnowballCanvas();
+    window.startSnowballGame();
   } else {
     stopSnowballLoop();
-    d2.style.display = "none";
-    official.style.display = "block";
-    btn.textContent = "🎮 2D軽量版に切替";
+    d2Cont.style.display = "none";
+    offCont.style.display = "block";
+    t3d.style.background = "#0284c7";
+    t3d.style.color = "#fff";
+    t3d.style.border = "none";
+    t2d.style.background = "#1e293b";
+    t2d.style.color = "#94a3b8";
+    t2d.style.border = "1px solid #334155";
+
+    const iframe = document.getElementById("snowballOfficialIframe");
+    if (iframe && (!iframe.src || iframe.src === "about:blank" || !iframe.src.includes("crazygames"))) {
+      iframe.src = "https://games.crazygames.com/en_US/snowball-io/index.html";
+    }
   }
 };
 
@@ -4924,56 +4981,103 @@ window.toggleSnowballFullscreen = function () {
   }
 };
 
-let sbCanvas, sbCtx;
-let sbAnimId = null;
-let sbRunning = false;
-let sbPlayer = null;
-let sbBots = [];
-let sbProjectiles = [];
-let sbArenaRadius = 175;
-let sbKills = 0;
-let sbInput = { active: false, x: 0, y: 0, startX: 0, startY: 0 };
+// D-Pad用関数
+window.sbPressDir = function (dx, dy) {
+  sbDpadDir.active = true;
+  sbDpadDir.x = dx;
+  sbDpadDir.y = dy;
+};
+
+window.sbReleaseDir = function () {
+  sbDpadDir.active = false;
+  sbDpadDir.x = 0;
+  sbDpadDir.y = 0;
+};
+
+window.sbTriggerShoot = function () {
+  if (sbPlayer && sbPlayer.isAlive) {
+    shootSnowball(sbPlayer);
+  }
+};
 
 function initSnowballCanvas() {
   sbCanvas = document.getElementById("snowballCanvas");
   if (!sbCanvas) return;
   sbCtx = sbCanvas.getContext("2d");
 
-  sbCanvas.onpointerdown = (e) => {
+  // タッチイベント（iPad / iPhone用、passive: falseでスクロール抑制）
+  function handleTouch(e, isEnd) {
     e.preventDefault();
+    if (isEnd) {
+      if (sbInput.active && sbPlayer && sbPlayer.isAlive) {
+        shootSnowball(sbPlayer);
+      }
+      sbInput.active = false;
+      return;
+    }
+    const touch = e.touches[0];
+    if (!touch) return;
     const rect = sbCanvas.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 400;
-    const y = ((e.clientY - rect.top) / rect.height) * 400;
-    sbInput.active = true;
-    sbInput.startX = x;
-    sbInput.startY = y;
+    const x = ((touch.clientX - rect.left) / rect.width) * 400;
+    const y = ((touch.clientY - rect.top) / rect.height) * 400;
+    if (!sbInput.active) {
+      sbInput.active = true;
+      sbInput.startX = x;
+      sbInput.startY = y;
+    }
     sbInput.x = x;
     sbInput.y = y;
+  }
+
+  sbCanvas.addEventListener("touchstart", (e) => handleTouch(e, false), { passive: false });
+  sbCanvas.addEventListener("touchmove", (e) => handleTouch(e, false), { passive: false });
+  sbCanvas.addEventListener("touchend", (e) => handleTouch(e, true), { passive: false });
+  sbCanvas.addEventListener("touchcancel", (e) => handleTouch(e, true), { passive: false });
+
+  // マウスイベント
+  sbCanvas.onmousedown = (e) => {
+    e.preventDefault();
+    const rect = sbCanvas.getBoundingClientRect();
+    sbInput.active = true;
+    sbInput.startX = ((e.clientX - rect.left) / rect.width) * 400;
+    sbInput.startY = ((e.clientY - rect.top) / rect.height) * 400;
+    sbInput.x = sbInput.startX;
+    sbInput.y = sbInput.startY;
   };
 
-  sbCanvas.onpointermove = (e) => {
-    if (!sbInput.active) return;
+  window.addEventListener("mousemove", (e) => {
+    if (!sbInput.active || !sbCanvas) return;
     const rect = sbCanvas.getBoundingClientRect();
     sbInput.x = ((e.clientX - rect.left) / rect.width) * 400;
     sbInput.y = ((e.clientY - rect.top) / rect.height) * 400;
-  };
+  });
 
-  sbCanvas.onpointerup = (e) => {
+  window.addEventListener("mouseup", () => {
     if (sbInput.active && sbPlayer && sbPlayer.isAlive) {
       shootSnowball(sbPlayer);
     }
     sbInput.active = false;
-  };
+  });
 
-  sbCanvas.onpointercancel = () => {
-    sbInput.active = false;
-  };
+  // キーボードイベント
+  window.addEventListener("keydown", (e) => {
+    const sbScreen = document.getElementById("snowballScreen");
+    if (sbScreen && sbScreen.style.display === "block") {
+      sbKeys[e.key.toLowerCase()] = true;
+      if (e.key === " " && sbPlayer && sbPlayer.isAlive) {
+        e.preventDefault();
+        shootSnowball(sbPlayer);
+      }
+    }
+  });
 
-  drawSnowballArena();
+  window.addEventListener("keyup", (e) => {
+    sbKeys[e.key.toLowerCase()] = false;
+  });
 }
 
 function shootSnowball(entity) {
-  if (entity.snowballSize < 4) return;
+  if (entity.snowballSize < 3) return;
   const speed = 7;
   const pSize = entity.snowballSize;
   const spawnDist = entity.radius + pSize + 4;
@@ -4995,6 +5099,11 @@ window.startSnowballGame = function () {
   sbArenaRadius = 175;
   document.getElementById("snowballKills").textContent = "0";
 
+  let myName = "あなた";
+  if (uid && profileCache[uid] && profileCache[uid].name) {
+    myName = profileCache[uid].name;
+  }
+
   sbPlayer = {
     x: 200,
     y: 280,
@@ -5004,7 +5113,7 @@ window.startSnowballGame = function () {
     radius: 13,
     snowballSize: 3,
     color: "#38bdf8",
-    name: "あなた",
+    name: myName,
     isAlive: true,
     isPlayer: true
   };
@@ -5060,24 +5169,41 @@ function updateSnowball() {
   }
 
   if (sbPlayer && sbPlayer.isAlive) {
-    if (sbInput.active) {
+    let moveX = 0;
+    let moveY = 0;
+
+    if (sbDpadDir.active) {
+      moveX = sbDpadDir.x;
+      moveY = sbDpadDir.y;
+    } else if (sbInput.active) {
       const dx = sbInput.x - sbInput.startX;
       const dy = sbInput.y - sbInput.startY;
       const dist = Math.hypot(dx, dy);
-      if (dist > 8) {
-        sbPlayer.angle = Math.atan2(dy, dx);
-        const speed = 2.4;
-        sbPlayer.vx = Math.cos(sbPlayer.angle) * speed;
-        sbPlayer.vy = Math.sin(sbPlayer.angle) * speed;
-        if (sbPlayer.snowballSize < 24) sbPlayer.snowballSize += 0.08;
+      if (dist > 6) {
+        moveX = dx / dist;
+        moveY = dy / dist;
       }
     } else {
-      sbPlayer.vx *= 0.85;
-      sbPlayer.vy *= 0.85;
+      if (sbKeys["arrowup"] || sbKeys["w"]) moveY -= 1;
+      if (sbKeys["arrowdown"] || sbKeys["s"]) moveY += 1;
+      if (sbKeys["arrowleft"] || sbKeys["a"]) moveX -= 1;
+      if (sbKeys["arrowright"] || sbKeys["d"]) moveX += 1;
+    }
+
+    if (moveX !== 0 || moveY !== 0) {
+      sbPlayer.angle = Math.atan2(moveY, moveX);
+      const speed = 2.7;
+      sbPlayer.vx = Math.cos(sbPlayer.angle) * speed;
+      sbPlayer.vy = Math.sin(sbPlayer.angle) * speed;
+      if (sbPlayer.snowballSize < 24) sbPlayer.snowballSize += 0.09;
+    } else {
+      sbPlayer.vx *= 0.88;
+      sbPlayer.vy *= 0.88;
     }
     moveEntity(sbPlayer);
   }
 
+  // ボット更新
   sbBots.forEach((bot) => {
     if (!bot.isAlive) return;
 
@@ -5087,84 +5213,73 @@ function updateSnowball() {
       let target = (sbPlayer && sbPlayer.isAlive) ? sbPlayer : null;
       if (!target || Math.random() < 0.4) {
         const others = sbBots.filter((b) => b !== bot && b.isAlive);
-        if (others.length > 0) target = others[Math.floor(Math.random() * others.length)];
+        if (others.length > 0) {
+          target = others[Math.floor(Math.random() * others.length)];
+        }
       }
-
       if (target) {
-        const tAngle = Math.atan2(target.y - bot.y, target.x - bot.x);
-        bot.targetAngle = tAngle + (Math.random() - 0.5) * 0.4;
+        const dx = target.x - bot.x;
+        const dy = target.y - bot.y;
+        bot.targetAngle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.4;
+      } else {
+        bot.targetAngle = Math.random() * Math.PI * 2;
       }
 
-      if (bot.snowballSize > 10 && Math.random() < 0.6) {
+      if (bot.snowballSize > 9 && Math.random() < 0.6) {
         shootSnowball(bot);
       }
     }
 
-    const dCenter = Math.hypot(bot.x - 200, bot.y - 200);
-    if (dCenter > sbArenaRadius - 30) {
+    const distCenter = Math.hypot(bot.x - 200, bot.y - 200);
+    if (distCenter > sbArenaRadius - 25) {
       bot.targetAngle = Math.atan2(200 - bot.y, 200 - bot.x);
     }
 
-    bot.angle += (bot.targetAngle - bot.angle) * 0.1;
+    let diff = bot.targetAngle - bot.angle;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    bot.angle += diff * 0.12;
+
     const bSpeed = 2.0;
     bot.vx = Math.cos(bot.angle) * bSpeed;
     bot.vy = Math.sin(bot.angle) * bSpeed;
-    if (bot.snowballSize < 22) bot.snowballSize += 0.06;
+    if (bot.snowballSize < 20) bot.snowballSize += 0.07;
 
     moveEntity(bot);
   });
 
-  const allEntities = [sbPlayer, ...sbBots].filter((e) => e && e.isAlive);
-  for (let i = 0; i < allEntities.length; i++) {
-    for (let j = i + 1; j < allEntities.length; j++) {
-      const e1 = allEntities[i];
-      const e2 = allEntities[j];
-      const dx = e2.x - e1.x;
-      const dy = e2.y - e1.y;
-      const dist = Math.hypot(dx, dy);
-      const minDist = e1.radius + e2.radius;
-      if (dist < minDist && dist > 0.01) {
-        const nx = dx / dist;
-        const ny = dy / dist;
-        const power = 3.5 + (e1.snowballSize + e2.snowballSize) * 0.15;
-        e1.vx -= nx * power;
-        e1.vy -= ny * power;
-        e2.vx += nx * power;
-        e2.vy += ny * power;
-      }
-    }
-  }
-
+  // 発射された雪玉の更新
   for (let i = sbProjectiles.length - 1; i >= 0; i--) {
     const p = sbProjectiles[i];
     p.x += p.vx;
     p.y += p.vy;
     p.life--;
 
-    let hit = false;
+    const allEntities = [sbPlayer, ...sbBots].filter((e) => e && e.isAlive && e !== p.owner);
     for (const ent of allEntities) {
-      if (ent === p.owner) continue;
-      const d = Math.hypot(ent.x - p.x, ent.y - p.y);
-      if (d < ent.radius + p.radius) {
-        const hitAngle = Math.atan2(p.vy, p.vx);
-        const knock = 4.5 + p.radius * 0.35;
-        ent.vx += Math.cos(hitAngle) * knock;
-        ent.vy += Math.sin(hitAngle) * knock;
-        hit = true;
+      const dist = Math.hypot(ent.x - p.x, ent.y - p.y);
+      if (dist < ent.radius + p.radius) {
+        const knockback = p.radius * 0.9 + 5;
+        const hitAngle = Math.atan2(ent.y - p.y, ent.x - p.x);
+        ent.vx += Math.cos(hitAngle) * knockback;
+        ent.vy += Math.sin(hitAngle) * knockback;
+        p.life = 0;
         break;
       }
     }
 
-    if (hit || p.life <= 0) {
+    if (p.life <= 0) {
       sbProjectiles.splice(i, 1);
     }
   }
 
-  allEntities.forEach((ent) => {
-    const dCenter = Math.hypot(ent.x - 200, ent.y - 200);
-    if (dCenter > sbArenaRadius + ent.radius) {
+  // 落下判定
+  const all = [sbPlayer, ...sbBots].filter((e) => e && e.isAlive);
+  all.forEach((ent) => {
+    const d = Math.hypot(ent.x - 200, ent.y - 200);
+    if (d > sbArenaRadius + ent.radius) {
       ent.isAlive = false;
-      if (ent !== sbPlayer) {
+      if (!ent.isPlayer && sbPlayer && sbPlayer.isAlive) {
         sbKills++;
         document.getElementById("snowballKills").textContent = String(sbKills);
       }
@@ -5200,59 +5315,59 @@ function drawSnowballArena() {
   if (!sbCtx) return;
   sbCtx.clearRect(0, 0, 400, 400);
 
-  sbCtx.fillStyle = "#0c2340";
+  // 海
+  sbCtx.fillStyle = "#0c4a6e";
   sbCtx.fillRect(0, 0, 400, 400);
 
+  // 氷の浮島（アリーナ）
   sbCtx.save();
   sbCtx.beginPath();
   sbCtx.arc(200, 200, sbArenaRadius, 0, Math.PI * 2);
   sbCtx.fillStyle = "#e0f2fe";
-  sbCtx.shadowColor = "rgba(56, 189, 248, 0.5)";
-  sbCtx.shadowBlur = 15;
   sbCtx.fill();
-  sbCtx.lineWidth = 4;
-  sbCtx.strokeStyle = "#bae6fd";
+  sbCtx.lineWidth = 6;
+  sbCtx.strokeStyle = "#7dd3fc";
   sbCtx.stroke();
   sbCtx.restore();
 
-  sbCtx.strokeStyle = "#7dd3fc";
-  sbCtx.lineWidth = 1;
-  sbCtx.beginPath();
-  sbCtx.arc(200, 200, sbArenaRadius * 0.65, 0.4, 2.8);
-  sbCtx.stroke();
-
+  // 雪玉プロジェクタイル描画
   sbProjectiles.forEach((p) => {
     sbCtx.save();
     sbCtx.beginPath();
     sbCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
     sbCtx.fillStyle = "#ffffff";
-    sbCtx.shadowColor = "rgba(255,255,255,0.8)";
-    sbCtx.shadowBlur = 6;
+    sbCtx.shadowColor = "rgba(0,0,0,0.3)";
+    sbCtx.shadowBlur = 4;
     sbCtx.fill();
-    sbCtx.strokeStyle = "#93c5fd";
+    sbCtx.strokeStyle = "#bae6fd";
     sbCtx.lineWidth = 1.5;
     sbCtx.stroke();
     sbCtx.restore();
   });
 
-  const allEntities = [sbPlayer, ...sbBots].filter((e) => e && e.isAlive);
-  allEntities.forEach((ent) => {
-    if (ent.snowballSize > 2) {
-      const sbX = ent.x + Math.cos(ent.angle) * (ent.radius + ent.snowballSize * 0.7);
-      const sbY = ent.y + Math.sin(ent.angle) * (ent.radius + ent.snowballSize * 0.7);
-      sbCtx.save();
-      sbCtx.beginPath();
-      sbCtx.arc(sbX, sbY, ent.snowballSize, 0, Math.PI * 2);
-      sbCtx.fillStyle = "#ffffff";
-      sbCtx.shadowColor = "rgba(0,0,0,0.3)";
-      sbCtx.shadowBlur = 4;
-      sbCtx.fill();
-      sbCtx.strokeStyle = "#cbd5e1";
-      sbCtx.lineWidth = 1.5;
-      sbCtx.stroke();
-      sbCtx.restore();
-    }
+  // キャラクター＆前方の雪玉描画
+  const renderList = [sbPlayer, ...sbBots].filter((e) => e && e.isAlive);
+  renderList.sort((a, b) => a.y - b.y);
 
+  renderList.forEach((ent) => {
+    // 前方の雪玉
+    const ballDist = ent.radius + ent.snowballSize * 0.7;
+    const bx = ent.x + Math.cos(ent.angle) * ballDist;
+    const by = ent.y + Math.sin(ent.angle) * ballDist;
+
+    sbCtx.save();
+    sbCtx.beginPath();
+    sbCtx.arc(bx, by, ent.snowballSize, 0, Math.PI * 2);
+    sbCtx.fillStyle = "#ffffff";
+    sbCtx.shadowColor = "rgba(0,0,0,0.25)";
+    sbCtx.shadowBlur = 4;
+    sbCtx.fill();
+    sbCtx.strokeStyle = "#7dd3fc";
+    sbCtx.lineWidth = 1.5;
+    sbCtx.stroke();
+    sbCtx.restore();
+
+    // プレイヤー本体
     sbCtx.save();
     sbCtx.beginPath();
     sbCtx.arc(ent.x, ent.y, ent.radius, 0, Math.PI * 2);
@@ -5264,6 +5379,7 @@ function drawSnowballArena() {
     sbCtx.lineWidth = ent.isPlayer ? 2.5 : 1.5;
     sbCtx.stroke();
 
+    // 目
     const eyeDist = 6;
     const eyeAngle = ent.angle;
     sbCtx.fillStyle = "#000";
@@ -5273,6 +5389,7 @@ function drawSnowballArena() {
     sbCtx.fill();
     sbCtx.restore();
 
+    // 名前
     sbCtx.fillStyle = ent.isPlayer ? "#38bdf8" : "#cbd5e1";
     sbCtx.font = "10px sans-serif";
     sbCtx.textAlign = "center";
