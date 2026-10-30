@@ -41,6 +41,82 @@ img, video, canvas, svg {
   background: rgba(0,0,0,0.85) !important;
 }
 
+/* 通知バッジ */
+.badge-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  padding: 0 5px;
+  margin-left: 4px;
+  vertical-align: middle;
+  line-height: 1;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.badge-count:empty, .badge-count[data-count="0"] {
+  display: none !important;
+}
+
+/* 通知アイテム */
+.notif-item {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.notif-item:hover, .notif-item:active {
+  background: #1c2128;
+  border-color: #58a6ff;
+}
+.notif-item.is-unread {
+  border-left: 4px solid #ef4444;
+  background: #1c1f26;
+}
+
+/* DM会話リストアイテム */
+.dm-conv-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+.dm-conv-item:hover, .dm-conv-item:active {
+  background: #1c2128;
+  border-color: #58a6ff;
+  transform: translateY(-1px);
+}
+.dm-conv-item.has-unread {
+  border-color: #ef4444;
+  background: #1c1c24;
+}
+.dm-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #21262d;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
 .post {
   border-bottom: 1px solid #222;
   padding: 12px 0;
@@ -445,19 +521,27 @@ button.back {
 
 <div class="container">
 
-  <div class="topButtons">
+  <div class="topButtons" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:15px;">
 
-    <button onclick="showHome()">
+    <button onclick="showHome()" style="flex:1; min-width:70px;">
       🏠 ホーム
     </button>
 
-    <button onclick="showMyProfile()">
-      👤 プロフィール
+    <button onclick="showNotifications()" style="flex:1; min-width:85px; position:relative;">
+      🔔 通知 <span id="topNotifBadge" class="badge-count" data-count="0"></span>
+    </button>
+
+    <button onclick="showDM()" style="flex:1; min-width:70px; position:relative;">
+      💬 DM <span id="topDmBadge" class="badge-count" data-count="0"></span>
+    </button>
+
+    <button onclick="showMyProfile()" style="flex:1; min-width:80px;">
+      👤 プロフ
     </button>
 
     <button
       onclick="showGameCorner()"
-      style="background:#10b981; font-weight:bold;"
+      style="background:#10b981; font-weight:bold; flex:1; min-width:75px;"
     >
       🎮 ゲーム
     </button>
@@ -465,8 +549,9 @@ button.back {
     <button
       class="logout"
       onclick="logout()"
+      style="width:auto; padding:0 12px;"
     >
-      🚪 ログアウト
+      🚪
     </button>
 
   </div>
@@ -479,9 +564,14 @@ button.back {
   <div id="homeScreen">
 
     <h2>野獣撲滅委員会ニガ支部</h2>
-　　<button onclick="showDM()">
-  　　💬 DM
-　　</button>
+    <div style="display:flex; gap:8px; margin-bottom:5px;">
+      <button onclick="showNotifications()" style="background:#1e293b; border:1px solid #334155; margin-top:0; font-weight:bold; flex:1;">
+        🔔 お知らせ <span id="homeNotifBadge" class="badge-count" data-count="0"></span>
+      </button>
+      <button onclick="showDM()" style="margin-top:0; font-weight:bold; flex:1;">
+        💬 DM <span id="homeDmBadge" class="badge-count" data-count="0"></span>
+      </button>
+    </div>
 　　<button onclick="showGameCorner()" style="background:linear-gradient(135deg, #10b981, #059669); margin-top:5px; font-weight:bold;">
   　　🎮 ゲームコーナー
 　　</button>
@@ -605,13 +695,23 @@ button.back {
         class="followArea"
       >
 
-        <button
-          id="followButton"
-          class="followButton"
-          onclick="toggleFollow()"
-        >
-          👥 フォロー
-        </button>
+        <div style="display:flex; gap:8px;">
+          <button
+            id="followButton"
+            class="followButton"
+            onclick="toggleFollow()"
+            style="flex:1;"
+          >
+            👥 フォロー
+          </button>
+          <button
+            id="profileDMBtn"
+            onclick="openDMFromCurrentProfile()"
+            style="flex:1; background:#1d9bf0; color:#fff; font-weight:bold; border-radius:10px; display:none;"
+          >
+            💬 DMを送る
+          </button>
+        </div>
 
         <div
           id="followStats"
@@ -716,46 +816,87 @@ button.back {
 </div>
 
 <!-- ======================
-     DM
+     お知らせ (通知) 画面
+======================= -->
+
+<div id="notificationScreen" style="display:none;">
+
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+    <button class="back" onclick="showHome()" style="margin:0; width:auto; padding:6px 14px;">
+      ← ホームに戻る
+    </button>
+    <button onclick="markAllNotificationsAsRead()" style="background:#1e293b; border:1px solid #334155; color:#94a3b8; font-size:12px; width:auto; padding:5px 12px; border-radius:6px; cursor:pointer;">
+      ✓ すべて既読にする
+    </button>
+  </div>
+
+  <h2 style="display:flex; align-items:center; gap:8px;">
+    🔔 お知らせ
+    <span id="notifTotalBadge" class="badge-count" data-count="0"></span>
+  </h2>
+
+  <div id="notificationList" style="margin-top:15px;">
+    <p style="color:#8b949e; text-align:center; padding:30px;">読み込み中...</p>
+  </div>
+
+</div>
+
+<!-- ======================
+     DM (ダイレクトメッセージ)
 ======================= -->
 
 <div id="dmScreen" style="display:none;">
 
-  <button
-    class="back"
-    onclick="showHome()"
-  >
-    ← ホームに戻る
-  </button>
+  <!-- 1. DM一覧画面 (dmListView) -->
+  <div id="dmListView">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <button class="back" onclick="showHome()" style="margin:0; width:auto; padding:6px 14px;">
+        ← ホームに戻る
+      </button>
+      <button onclick="toggleNewDMPanel()" id="newDMBtn" style="background:#1d9bf0; color:#fff; width:auto; padding:6px 14px; font-weight:bold; border-radius:8px; font-size:12px; cursor:pointer;">
+        ➕ 新規DM
+      </button>
+    </div>
 
-  <h2>💬 DM</h2>
+    <h2 style="display:flex; align-items:center; gap:8px;">
+      💬 メッセージ一覧
+      <span id="dmListTotalBadge" class="badge-count" data-count="0"></span>
+    </h2>
 
-  <input
-  id="dmUserId"
-  placeholder="DMする相手のユーザーID"
->
+    <!-- 新規DM相手指定パネル (折りたたみ式) -->
+    <div id="newDMPanel" style="display:none; background:#161b22; border:1px solid #30363d; border-radius:10px; padding:12px; margin-bottom:15px;">
+      <h4 style="margin:0 0 6px 0; color:#58a6ff; font-size:13px;">新しい相手とDMを開始</h4>
+      <p style="margin:0 0 8px 0; color:#8b949e; font-size:11px;">ユーザー名（@なしでも可）を入力してください</p>
+      <div style="display:flex; gap:8px;">
+        <input id="dmUsernameInput" placeholder="ユーザー名 (例: 114514)" style="margin-top:0; flex:1;" onkeydown="if(event.key==='Enter'&&!event.isComposing)startNewDMByUsername()">
+        <button onclick="startNewDMByUsername()" style="background:#238636; width:auto; padding:0 16px; margin-top:0; font-weight:bold;">開始</button>
+      </div>
+    </div>
 
-<button onclick="openDM()">
-  DMを開く
-</button>
+    <!-- やり取りしている相手一覧リスト -->
+    <div id="dmConversationsList" style="margin-top:10px;">
+      <p style="color:#8b949e; text-align:center; padding:30px;">読み込み中...</p>
+    </div>
+  </div>
 
-<div id="dmChat"></div>
+  <!-- 2. 個別チャット画面 (dmThreadView) -->
+  <div id="dmThreadView" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #222; padding-bottom:8px;">
+      <button class="back" onclick="showDMList()" style="margin:0; width:auto; padding:6px 14px;">
+        ← DM一覧へ
+      </button>
+      <div id="dmThreadHeaderTitle" style="font-weight:bold; font-size:14px; color:#fff; text-align:right;"></div>
+    </div>
 
-<div id="dmInputArea" style="display:none;">
+    <!-- チャット吹き出し表示エリア -->
+    <div id="dmChat" style="height:55vh; min-height:280px; max-height:500px; overflow-y:auto; background:#0d1117; border:1px solid #21262d; border-radius:10px; padding:12px; margin-bottom:12px;"></div>
 
-  <input
-    id="dmMessage"
-    placeholder="メッセージを入力..."
-    maxlength="1000"
-  >
-
-  <button onclick="sendDM()">
-    送信
-  </button>
-
-</div>
-
-  <div id="dmList"></div>
+    <!-- 送信エリア -->
+    <div style="display:flex; gap:8px; align-items:center;">
+      <input id="dmMessage" placeholder="メッセージを入力... (Enterで送信)" maxlength="1000" style="margin-top:0; flex:1;" onkeydown="if(event.key==='Enter'&&!event.isComposing)sendDM()">
+      <button onclick="sendDM()" style="background:#1d9bf0; width:auto; padding:0 18px; margin-top:0; font-weight:bold; height:42px;">送信</button>
+    </div>
+  </div>
 
 </div>
 
@@ -1664,9 +1805,13 @@ document.getElementById(
 
 await loadProfile();
 
+startNotificationsAndDMsListener();
+
 showHome();
 
 } else {
+
+  stopNotificationsAndDMsListener();
 
   uid = null;
 
@@ -2402,6 +2547,10 @@ async function (userId) {
 
   }
 
+  const dmBtn = document.getElementById("profileDMBtn");
+  if (dmBtn) {
+    dmBtn.style.display = userId === uid ? "none" : "inline-block";
+  }
 
   await loadProfilePosts(
     userId
@@ -2431,6 +2580,7 @@ window.hideAllScreens = function () {
   const ids = [
     "homeScreen",
     "profileScreen",
+    "notificationScreen",
     "dmScreen",
     "adminScreen",
     "gameCornerScreen",
@@ -2481,6 +2631,29 @@ function () {
   ).style.display =
     "block";
 
+  window.showDMList();
+
+};
+
+window.showDMList = function () {
+  const lv = document.getElementById("dmListView");
+  const tv = document.getElementById("dmThreadView");
+  if (lv) lv.style.display = "block";
+  if (tv) tv.style.display = "none";
+  if (dmUnsubscribe) {
+    dmUnsubscribe();
+    dmUnsubscribe = null;
+  }
+  dmTargetUserId = null;
+  renderDMConversationsList();
+};
+
+window.showNotifications = function () {
+  viewingProfileUserId = null;
+  window.hideAllScreens();
+  const screen = document.getElementById("notificationScreen");
+  if (screen) screen.style.display = "block";
+  renderNotificationsList();
 };
 
 /* ======================
@@ -2741,318 +2914,502 @@ userDiv.appendChild(
 }
 
 /* ======================
-   DM
+   お知らせ・DM通知・会話一覧管理
 ====================== */
 
-let dmTargetUserId =
-  null;
+let notifUnsubReplies = null;
+let notifUnsubDMs = null;
+let allNotifications = [];
+let allDMConversations = {}; // targetUid -> { lastMessage, unreadCount, targetProfile }
+let dmTargetProfile = null;
 
-let dmUnsubscribe =
-  null;
+// 既読トラッキング用 (localStorage)
+function getReadNotifsMap() {
+  if (!uid) return {};
+  try {
+    return JSON.parse(localStorage.getItem(`read_notifs_${uid}`) || "{}");
+  } catch (e) {
+    return {};
+  }
+}
 
-window.openDM = async function () {
+function saveReadNotif(id) {
+  if (!uid || !id) return;
+  const map = getReadNotifsMap();
+  map[id] = Date.now();
+  try {
+    localStorage.setItem(`read_notifs_${uid}`, JSON.stringify(map));
+  } catch (e) {}
+}
 
-  const input =
-    document.getElementById("dmUserId");
+function getLastReadDMTimes() {
+  if (!uid) return {};
+  try {
+    return JSON.parse(localStorage.getItem(`last_read_dm_${uid}`) || "{}");
+  } catch (e) {
+    return {};
+  }
+}
 
+function saveLastReadDMTime(otherUid, timestamp) {
+  if (!uid || !otherUid) return;
+  const map = getLastReadDMTimes();
+  map[otherUid] = timestamp || Date.now();
+  try {
+    localStorage.setItem(`last_read_dm_${uid}`, JSON.stringify(map));
+  } catch (e) {}
+}
+
+// バッジ数値更新ヘルパー
+function updateBadgeElement(elId, count) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.setAttribute("data-count", count > 0 ? count : 0);
+  el.textContent = count > 99 ? "99+" : (count > 0 ? count : "");
+}
+
+function updateAllBadges() {
+  const unreadNotifs = allNotifications.filter(n => !n.isRead).length;
+  updateBadgeElement("topNotifBadge", unreadNotifs);
+  updateBadgeElement("homeNotifBadge", unreadNotifs);
+  updateBadgeElement("notifTotalBadge", unreadNotifs);
+
+  let unreadDMCount = 0;
+  Object.values(allDMConversations).forEach(c => {
+    unreadDMCount += (c.unreadCount || 0);
+  });
+  updateBadgeElement("topDmBadge", unreadDMCount);
+  updateBadgeElement("homeDmBadge", unreadDMCount);
+  updateBadgeElement("dmListTotalBadge", unreadDMCount);
+}
+
+// 監視開始
+function startNotificationsAndDMsListener() {
+  stopNotificationsAndDMsListener();
+  if (!uid) return;
+
+  // 1. 自分宛ての返信（postsコレクションの replyToOwner == uid）
+  const replyQuery = query(
+    collection(db, "posts"),
+    where("replyToOwner", "==", uid)
+  );
+
+  notifUnsubReplies = onSnapshot(replyQuery, (snapshot) => {
+    const readMap = getReadNotifsMap();
+    const replyNotifs = snapshot.docs
+      .map(docSnap => {
+        const d = docSnap.data();
+        return {
+          id: docSnap.id,
+          type: "reply",
+          title: `💬 ${d.name || "誰か"} さんがあなたの投稿に返信しました`,
+          text: d.text || "",
+          fromName: d.name || "名無し",
+          fromUid: d.owner,
+          targetPostId: d.replyTo,
+          createdAt: d.createdAt || 0,
+          isRead: !!readMap[docSnap.id] || (d.owner === uid)
+        };
+      })
+      .filter(n => n.fromUid !== uid); // 自分の返信は除外
+
+    // 通知統合
+    allNotifications = replyNotifs.sort((a, b) => b.createdAt - a.createdAt);
+    updateAllBadges();
+    const notifScreen = document.getElementById("notificationScreen");
+    if (notifScreen && notifScreen.style.display !== "none") {
+      renderNotificationsList();
+    }
+  }, (err) => console.error("通知受信エラー:", err));
+
+  // 2. 自分宛てのDM（messagesコレクションの receiverId == uid）
+  const dmInQuery = query(
+    collection(db, "messages"),
+    where("receiverId", "==", uid)
+  );
+  // 自分が送信したDMも（messagesコレクションの senderId == uid）で会話相手をリストアップ
+  const dmOutQuery = query(
+    collection(db, "messages"),
+    where("senderId", "==", uid)
+  );
+
+  let inMessages = [];
+  let outMessages = [];
+
+  function processAllDMs() {
+    const all = [...inMessages, ...outMessages].sort((a, b) => b.createdAt - a.createdAt);
+    const lastReadMap = getLastReadDMTimes();
+    const convs = {};
+
+    all.forEach(msg => {
+      const otherUid = msg.senderId === uid ? msg.receiverId : msg.senderId;
+      if (!otherUid || otherUid === uid) return;
+
+      if (!convs[otherUid]) {
+        convs[otherUid] = {
+          otherUid,
+          lastMessage: msg,
+          unreadCount: 0,
+          updatedAt: msg.createdAt || 0
+        };
+      }
+      // 未読判定: 相手から届いたメッセージで、自分が開いた時刻より新しいもの
+      const lastRead = lastReadMap[otherUid] || 0;
+      if (msg.receiverId === uid && (msg.createdAt || 0) > lastRead) {
+        // 現在そのチャット画面を開いていれば既読扱い
+        if (dmTargetUserId === otherUid) {
+          saveLastReadDMTime(otherUid, Date.now());
+        } else {
+          convs[otherUid].unreadCount++;
+        }
+      }
+    });
+
+    allDMConversations = convs;
+    updateAllBadges();
+
+    const dmScreen = document.getElementById("dmScreen");
+    const dmList = document.getElementById("dmListView");
+    if (dmScreen && dmScreen.style.display !== "none" && dmList && dmList.style.display !== "none") {
+      renderDMConversationsList();
+    }
+  }
+
+  const unsub1 = onSnapshot(dmInQuery, (snap) => {
+    inMessages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    processAllDMs();
+  }, (e) => console.error("DM受信(in)エラー:", e));
+
+  const unsub2 = onSnapshot(dmOutQuery, (snap) => {
+    outMessages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    processAllDMs();
+  }, (e) => console.error("DM受信(out)エラー:", e));
+
+  notifUnsubDMs = () => {
+    unsub1();
+    unsub2();
+  };
+}
+
+function stopNotificationsAndDMsListener() {
+  if (notifUnsubReplies) {
+    notifUnsubReplies();
+    notifUnsubReplies = null;
+  }
+  if (notifUnsubDMs) {
+    notifUnsubDMs();
+    notifUnsubDMs = null;
+  }
+  allNotifications = [];
+  allDMConversations = {};
+}
+
+// 通知一覧の描画
+async function renderNotificationsList() {
+  const container = document.getElementById("notificationList");
+  if (!container) return;
+
+  if (allNotifications.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:50px 20px; color:#8b949e;">
+        <div style="font-size:40px; margin-bottom:10px;">📭</div>
+        <p style="margin:0; font-size:14px;">新しいお知らせはありません</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = allNotifications.map(n => {
+    const timeStr = n.createdAt ? new Date(n.createdAt).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+    return `
+      <div class="notif-item ${n.isRead ? "" : "is-unread"}" onclick="clickNotificationItem('${escapeHTML(n.id)}', '${escapeHTML(n.targetPostId || "")}', '${escapeHTML(n.fromUid || "")}')">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <strong style="color:${n.isRead ? '#94a3b8' : '#f0f6fc'}; font-size:13px;">${escapeHTML(n.title)}</strong>
+          <span style="color:#64748b; font-size:11px;">${timeStr}</span>
+        </div>
+        <div style="color:#cbd5e1; font-size:13px; line-height:1.4; word-break:break-word;">
+          ${escapeHTML(n.text || "")}
+        </div>
+        ${!n.isRead ? '<span style="display:inline-block; font-size:10px; color:#ef4444; font-weight:bold; margin-top:4px;">● 未読</span>' : ''}
+      </div>
+    `;
+  }).join("");
+}
+
+window.clickNotificationItem = function (notifId, targetPostId, fromUid) {
+  saveReadNotif(notifId);
+  const target = allNotifications.find(n => n.id === notifId);
+  if (target) target.isRead = true;
+  updateAllBadges();
+  renderNotificationsList();
+
+  // ホームに戻って該当投稿を見る、または相手プロフィールを表示
+  if (fromUid) {
+    showProfile(fromUid);
+  } else {
+    showHome();
+  }
+};
+
+window.markAllNotificationsAsRead = function () {
+  allNotifications.forEach(n => {
+    n.isRead = true;
+    saveReadNotif(n.id);
+  });
+  updateAllBadges();
+  renderNotificationsList();
+};
+
+// DM相手一覧の描画
+async function renderDMConversationsList() {
+  const container = document.getElementById("dmConversationsList");
+  if (!container) return;
+
+  const convList = Object.values(allDMConversations).sort((a, b) => b.updatedAt - a.updatedAt);
+
+  if (convList.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:50px 20px; color:#8b949e; background:#161b22; border-radius:12px; border:1px solid #30363d;">
+        <div style="font-size:40px; margin-bottom:10px;">💬</div>
+        <p style="margin:0 0 10px 0; font-size:14px; font-weight:bold; color:#f0f6fc;">メッセージ履歴はありません</p>
+        <p style="margin:0; font-size:12px; color:#94a3b8;">右上の「➕ 新規DM」やユーザーのプロフィールからDMを開始できます！</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = `<p style="color:#8b949e; text-align:center; padding:15px; font-size:12px;">読み込み中...</p>`;
+
+  const itemsHTML = await Promise.all(convList.map(async (c) => {
+    const prof = await getProfile(c.otherUid);
+    const name = prof?.name || "名無し";
+    const username = prof?.username ? `@${prof.username}` : "";
+    const avatar = prof?.profileImage || createDefaultAvatar(name);
+    const lastMsg = c.lastMessage?.text || "メッセージなし";
+    const isMine = c.lastMessage?.senderId === uid;
+    const timeStr = c.updatedAt ? new Date(c.updatedAt).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+    const hasUnread = (c.unreadCount || 0) > 0;
+
+    return `
+      <div class="dm-conv-item ${hasUnread ? "has-unread" : ""}" onclick="openDMWithUser('${escapeHTML(c.otherUid)}')">
+        <img class="dm-avatar" src="${escapeHTML(avatar)}" alt="${escapeHTML(name)}">
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+            <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+              <strong style="color:#f0f6fc; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(name)}</strong>
+              <span style="color:#64748b; font-size:11px; white-space:nowrap;">${escapeHTML(username)}</span>
+            </div>
+            <span style="color:#64748b; font-size:11px; flex-shrink:0;">${timeStr}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <p style="margin:0; color:${hasUnread ? '#f87171' : '#94a3b8'}; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              ${isMine ? '自分: ' : ''}${escapeHTML(lastMsg)}
+            </p>
+            ${hasUnread ? `<span class="badge-count" style="flex-shrink:0;">${c.unreadCount}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }));
+
+  container.innerHTML = itemsHTML.join("");
+}
+
+window.toggleNewDMPanel = function () {
+  const panel = document.getElementById("newDMPanel");
+  const btn = document.getElementById("newDMBtn");
+  if (!panel) return;
+  const isHidden = panel.style.display === "none";
+  panel.style.display = isHidden ? "block" : "none";
+  if (btn) btn.textContent = isHidden ? "✕ 閉じる" : "➕ 新規DM";
+  if (isHidden) {
+    const input = document.getElementById("dmUsernameInput");
+    if (input) setTimeout(() => input.focus(), 50);
+  }
+};
+
+window.startNewDMByUsername = async function () {
+  const input = document.getElementById("dmUsernameInput");
   if (!input) return;
-
-  let username =
-    input.value.trim();
-
+  let username = input.value.trim().replace(/^@/, "");
   if (!username) {
     alert("DMする相手のユーザー名を入力してください");
     return;
   }
-
-  // @ が付いていてもOK
-  username =
-    username.replace(/^@/, "");
-
   if (!uid) {
     alert("ログインしてください");
     return;
   }
 
   try {
-
-    // username からユーザーを検索
-    const userQuery =
-      query(
-        collection(db, "users"),
-        where("username", "==", username)
-      );
-
-    const snapshot =
-      await getDocs(userQuery);
-
+    const userQuery = query(
+      collection(db, "users"),
+      where("username", "==", username)
+    );
+    const snapshot = await getDocs(userQuery);
     if (snapshot.empty) {
-      alert("そのユーザーが見つかりません");
+      alert("そのユーザー名（@" + username + "）は見つかりませんでした");
       return;
     }
-
-    const targetDoc =
-      snapshot.docs[0];
-
-    const targetId =
-      targetDoc.id;
-
-    if (targetId === uid) {
-      alert("自分にはDMできません");
+    const targetDoc = snapshot.docs[0];
+    if (targetDoc.id === uid) {
+      alert("自分自身にはDMできません");
       return;
     }
+    input.value = "";
+    window.toggleNewDMPanel();
+    await openDMWithUser(targetDoc.id);
+  } catch (e) {
+    alert("ユーザー検索に失敗しました: " + e.message);
+  }
+};
 
-    const profile =
-      targetDoc.data();
+window.openDMFromCurrentProfile = async function () {
+  if (!viewingProfileUserId || viewingProfileUserId === uid) return;
+  window.showDM();
+  await openDMWithUser(viewingProfileUserId);
+};
 
-    dmTargetUserId =
-      targetId;
+// 相手UIDを指定して個別DMチャット画面を開く
+window.openDMWithUser = async function (targetId) {
+  if (!uid || !targetId) return;
 
-    if (dmUnsubscribe) {
-      dmUnsubscribe();
-      dmUnsubscribe = null;
-    }
+  dmTargetUserId = targetId;
+  saveLastReadDMTime(targetId, Date.now());
+  if (allDMConversations[targetId]) {
+    allDMConversations[targetId].unreadCount = 0;
+  }
+  updateAllBadges();
 
-    const conversationId =
-      [uid, dmTargetUserId]
-        .sort()
-        .join("_");
+  const lv = document.getElementById("dmListView");
+  const tv = document.getElementById("dmThreadView");
+  if (lv) lv.style.display = "none";
+  if (tv) tv.style.display = "block";
 
-    const messagesQuery =
-      query(
-        collection(db, "messages"),
-        where(
-          "conversationId",
-          "==",
-          conversationId
-        )
-      );
+  const prof = await getProfile(targetId);
+  dmTargetProfile = prof;
+  const name = prof?.name || "名無し";
+  const username = prof?.username ? `@${prof.username}` : "";
 
-    dmUnsubscribe =
-      onSnapshot(
-        messagesQuery,
-        (snapshot) => {
-
-          const messages =
-            snapshot.docs
-              .map((docSnap) => ({
-                id: docSnap.id,
-                ...docSnap.data()
-              }))
-              .sort(
-                (a, b) =>
-                  a.createdAt - b.createdAt
-              );
-
-          const dmChat =
-            document.getElementById(
-              "dmChat"
-            );
-
-          if (!dmChat) return;
-
-          dmChat.innerHTML =
-            `<p style="color:#aaa;">
-              ${escapeHTML(
-                profile.name ||
-                username ||
-                "名無し"
-              )} さんとのDM
-            </p>` +
-
-            messages.map(
-              (message) => {
-
-                const isMine =
-                  message.senderId === uid;
-
-                return `
-                  <div style="
-                    text-align:${isMine ? "right" : "left"};
-                    margin:8px 0;
-                  ">
-                    <span style="
-                      display:inline-block;
-                      max-width:80%;
-                      padding:9px 12px;
-                      border-radius:12px;
-                      background:${isMine ? "#1d9bf0" : "#222"};
-                      word-break:break-word;
-                    ">
-                      ${escapeHTML(
-                        message.text || ""
-                      )}
-                    </span>
-                  </div>
-                `;
-
-              }
-            ).join("");
-
-          dmChat.scrollTop =
-            dmChat.scrollHeight;
-
-        },
-        (error) => {
-
-          console.error(
-            "DM受信エラー:",
-            error
-          );
-
-        }
-      );
-
-    const dmChat =
-      document.getElementById(
-        "dmChat"
-      );
-
-    if (dmChat) {
-
-      dmChat.innerHTML =
-        `<p style="color:#aaa;">
-          ${escapeHTML(
-            profile.name ||
-            username ||
-            "名無し"
-          )} さんとのDM
-        </p>`;
-
-    }
-
-    const dmInputArea =
-      document.getElementById(
-        "dmInputArea"
-      );
-
-    if (dmInputArea) {
-      dmInputArea.style.display =
-        "block";
-    }
-
-  } catch (error) {
-
-    console.error(
-      "DMユーザー検索エラー:",
-      error
-    );
-
-    alert(
-      "DMユーザーの検索に失敗しました：\n" +
-      error.message
-    );
-
+  const titleEl = document.getElementById("dmThreadHeaderTitle");
+  if (titleEl) {
+    titleEl.innerHTML = `
+      <span onclick="showProfile('${escapeHTML(targetId)}')" style="cursor:pointer; color:#38bdf8; text-decoration:underline;">
+        ${escapeHTML(name)}
+      </span>
+      <span style="font-size:11px; color:#64748b; font-weight:normal;">(${escapeHTML(username)})</span>
+    `;
   }
 
+  const dmChat = document.getElementById("dmChat");
+  if (dmChat) {
+    dmChat.innerHTML = `<p style="color:#8b949e; text-align:center; padding:20px;">メッセージを読み込み中...</p>`;
+  }
+
+  if (dmUnsubscribe) {
+    dmUnsubscribe();
+    dmUnsubscribe = null;
+  }
+
+  const conversationId = [uid, dmTargetUserId].sort().join("_");
+  const messagesQuery = query(
+    collection(db, "messages"),
+    where("conversationId", "==", conversationId)
+  );
+
+  dmUnsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+    saveLastReadDMTime(dmTargetUserId, Date.now());
+    updateAllBadges();
+
+    const messages = snapshot.docs
+      .map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))
+      .sort((a, b) => a.createdAt - b.createdAt);
+
+    if (!dmChat) return;
+
+    if (messages.length === 0) {
+      dmChat.innerHTML = `
+        <div style="text-align:center; padding:30px 10px; color:#8b949e;">
+          <div style="font-size:32px; margin-bottom:8px;">👋</div>
+          <p style="margin:0; font-size:13px;">まだメッセージはありません。<br>${escapeHTML(name)} さんに挨拶してみましょう！</p>
+        </div>
+      `;
+      return;
+    }
+
+    dmChat.innerHTML = messages.map(message => {
+      const isMine = message.senderId === uid;
+      const timeStr = message.createdAt ? new Date(message.createdAt).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }) : "";
+      return `
+        <div style="text-align:${isMine ? "right" : "left"}; margin:8px 0;">
+          <div style="display:inline-flex; flex-direction:column; align-items:${isMine ? "flex-end" : "flex-start"}; max-width:82%;">
+            <span style="
+              display:inline-block;
+              padding:9px 13px;
+              border-radius:${isMine ? "14px 14px 2px 14px" : "14px 14px 14px 2px"};
+              background:${isMine ? "#1d9bf0" : "#21262d"};
+              color:#fff;
+              font-size:13px;
+              line-height:1.45;
+              word-break:break-word;
+              box-shadow:0 1px 3px rgba(0,0,0,0.3);
+            ">
+              ${escapeHTML(message.text || "")}
+            </span>
+            <span style="font-size:10px; color:#64748b; margin-top:2px; padding:0 2px;">
+              ${timeStr}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    dmChat.scrollTop = dmChat.scrollHeight;
+  }, (error) => {
+    console.error("DMリアルタイム受信エラー:", error);
+  });
+
+  const msgInput = document.getElementById("dmMessage");
+  if (msgInput) setTimeout(() => msgInput.focus(), 100);
 };
 
 /* ======================
    DM送信
 ====================== */
 
-window.sendDM =
-async function () {
-
+window.sendDM = async function () {
   if (!uid) {
-
-    alert(
-      "ログインしてください"
-    );
-
+    alert("ログインしてください");
     return;
-
   }
-
 
   if (!dmTargetUserId) {
-
-    alert(
-      "先にDMする相手を選んでください"
-    );
-
+    alert("相手が選択されていません");
     return;
-
   }
 
-
-  const input =
-    document.getElementById(
-      "dmMessage"
-    );
-
-
+  const input = document.getElementById("dmMessage");
   if (!input) return;
 
-
-  const text =
-    input.value.trim();
-
-
-  if (!text) {
-
-    alert(
-      "メッセージを入力してください"
-    );
-
-    return;
-
-  }
-
+  const text = input.value.trim();
+  if (!text) return;
 
   try {
+    const conversationId = [uid, dmTargetUserId].sort().join("_");
+    await addDoc(collection(db, "messages"), {
+      conversationId: conversationId,
+      senderId: uid,
+      receiverId: dmTargetUserId,
+      text: text,
+      createdAt: Date.now()
+    });
 
-    const conversationId =
-      [uid, dmTargetUserId]
-        .sort()
-        .join("_");
-
-
-    await addDoc(
-      collection(
-        db,
-        "messages"
-      ),
-      {
-
-        conversationId:
-          conversationId,
-
-        senderId:
-          uid,
-
-        receiverId:
-          dmTargetUserId,
-
-        text:
-          text,
-
-        createdAt:
-          Date.now()
-
-      }
-    );
-
-
-    input.value =
-      "";
-
-
+    input.value = "";
+    saveLastReadDMTime(dmTargetUserId, Date.now());
   } catch (error) {
-
-    console.error(
-      "DM送信エラー:",
-      error
-    );
-
-
-    alert(
-      "DMの送信に失敗しました：\n" +
-      error.message
-    );
-
+    console.error("DM送信エラー:", error);
+    alert("DMの送信に失敗しました：\n" + error.message);
   }
-
 };
 
 
