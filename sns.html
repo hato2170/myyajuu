@@ -1549,8 +1549,6 @@ button.back {
 
   </div>
 
-  </div>
-
 
 
 <script type="module">
@@ -8430,8 +8428,7 @@ window.createDaifugoInviteUrl = function () {
   const roomKey = "df_" + Math.random().toString(36).slice(2, 8);
   const url = `${location.origin}${location.pathname}?daifugo=${roomKey}`;
   navigator.clipboard.writeText(url).then(() => {
-    alert("招待URLをコピーしました！友達に送信して開いてもらってください。
-" + url);
+    alert("招待URLをコピーしました！友達に送信して開いてもらってください。\n" + url);
   }).catch(() => {
     prompt("招待URLです。コピーして友達に送ってください:", url);
   });
