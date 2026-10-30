@@ -731,7 +731,7 @@ button.back {
               ⚡ サーバー1 (サイト内蔵・同一URL)
             </button>
             <button id="paperServer2Btn" onclick="switchPaperServer(2)" style="background:#1e293b; color:#94a3b8; width:auto; padding:4px 10px; font-size:11px; border-radius:6px; border:1px solid #334155; cursor:pointer;">
-              🌐 サーバー2 (GitHub edu)
+              🌐 サーバー2 (GitHub Pages公式)
             </button>
             <button id="paperServer3Btn" onclick="switchPaperServer(3)" style="background:#1e293b; color:#94a3b8; width:auto; padding:4px 10px; font-size:11px; border-radius:6px; border:1px solid #334155; cursor:pointer;">
               🚀 サーバー3 (GitLab)
@@ -8973,16 +8973,16 @@ const PAPER_COLORS = [
 
 const PAPER_SERVERS = {
   1: {
-    url: "paper/",
-    desc: "サーバー1 (内蔵): チャットサイト内蔵の公式本家Paper.io 2です。同一URL・ブロック完全回避！"
+    url: "paper/index.html",
+    desc: "サーバー1 (サイト内蔵・推奨): 完全内蔵・広告なし・同一URLで学校iPadでも確実に動く本家Paper.io 2です！"
   },
   2: {
-    url: "https://sciencemathedu.github.io/paperio2/",
-    desc: "サーバー2 (GitHub edu): GitHub Pages教育用ミラー配信の公式本家版です。"
+    url: "https://ubg17.github.io/PaperIO2/",
+    desc: "サーバー2 (GitHub Pages公式): 高速・広告なしの公式Unblocked版です。"
   },
   3: {
     url: "https://paperio2.gitlab.io/file/",
-    desc: "サーバー3 (GitLab): GitLab高速サーバー配信の公式版です。"
+    desc: "サーバー3 (GitLabミラー): GitLab高速サーバー配信の公式版です。"
   }
 };
 let currentPaperServer = 1;
@@ -9015,9 +9015,11 @@ window.switchPaperServer = function (serverNum) {
 window.reloadPaper = function () {
   const iframe = document.getElementById("paperOfficialIframe");
   if (iframe) {
-    const s = iframe.src;
+    const cfg = PAPER_SERVERS[currentPaperServer] || PAPER_SERVERS[1];
     iframe.src = "about:blank";
-    setTimeout(() => { iframe.src = s; }, 50);
+    setTimeout(() => {
+      iframe.src = cfg.url + (cfg.url.includes("?") ? "&" : "?") + "t=" + Date.now();
+    }, 50);
   }
 };
 
@@ -9111,8 +9113,8 @@ window.switchPaperTab = function (tab) {
     t2d.style.border = "1px solid #334155";
 
     const iframe = document.getElementById("paperOfficialIframe");
-    if (iframe && (!iframe.src || iframe.src === "about:blank")) {
-      switchPaperServer(1);
+    if (iframe) {
+      switchPaperServer(currentPaperServer || 1);
     }
   } else {
     offCont.style.display = "none";
