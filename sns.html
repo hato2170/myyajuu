@@ -117,6 +117,47 @@ img, video, canvas, svg {
   font-size: 20px;
 }
 
+/* トランプカード共通スタイル (ソリティア & 大富豪) */
+.pcard {
+  width: 42px;
+  height: 60px;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 3px 4px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: bold;
+  font-size: 11px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+.pcard.red {
+  color: #dc2626;
+}
+.pcard.black {
+  color: #0f172a;
+}
+.pcard.back {
+  background: linear-gradient(135deg, #1e3a8a, #172554);
+  border: 1px solid #3b82f6;
+  color: #60a5fa;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+.pcard.selected {
+  transform: translateY(-10px);
+  box-shadow: 0 0 10px #38bdf8, 0 4px 12px rgba(0,0,0,0.5);
+  border: 2px solid #38bdf8;
+}
+
 .post {
   border-bottom: 1px solid #222;
   padding: 12px 0;
@@ -970,6 +1011,26 @@ button.back {
           <span style="font-size:20px; color:#ef4444;">▶</span>
         </div>
       </div>
+
+      <div style="background:#161b22; border:1px solid #30363d; border-radius:12px; padding:16px; cursor:pointer;" onclick="openDaifugoHub()">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <h3 style="margin:0 0 6px 0; color:#f59e0b; font-size:18px;">🃏 大富豪（4人対戦・ハウスルール）</h3>
+            <p style="margin:0; color:#8b949e; font-size:13px;">革命・8切り・都落ち・スートしばり等ルール自由！友達やCPUと本格4人対戦！</p>
+          </div>
+          <span style="font-size:20px; color:#f59e0b;">▶</span>
+        </div>
+      </div>
+
+      <div style="background:#161b22; border:1px solid #30363d; border-radius:12px; padding:16px; cursor:pointer;" onclick="openSolitaireHub()">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <h3 style="margin:0 0 6px 0; color:#10b981; font-size:18px;">♠️ ソリティア（クロンダイク）</h3>
+            <p style="margin:0; color:#8b949e; font-size:13px;">定番トランプゲーム！タップ自動移動対応でiPadでもサクサク遊べる！</p>
+          </div>
+          <span style="font-size:20px; color:#10b981;">▶</span>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -995,8 +1056,20 @@ button.back {
       <h3 style="margin-top:0;">⚫⚪ オセロ対戦ルーム</h3>
 
       <div style="background:#1c2128; padding:14px; border-radius:10px; margin-bottom:12px; border:1px solid #30363d;">
-        <h4 style="margin:0 0 6px 0; color:#38bdf8;">🤖 AI対戦（ひとりで練習）</h4>
-        <p style="margin:0 0 10px 0; color:#94a3b8; font-size:13px;">相手がいなくても今すぐ遊べる！白石のAIと対戦します。</p>
+        <h4 style="margin:0 0 6px 0; color:#38bdf8;">🤖 CPU対戦（ひとりで練習）</h4>
+        <p style="margin:0 0 8px 0; color:#94a3b8; font-size:13px;">最弱Lv.1から最強神モードLv.10まで自由に選んで対局！</p>
+        <div style="background:#161b22; padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid #30363d;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:12px; color:#cbd5e1; font-weight:bold;">難易度レベル:</span>
+            <span id="othelloAiLevelDisplay" style="font-size:12px; color:#38bdf8; font-weight:bold;">Lv.5 (中級)</span>
+          </div>
+          <input type="range" id="othelloAiLevelSlider" min="1" max="10" value="5" oninput="updateOthelloAiLevelDisplay(this.value)" style="width:100%; accent-color:#0284c7; cursor:pointer;">
+          <div style="display:flex; justify-content:space-between; font-size:10px; color:#64748b; margin-top:2px;">
+            <span>Lv.1 (最弱)</span>
+            <span>Lv.5 (中級)</span>
+            <span>Lv.10 (最強)</span>
+          </div>
+        </div>
         <button onclick="startOthelloAI()" style="background:#0284c7; padding:8px;">AIと対戦開始</button>
       </div>
 
@@ -1293,6 +1366,188 @@ button.back {
         </div>
       </div>
     </div>
+
+  </div>
+
+  <!-- ======================
+       大富豪 画面
+  ======================= -->
+
+  <div id="daifugoScreen" style="display:none;">
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <button class="back" onclick="leaveDaifugoGame()" style="margin:0; width:auto; padding:6px 14px;">
+        ← コーナーへ
+      </button>
+      <div style="display:flex; gap:6px;">
+        <button onclick="toggleDaifugoRulesModal(true)" style="background:#1e293b; border:1px solid #334155; color:#f0f6fc; width:auto; padding:6px 10px; font-size:12px; border-radius:8px; cursor:pointer;">
+          ⚙️ ハウスルール
+        </button>
+        <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 12px; font-weight:bold; border-radius:8px;">
+          🚨 緊急回避 (数学)
+        </button>
+      </div>
+    </div>
+
+    <!-- 大富豪ロビー -->
+    <div id="daifugoLobby">
+      <h3 style="margin-top:0;">🃏 大富豪ルーム</h3>
+
+      <div style="background:#1c2128; padding:14px; border-radius:10px; margin-bottom:12px; border:1px solid #30363d;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h4 style="margin:0; color:#f59e0b;">🤖 4人CPU対戦（ひとりで遊ぶ）</h4>
+          <span style="font-size:11px; color:#10b981; background:#064e3b; padding:2px 8px; border-radius:10px;">待機なし即開始</span>
+        </div>
+        <p style="margin:6px 0 10px 0; color:#94a3b8; font-size:13px;">CPUボット3人（たかし・けんた・さくら）と本格4人対戦！革命・8切り・都落ち対応！</p>
+        <button onclick="startDaifugoCPU()" style="background:#d97706; padding:8px; font-weight:bold;">CPU対戦を開始</button>
+      </div>
+
+      <div style="background:#1c2128; padding:14px; border-radius:10px; margin-bottom:12px; border:1px solid #30363d;">
+        <h4 style="margin:0 0 6px 0; color:#4ade80;">🌍 自由参加（誰でも対戦 / 最大4人）</h4>
+        <p style="margin:0 0 10px 0; color:#94a3b8; font-size:13px;">空いている部屋に合流、または部屋を作って待機します（不足はCPUが自動補完）。</p>
+        <button onclick="startDaifugoRandom()" style="background:#16a34a; padding:8px;">対戦相手を探す / 部屋作成</button>
+      </div>
+
+      <div style="background:#1c2128; padding:14px; border-radius:10px; margin-bottom:12px; border:1px solid #30363d;">
+        <h4 style="margin:0 0 6px 0; color:#facc15;">🔑 合言葉で友達と対戦（最大4人）</h4>
+        <p style="margin:0 0 10px 0; color:#94a3b8; font-size:13px;">友達と同じ合言葉（例: 777, 富豪）を入力して一緒に入室！</p>
+        <div style="display:flex; gap:8px;">
+          <input id="daifugoPassInput" placeholder="合言葉 (例: 777)" style="margin-top:0; flex:1;">
+          <button onclick="joinDaifugoPassphrase()" style="background:#ca8a04; width:auto; padding:0 16px; margin-top:0;">入室</button>
+        </div>
+      </div>
+
+      <div style="background:#1c2128; padding:14px; border-radius:10px; margin-bottom:12px; border:1px solid #30363d;">
+        <h4 style="margin:0 0 6px 0; color:#c084fc;">🔗 招待URLを作成</h4>
+        <p style="margin:0 0 10px 0; color:#94a3b8; font-size:13px;">LINEやチャットでリンクを送るだけで友達を直接招待できます。</p>
+        <button onclick="createDaifugoInviteUrl()" style="background:#9333ea; padding:8px;">招待URLを発行してコピー</button>
+      </div>
+    </div>
+
+    <!-- 大富豪ゲームプレイ画面 -->
+    <div id="daifugoGameArea" style="display:none;">
+      <div style="background:#161b22; padding:10px; border-radius:8px; margin-bottom:10px; font-size:14px; display:flex; justify-content:space-between; align-items:center;">
+        <div id="daifugoRoomTitle" style="color:#f59e0b; font-weight:bold;">ルーム: ---</div>
+        <div id="daifugoCopyUrlBtn" style="cursor:pointer; color:#a5d6ff; font-size:12px; display:none;" onclick="copyCurrentDaifugoRoomUrl()">📋 招待URLコピー</div>
+      </div>
+
+      <div id="daifugoStatusBanner" style="background:#21262d; padding:8px 12px; border-radius:6px; margin-bottom:10px; text-align:center; font-size:14px; color:#f0f6fc; min-height:22px; font-weight:bold;">
+        ゲーム待機中...
+      </div>
+
+      <!-- 対戦相手エリア（他3人） -->
+      <div id="daifugoOpponentsArea" style="display:flex; justify-content:space-around; gap:8px; margin-bottom:12px; overflow-x:auto; padding:4px 0;"></div>
+
+      <!-- 中央テーブル（場に出されたカード・状態バッジ） -->
+      <div style="background:linear-gradient(145deg, #1e1b4b, #0f172a); border:2px solid #3b82f6; border-radius:16px; padding:14px; margin-bottom:14px; min-height:130px; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative; box-shadow:inset 0 2px 10px rgba(0,0,0,0.5);">
+        <!-- 特殊状態バッジ -->
+        <div id="daifugoStateBadges" style="position:absolute; top:8px; left:12px; display:flex; gap:6px; flex-wrap:wrap;"></div>
+
+        <!-- 場札コンテナ -->
+        <div id="daifugoTableCards" style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap; min-height:65px; align-items:center;">
+          <span style="color:#64748b; font-size:13px;">（場にカードはありません）</span>
+        </div>
+      </div>
+
+      <!-- プレイヤーエリア（自分の手札＆操作ボタン） -->
+      <div style="background:#161b22; border:1px solid #30363d; border-radius:14px; padding:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <strong id="daifugoMyName" style="color:#f0f6fc; font-size:13px;">あなた</strong>
+            <span id="daifugoMyRank" style="font-size:11px; background:#334155; color:#fff; padding:2px 8px; border-radius:10px;">平民</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button id="daifugoPassBtn" onclick="onDaifugoPassClick()" style="background:#475569; color:#fff; font-size:12px; font-weight:bold; padding:6px 14px; border-radius:8px; width:auto; margin:0;" disabled>
+              パス
+            </button>
+            <button id="daifugoPlayBtn" onclick="onDaifugoPlayClick()" style="background:#2563eb; color:#fff; font-size:12px; font-weight:bold; padding:6px 16px; border-radius:8px; width:auto; margin:0;" disabled>
+              出す
+            </button>
+          </div>
+        </div>
+
+        <!-- 自分の手札 -->
+        <div id="daifugoMyHand" style="display:flex; gap:4px; overflow-x:auto; padding:10px 2px 6px 2px; min-height:80px; align-items:flex-end;"></div>
+      </div>
+
+      <!-- 下部ボタン -->
+      <div style="display:flex; gap:10px; margin-top:10px;">
+        <button onclick="leaveDaifugoGame()" style="background:#30363d; flex:1; padding:8px; font-size:13px; margin:0;">ゲーム終了</button>
+        <button id="daifugoRestartBtn" onclick="restartDaifugoGame()" style="background:#238636; flex:1; padding:8px; font-size:13px; margin:0; display:none;">次の対局へ</button>
+      </div>
+    </div>
+
+    <!-- ハウスルール設定モーダル -->
+    <div id="daifugoRulesModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:99999; justify-content:center; align-items:center; padding:16px;">
+      <div style="background:#161b22; border:1px solid #30363d; border-radius:16px; padding:18px; width:100%; max-width:380px; box-shadow:0 8px 30px rgba(0,0,0,0.9); max-height:85vh; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="margin:0; color:#f59e0b; font-size:16px;">⚙️ 大富豪 ハウスルール設定</h3>
+          <button onclick="toggleDaifugoRulesModal(false)" style="background:#21262d; border:none; color:#94a3b8; font-size:12px; width:24px; height:24px; border-radius:50%; cursor:pointer; padding:0; margin:0;">✕</button>
+        </div>
+        <div id="daifugoRulesList" style="display:flex; flex-direction:column; gap:10px; font-size:13px;"></div>
+        <button onclick="toggleDaifugoRulesModal(false)" style="background:#d97706; color:#fff; font-weight:bold; margin-top:14px; padding:10px; border-radius:8px;">設定を保存して閉じる</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ======================
+       ソリティア (クロンダイク) 画面
+  ======================= -->
+
+  <div id="solitaireScreen" style="display:none;">
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <button class="back" onclick="showGameCorner()" style="margin:0; width:auto; padding:6px 14px;">
+        ← コーナーへ
+      </button>
+      <div style="display:flex; gap:6px;">
+        <button onclick="restartSolitaire()" style="background:#1e293b; border:1px solid #334155; color:#f0f6fc; width:auto; padding:6px 10px; font-size:12px; border-radius:8px; cursor:pointer;">
+          🔄 最初から
+        </button>
+        <button onclick="startNewSolitaireGame()" style="background:#10b981; color:#fff; width:auto; padding:6px 10px; font-size:12px; font-weight:bold; border-radius:8px; cursor:pointer;">
+          🆕 新ゲーム
+        </button>
+        <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 12px; font-weight:bold; border-radius:8px;">
+          🚨 緊急回避 (数学)
+        </button>
+      </div>
+    </div>
+
+    <!-- ステータスバー -->
+    <div style="display:flex; justify-content:space-between; align-items:center; background:#161b22; border:1px solid #30363d; border-radius:10px; padding:8px 14px; margin-bottom:12px; font-size:13px;">
+      <div style="display:flex; gap:12px;">
+        <span style="color:#94a3b8;">スコア: <strong id="solitaireScore" style="color:#f0f6fc;">0</strong></span>
+        <span style="color:#94a3b8;">手数: <strong id="solitaireMoves" style="color:#f0f6fc;">0</strong></span>
+      </div>
+      <button id="solitaireAutoBtn" onclick="autoSolveSolitaire()" style="display:none; background:linear-gradient(135deg, #f59e0b, #d97706); color:#fff; font-size:11px; font-weight:bold; padding:4px 10px; border-radius:6px; border:none; cursor:pointer;">
+        ✨ 自動完成
+      </button>
+    </div>
+
+    <!-- ソリティア盤面コンテナ (グリーンフェルト風背景) -->
+    <div id="solitaireBoard" style="background:#064e3b; border:2px solid #047857; border-radius:14px; padding:12px 8px; min-height:480px; user-select:none; box-shadow:inset 0 2px 10px rgba(0,0,0,0.5);">
+      <!-- 上段: 山札 / 捨て札 (左) ＆ 組札 4枠 (右) -->
+      <div style="display:flex; justify-content:space-between; gap:6px; margin-bottom:14px;">
+        <div style="display:flex; gap:6px;">
+          <div id="solStock" onclick="drawSolitaireStock()" style="width:42px; height:60px; border:1px dashed #059669; border-radius:6px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:#022c22;">
+            <span style="font-size:20px;">🎴</span>
+          </div>
+          <div id="solWaste" onclick="clickSolWaste()" style="width:42px; height:60px; border:1px solid #047857; border-radius:6px; position:relative;"></div>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <div id="solFound0" onclick="clickSolFoundation(0)" style="width:42px; height:60px; border:1px dashed #059669; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#047857; font-size:16px; cursor:pointer; position:relative;">♠</div>
+          <div id="solFound1" onclick="clickSolFoundation(1)" style="width:42px; height:60px; border:1px dashed #059669; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#047857; font-size:16px; cursor:pointer; position:relative;">♥</div>
+          <div id="solFound2" onclick="clickSolFoundation(2)" style="width:42px; height:60px; border:1px dashed #059669; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#047857; font-size:16px; cursor:pointer; position:relative;">♦</div>
+          <div id="solFound3" onclick="clickSolFoundation(3)" style="width:42px; height:60px; border:1px dashed #059669; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#047857; font-size:16px; cursor:pointer; position:relative;">♣</div>
+        </div>
+      </div>
+
+      <!-- 下段: 場札 7列 -->
+      <div id="solTableauArea" style="display:grid; grid-template-columns:repeat(7, 1fr); gap:4px; min-height:360px;"></div>
+    </div>
+
+  </div>
 
   </div>
 
@@ -2604,7 +2859,9 @@ window.hideAllScreens = function () {
     "gameCornerScreen",
     "othelloScreen",
     "snowballScreen",
-    "unoScreen"
+    "unoScreen",
+    "daifugoScreen",
+    "solitaireScreen"
   ];
   ids.forEach((id) => {
     const el = document.getElementById(id);
@@ -5004,8 +5261,216 @@ async function handleOthelloCellClick(r, c, flips) {
   }
 }
 
+let othelloAiLevel = 5;
+
+const OTHELLO_LEVEL_NAMES = {
+  1: "Lv.1 (最弱・あほCPU)",
+  2: "Lv.2 (入門)",
+  3: "Lv.3 (初級・枚数重視)",
+  4: "Lv.4 (中級・角狙い)",
+  5: "Lv.5 (中級・定石考慮)",
+  6: "Lv.6 (上級・開放度重視)",
+  7: "Lv.7 (有段・2手先読み)",
+  8: "Lv.8 (熟練・位置テーブル3手読み)",
+  9: "Lv.9 (達人・αβ枝刈り4手読み)",
+  10: "Lv.10 (最強・神モード完全読み)"
+};
+
+window.updateOthelloAiLevelDisplay = function (val) {
+  othelloAiLevel = parseInt(val) || 5;
+  const label = document.getElementById("othelloAiLevelDisplay");
+  if (label) {
+    label.textContent = OTHELLO_LEVEL_NAMES[othelloAiLevel] || `Lv.${othelloAiLevel}`;
+  }
+};
+
+const OTHELLO_EVAL_MATRIX = [
+  [ 120, -30,  20,   5,   5,  20, -30,  120],
+  [ -30, -50,  -5,  -5,  -5,  -5, -50,  -30],
+  [  20,  -5,  15,   3,   3,  15,  -5,   20],
+  [   5,  -5,   3,   3,   3,   3,  -5,    5],
+  [   5,  -5,   3,   3,   3,   3,  -5,    5],
+  [  20,  -5,  15,   3,   3,  15,  -5,   20],
+  [ -30, -50,  -5,  -5,  -5,  -5, -50,  -30],
+  [ 120, -30,  20,   5,   5,  20, -30,  120]
+];
+
+function evaluateOthelloBoard(board, player) {
+  const opp = player === 1 ? 2 : 1;
+  let score = 0;
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (board[r][c] === player) score += OTHELLO_EVAL_MATRIX[r][c];
+      else if (board[r][c] === opp) score -= OTHELLO_EVAL_MATRIX[r][c];
+    }
+  }
+  const myMoves = getValidOthelloMoves(board, player).length;
+  const oppMoves = getValidOthelloMoves(board, opp).length;
+  score += (myMoves - oppMoves) * 8;
+  return score;
+}
+
+function cloneOthelloBoard(board) {
+  return board.map(row => [...row]);
+}
+
+function applyOthelloMove(board, move, player) {
+  const newB = cloneOthelloBoard(board);
+  newB[move.r][move.c] = player;
+  for (const [fr, fc] of move.flips) {
+    newB[fr][fc] = player;
+  }
+  return newB;
+}
+
+function othelloMinimax(board, depth, alpha, beta, isMaximizing, aiRole) {
+  const currentRole = isMaximizing ? aiRole : (aiRole === 1 ? 2 : 1);
+  const moves = getValidOthelloMoves(board, currentRole);
+
+  if (depth === 0 || moves.length === 0) {
+    return evaluateOthelloBoard(board, aiRole);
+  }
+
+  if (isMaximizing) {
+    let maxEval = -999999;
+    for (const m of moves) {
+      const nextB = applyOthelloMove(board, m, currentRole);
+      const ev = othelloMinimax(nextB, depth - 1, alpha, beta, false, aiRole);
+      maxEval = Math.max(maxEval, ev);
+      alpha = Math.max(alpha, ev);
+      if (beta <= alpha) break;
+    }
+    return maxEval;
+  } else {
+    let minEval = 999999;
+    for (const m of moves) {
+      const nextB = applyOthelloMove(board, m, currentRole);
+      const ev = othelloMinimax(nextB, depth - 1, alpha, beta, true, aiRole);
+      minEval = Math.min(minEval, ev);
+      beta = Math.min(beta, ev);
+      if (beta <= alpha) break;
+    }
+    return minEval;
+  }
+}
+
+function pickOthelloAiMove(board, moves, level) {
+  if (moves.length === 1) return moves[0];
+
+  if (level === 1) {
+    return moves[Math.floor(Math.random() * moves.length)];
+  }
+  if (level === 2) {
+    if (Math.random() < 0.7) return moves[Math.floor(Math.random() * moves.length)];
+    return [...moves].sort((a, b) => b.flips.length - a.flips.length)[0];
+  }
+  if (level === 3) {
+    return [...moves].sort((a, b) => b.flips.length - a.flips.length)[0];
+  }
+  if (level === 4) {
+    const corners = moves.filter(m => (m.r === 0 || m.r === 7) && (m.c === 0 || m.c === 7));
+    if (corners.length > 0) return corners[0];
+    return [...moves].sort((a, b) => b.flips.length - a.flips.length)[0];
+  }
+  if (level === 5) {
+    let best = moves[0];
+    let bestScore = -9999;
+    for (const m of moves) {
+      let score = m.flips.length;
+      if ((m.r === 0 || m.r === 7) && (m.c === 0 || m.c === 7)) score += 100;
+      else if (m.r === 0 || m.r === 7 || m.c === 0 || m.c === 7) score += 15;
+      const isBadAdj = (
+        (m.r <= 1 && m.c <= 1 && board[0][0] === 0) ||
+        (m.r <= 1 && m.c >= 6 && board[0][7] === 0) ||
+        (m.r >= 6 && m.c <= 1 && board[7][0] === 0) ||
+        (m.r >= 6 && m.c >= 6 && board[7][7] === 0)
+      );
+      if (isBadAdj) score -= 40;
+      if (score > bestScore) {
+        bestScore = score;
+        best = m;
+      }
+    }
+    return best;
+  }
+  if (level === 6) {
+    let best = moves[0];
+    let bestScore = -99999;
+    for (const m of moves) {
+      const nextB = applyOthelloMove(board, m, 2);
+      const ev = evaluateOthelloBoard(nextB, 2);
+      if (ev > bestScore) {
+        bestScore = ev;
+        best = m;
+      }
+    }
+    return best;
+  }
+  if (level === 7) {
+    let best = moves[0];
+    let bestScore = -99999;
+    for (const m of moves) {
+      const nextB = applyOthelloMove(board, m, 2);
+      const ev = othelloMinimax(nextB, 1, -999999, 999999, false, 2);
+      if (ev > bestScore) {
+        bestScore = ev;
+        best = m;
+      }
+    }
+    return best;
+  }
+  if (level === 8) {
+    let best = moves[0];
+    let bestScore = -99999;
+    for (const m of moves) {
+      const nextB = applyOthelloMove(board, m, 2);
+      const ev = othelloMinimax(nextB, 2, -999999, 999999, false, 2);
+      if (ev > bestScore) {
+        bestScore = ev;
+        best = m;
+      }
+    }
+    return best;
+  }
+  if (level === 9) {
+    let best = moves[0];
+    let bestScore = -99999;
+    for (const m of moves) {
+      const nextB = applyOthelloMove(board, m, 2);
+      const ev = othelloMinimax(nextB, 3, -999999, 999999, false, 2);
+      if (ev > bestScore) {
+        bestScore = ev;
+        best = m;
+      }
+    }
+    return best;
+  }
+
+  // Level 10 (最強・神モード)
+  let depth = 3;
+  let emptyCount = 0;
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (board[r][c] === 0) emptyCount++;
+    }
+  }
+  if (emptyCount <= 10) depth = 5;
+
+  let best = moves[0];
+  let bestScore = -999999;
+  for (const m of moves) {
+    const nextB = applyOthelloMove(board, m, 2);
+    const ev = othelloMinimax(nextB, depth, -999999, 999999, false, 2);
+    if (ev > bestScore) {
+      bestScore = ev;
+      best = m;
+    }
+  }
+  return best;
+}
+
 function runOthelloAIMove() {
-  document.getElementById("othelloStatusBanner").textContent = "🤖 AIが思考中...";
+  document.getElementById("othelloStatusBanner").textContent = `🤖 CPU (${OTHELLO_LEVEL_NAMES[othelloAiLevel] || 'Lv.' + othelloAiLevel}) が思考中...`;
   setTimeout(() => {
     if (localOthelloStatus === "finished" || localOthelloTurn !== 2) return;
     const moves = getValidOthelloMoves(localOthelloBoard, 2);
@@ -5013,7 +5478,7 @@ function runOthelloAIMove() {
       const p1Moves = getValidOthelloMoves(localOthelloBoard, 1);
       if (p1Moves.length > 0) {
         localOthelloTurn = 1;
-        document.getElementById("othelloStatusBanner").textContent = "AIは置けるマスがありませんでした（パス）。あなたの手番です！";
+        document.getElementById("othelloStatusBanner").textContent = "CPUは置けるマスがありませんでした（パス）。あなたの手番です！";
         renderOthelloUI(localOthelloBoard, localOthelloTurn, 1, true, false);
       } else {
         finishAIGame();
@@ -5021,27 +5486,7 @@ function runOthelloAIMove() {
       return;
     }
 
-    // AI評価関数 (四隅重視 + 危険マス回避)
-    let bestMove = moves[0];
-    let bestScore = -9999;
-    for (const m of moves) {
-      let score = m.flips.length;
-      if ((m.r === 0 || m.r === 7) && (m.c === 0 || m.c === 7)) score += 100;
-      else if (m.r === 0 || m.r === 7 || m.c === 0 || m.c === 7) score += 15;
-
-      const isBadAdj = (
-        (m.r <= 1 && m.c <= 1 && localOthelloBoard[0][0] === 0) ||
-        (m.r <= 1 && m.c >= 6 && localOthelloBoard[0][7] === 0) ||
-        (m.r >= 6 && m.c <= 1 && localOthelloBoard[7][0] === 0) ||
-        (m.r >= 6 && m.c >= 6 && localOthelloBoard[7][7] === 0)
-      );
-      if (isBadAdj) score -= 30;
-
-      if (score > bestScore) {
-        bestScore = score;
-        bestMove = m;
-      }
-    }
+    const bestMove = pickOthelloAiMove(localOthelloBoard, moves, othelloAiLevel);
 
     localOthelloBoard[bestMove.r][bestMove.c] = 2;
     for (const [fr, fc] of bestMove.flips) {
@@ -5056,14 +5501,14 @@ function runOthelloAIMove() {
     } else {
       const aiMovesAgain = getValidOthelloMoves(localOthelloBoard, 2);
       if (aiMovesAgain.length > 0) {
-        document.getElementById("othelloStatusBanner").textContent = "あなたの手番がパスされました。AIが続けて打ちます。";
+        document.getElementById("othelloStatusBanner").textContent = "あなたの手番がパスされました。CPUが続けて打ちます。";
         renderOthelloUI(localOthelloBoard, localOthelloTurn, 1, false, false);
         runOthelloAIMove();
       } else {
         finishAIGame();
       }
     }
-  }, 450);
+  }, 400);
 }
 
 function finishAIGame() {
@@ -5086,14 +5531,15 @@ window.startOthelloAI = function () {
   localOthelloTurn = 1;
   localOthelloStatus = "playing";
 
+  const levelName = OTHELLO_LEVEL_NAMES[othelloAiLevel] || `Lv.${othelloAiLevel}`;
   document.getElementById("othelloLobby").style.display = "none";
   document.getElementById("othelloGameArea").style.display = "block";
-  document.getElementById("othelloRoomTitle").textContent = "🤖 AI対戦";
+  document.getElementById("othelloRoomTitle").textContent = `🤖 CPU対戦 (${levelName})`;
   document.getElementById("othelloCopyUrlBtn").style.display = "none";
   document.getElementById("othelloRestartBtn").style.display = "none";
   document.getElementById("othelloBlackName").textContent = "あなた (黒)";
-  document.getElementById("othelloWhiteName").textContent = "AI (白)";
-  document.getElementById("othelloStatusBanner").textContent = "対局開始！あなたの手番です（黒）";
+  document.getElementById("othelloWhiteName").textContent = `CPU (${levelName})`;
+  document.getElementById("othelloStatusBanner").textContent = `対局開始！難易度: ${levelName}。あなたの手番です（黒）`;
 
   renderOthelloUI(localOthelloBoard, localOthelloTurn, 1, true, false);
 };
@@ -6911,6 +7357,1114 @@ window.restartUnoGame = function () {
     enterUnoOnlineRoom(currentUnoRoomId);
   }
 };
+
+
+/* ======================
+   ソリティア (クロンダイク)
+====================== */
+
+let solStock = [];
+let solWaste = [];
+let solFoundations = [[], [], [], []];
+let solTableau = [[], [], [], [], [], [], []];
+let solScore = 0;
+let solMoves = 0;
+let solSelected = null;
+let solInitialSnapshot = null;
+
+const SOL_SUITS = [
+  { name: "spade", symbol: "♠", color: "black", foundIdx: 0 },
+  { name: "heart", symbol: "♥", color: "red", foundIdx: 1 },
+  { name: "diamond", symbol: "♦", color: "red", foundIdx: 2 },
+  { name: "club", symbol: "♣", color: "black", foundIdx: 3 }
+];
+
+const SOL_NUM_NAMES = {
+  1: "A", 2: "2", 3: "3", 4: "4", 5: "5", 6: "6", 7: "7", 8: "8", 9: "9", 10: "10", 11: "J", 12: "Q", 13: "K"
+};
+
+function createSolDeck() {
+  const deck = [];
+  for (let sIdx = 0; sIdx < 4; sIdx++) {
+    for (let num = 1; num <= 13; num++) {
+      deck.push({
+        id: `${SOL_SUITS[sIdx].name}_${num}_${Math.random().toString(36).slice(2, 6)}`,
+        suit: SOL_SUITS[sIdx].name,
+        symbol: SOL_SUITS[sIdx].symbol,
+        color: SOL_SUITS[sIdx].color,
+        foundIdx: SOL_SUITS[sIdx].foundIdx,
+        num: num,
+        name: SOL_NUM_NAMES[num],
+        faceUp: false
+      });
+    }
+  }
+  return deck;
+}
+
+function shuffleSolDeck(deck) {
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
+}
+
+window.openSolitaireHub = function () {
+  window.hideAllScreens();
+  const screen = document.getElementById("solitaireScreen");
+  if (screen) screen.style.display = "block";
+  if (!solInitialSnapshot) {
+    window.startNewSolitaireGame();
+  } else {
+    renderSolitaireUI();
+  }
+};
+
+window.startNewSolitaireGame = function () {
+  const deck = shuffleSolDeck(createSolDeck());
+  solStock = [];
+  solWaste = [];
+  solFoundations = [[], [], [], []];
+  solTableau = [[], [], [], [], [], [], []];
+  solScore = 0;
+  solMoves = 0;
+  solSelected = null;
+
+  for (let col = 0; col < 7; col++) {
+    for (let row = 0; row <= col; row++) {
+      const card = deck.pop();
+      card.faceUp = (row === col);
+      solTableau[col].push(card);
+    }
+  }
+
+  solStock = deck;
+
+  solInitialSnapshot = JSON.stringify({
+    stock: solStock,
+    waste: solWaste,
+    foundations: solFoundations,
+    tableau: solTableau
+  });
+
+  renderSolitaireUI();
+};
+
+window.restartSolitaire = function () {
+  if (!solInitialSnapshot) {
+    window.startNewSolitaireGame();
+    return;
+  }
+  const snap = JSON.parse(solInitialSnapshot);
+  solStock = snap.stock;
+  solWaste = snap.waste;
+  solFoundations = snap.foundations;
+  solTableau = snap.tableau;
+  solScore = 0;
+  solMoves = 0;
+  solSelected = null;
+  renderSolitaireUI();
+};
+
+window.drawSolitaireStock = function () {
+  solSelected = null;
+  if (solStock.length > 0) {
+    const card = solStock.pop();
+    card.faceUp = true;
+    solWaste.push(card);
+    solMoves++;
+  } else if (solWaste.length > 0) {
+    solStock = solWaste.reverse().map(c => {
+      c.faceUp = false;
+      return c;
+    });
+    solWaste = [];
+    solMoves++;
+  }
+  renderSolitaireUI();
+};
+
+window.clickSolWaste = function () {
+  if (solWaste.length === 0) return;
+  const topCard = solWaste[solWaste.length - 1];
+
+  if (solSelected && solSelected.location === "waste") {
+    solSelected = null;
+    renderSolitaireUI();
+    return;
+  }
+
+  const canSendFound = tryAutoMoveCardToFoundation(topCard);
+  if (canSendFound) {
+    solWaste.pop();
+    solScore += 10;
+    solMoves++;
+    solSelected = null;
+    checkSolitaireWinCondition();
+    renderSolitaireUI();
+    return;
+  }
+
+  solSelected = { location: "waste", card: topCard };
+  renderSolitaireUI();
+};
+
+function tryAutoMoveCardToFoundation(card) {
+  const fIdx = card.foundIdx;
+  const foundPile = solFoundations[fIdx];
+  if (foundPile.length === 0) {
+    if (card.num === 1) {
+      foundPile.push(card);
+      return true;
+    }
+  } else {
+    const top = foundPile[foundPile.length - 1];
+    if (top.num + 1 === card.num) {
+      foundPile.push(card);
+      return true;
+    }
+  }
+  return false;
+}
+
+window.clickSolFoundation = function (fIdx) {
+  const foundPile = solFoundations[fIdx];
+
+  if (solSelected) {
+    const card = solSelected.card;
+    let valid = false;
+    if (foundPile.length === 0 && card.num === 1 && card.foundIdx === fIdx) {
+      valid = true;
+    } else if (foundPile.length > 0) {
+      const top = foundPile[foundPile.length - 1];
+      if (top.foundIdx === fIdx && top.num + 1 === card.num) {
+        valid = true;
+      }
+    }
+
+    if (valid) {
+      removeSelectedSolCard();
+      foundPile.push(card);
+      solScore += 10;
+      solMoves++;
+      solSelected = null;
+      checkSolitaireWinCondition();
+      renderSolitaireUI();
+      return;
+    }
+  }
+
+  if (foundPile.length > 0) {
+    const card = foundPile[foundPile.length - 1];
+    if (solSelected && solSelected.location === "found" && solSelected.fIdx === fIdx) {
+      solSelected = null;
+    } else {
+      solSelected = { location: "found", fIdx: fIdx, card: card };
+    }
+    renderSolitaireUI();
+  }
+};
+
+window.clickSolTableau = function (colIdx, cardIdx) {
+  const col = solTableau[colIdx];
+
+  if (col.length === 0) {
+    if (solSelected && solSelected.card.num === 13) {
+      const movingCards = getSelectedSolCards();
+      removeSelectedSolCard();
+      solTableau[colIdx].push(...movingCards);
+      solScore += 5;
+      solMoves++;
+      solSelected = null;
+      renderSolitaireUI();
+    }
+    return;
+  }
+
+  const clickedCard = col[cardIdx];
+
+  if (!clickedCard.faceUp) {
+    if (cardIdx === col.length - 1) {
+      clickedCard.faceUp = true;
+      solScore += 5;
+      solMoves++;
+      renderSolitaireUI();
+    }
+    return;
+  }
+
+  if (solSelected) {
+    if (solSelected.location === "tableau" && solSelected.colIdx === colIdx && solSelected.cardIdx === cardIdx) {
+      solSelected = null;
+      renderSolitaireUI();
+      return;
+    }
+
+    const movingCard = solSelected.card;
+    const destCard = col[col.length - 1];
+
+    if (destCard.color !== movingCard.color && destCard.num === movingCard.num + 1) {
+      const movingCards = getSelectedSolCards();
+      removeSelectedSolCard();
+      solTableau[colIdx].push(...movingCards);
+      solScore += 5;
+      solMoves++;
+      solSelected = null;
+      renderSolitaireUI();
+      return;
+    }
+  }
+
+  if (cardIdx === col.length - 1) {
+    const canFound = tryAutoMoveCardToFoundation(clickedCard);
+    if (canFound) {
+      col.pop();
+      if (col.length > 0 && !col[col.length - 1].faceUp) {
+        col[col.length - 1].faceUp = true;
+        solScore += 5;
+      }
+      solScore += 10;
+      solMoves++;
+      solSelected = null;
+      checkSolitaireWinCondition();
+      renderSolitaireUI();
+      return;
+    }
+  }
+
+  solSelected = {
+    location: "tableau",
+    colIdx: colIdx,
+    cardIdx: cardIdx,
+    card: clickedCard
+  };
+  renderSolitaireUI();
+};
+
+function getSelectedSolCards() {
+  if (!solSelected) return [];
+  if (solSelected.location === "waste" || solSelected.location === "found") {
+    return [solSelected.card];
+  }
+  if (solSelected.location === "tableau") {
+    const col = solTableau[solSelected.colIdx];
+    return col.slice(solSelected.cardIdx);
+  }
+  return [];
+}
+
+function removeSelectedSolCard() {
+  if (!solSelected) return;
+  if (solSelected.location === "waste") {
+    solWaste.pop();
+  } else if (solSelected.location === "found") {
+    solFoundations[solSelected.fIdx].pop();
+  } else if (solSelected.location === "tableau") {
+    const col = solTableau[solSelected.colIdx];
+    col.splice(solSelected.cardIdx);
+    if (col.length > 0 && !col[col.length - 1].faceUp) {
+      col[col.length - 1].faceUp = true;
+      solScore += 5;
+    }
+  }
+}
+
+function checkSolitaireWinCondition() {
+  const totalFound = solFoundations.reduce((acc, f) => acc + f.length, 0);
+  if (totalFound === 52) {
+    setTimeout(() => {
+      alert("🎉 祝・クリア！ソリティア完成おめでとうございます！スコア: " + solScore);
+    }, 200);
+    return;
+  }
+
+  let allFaceUp = true;
+  for (const col of solTableau) {
+    for (const c of col) {
+      if (!c.faceUp) { allFaceUp = false; break; }
+    }
+  }
+  const canAuto = allFaceUp && solStock.length === 0 && solWaste.length === 0;
+  const autoBtn = document.getElementById("solitaireAutoBtn");
+  if (autoBtn) autoBtn.style.display = canAuto ? "block" : "none";
+}
+
+window.autoSolveSolitaire = function () {
+  let moved = false;
+  for (let c = 0; c < 7; c++) {
+    const col = solTableau[c];
+    if (col.length > 0) {
+      const card = col[col.length - 1];
+      if (tryAutoMoveCardToFoundation(card)) {
+        col.pop();
+        solScore += 10;
+        solMoves++;
+        moved = true;
+        break;
+      }
+    }
+  }
+  renderSolitaireUI();
+  checkSolitaireWinCondition();
+  if (moved) {
+    setTimeout(window.autoSolveSolitaire, 80);
+  }
+};
+
+function renderSolitaireUI() {
+  document.getElementById("solitaireScore").textContent = solScore;
+  document.getElementById("solitaireMoves").textContent = solMoves;
+
+  const wasteEl = document.getElementById("solWaste");
+  if (wasteEl) {
+    if (solWaste.length === 0) {
+      wasteEl.innerHTML = "";
+    } else {
+      const top = solWaste[solWaste.length - 1];
+      const isSel = solSelected && solSelected.location === "waste";
+      wasteEl.innerHTML = `
+        <div class="pcard ${top.color} ${isSel ? 'selected' : ''}" style="width:100%; height:100%; margin:0;">
+          <div style="font-size:10px;">${top.symbol}${top.name}</div>
+          <div style="font-size:16px; text-align:center;">${top.symbol}</div>
+          <div style="font-size:10px; text-align:right;">${top.name}</div>
+        </div>
+      `;
+    }
+  }
+
+  for (let i = 0; i < 4; i++) {
+    const fEl = document.getElementById(`solFound${i}`);
+    if (!fEl) continue;
+    const fPile = solFoundations[i];
+    if (fPile.length === 0) {
+      const symbols = ["♠", "♥", "♦", "♣"];
+      fEl.innerHTML = symbols[i];
+    } else {
+      const top = fPile[fPile.length - 1];
+      const isSel = solSelected && solSelected.location === "found" && solSelected.fIdx === i;
+      fEl.innerHTML = `
+        <div class="pcard ${top.color} ${isSel ? 'selected' : ''}" style="width:100%; height:100%; margin:0;">
+          <div style="font-size:10px;">${top.symbol}${top.name}</div>
+          <div style="font-size:16px; text-align:center;">${top.symbol}</div>
+          <div style="font-size:10px; text-align:right;">${top.name}</div>
+        </div>
+      `;
+    }
+  }
+
+  const tableauArea = document.getElementById("solTableauArea");
+  if (!tableauArea) return;
+  tableauArea.innerHTML = "";
+
+  for (let colIdx = 0; colIdx < 7; colIdx++) {
+    const col = solTableau[colIdx];
+    const colDiv = document.createElement("div");
+    colDiv.style.position = "relative";
+    colDiv.style.minHeight = "280px";
+    colDiv.onclick = (e) => {
+      if (e.target === colDiv && col.length === 0) {
+        window.clickSolTableau(colIdx, 0);
+      }
+    };
+
+    if (col.length === 0) {
+      colDiv.innerHTML = `<div style="width:100%; height:60px; border:1px dashed #059669; border-radius:6px; background:rgba(0,0,0,0.15);"></div>`;
+    } else {
+      col.forEach((card, cardIdx) => {
+        const isSel = solSelected && solSelected.location === "tableau" && solSelected.colIdx === colIdx && cardIdx >= solSelected.cardIdx;
+        const cardDiv = document.createElement("div");
+        cardDiv.className = `pcard ${card.faceUp ? card.color : 'back'} ${isSel ? 'selected' : ''}`;
+        cardDiv.style.position = "absolute";
+        cardDiv.style.top = `${cardIdx * 18}px`;
+        cardDiv.style.left = "0";
+        cardDiv.style.right = "0";
+        cardDiv.style.width = "100%";
+        cardDiv.style.zIndex = cardIdx + 1;
+
+        if (card.faceUp) {
+          cardDiv.innerHTML = `
+            <div style="font-size:10px;">${card.symbol}${card.name}</div>
+            <div style="font-size:14px; text-align:center;">${card.symbol}</div>
+            <div style="font-size:10px; text-align:right;">${card.name}</div>
+          `;
+        } else {
+          cardDiv.innerHTML = `🎴`;
+        }
+
+        cardDiv.onclick = (e) => {
+          e.stopPropagation();
+          window.clickSolTableau(colIdx, cardIdx);
+        };
+        colDiv.appendChild(cardDiv);
+      });
+    }
+
+    tableauArea.appendChild(colDiv);
+  }
+}
+
+/* ======================
+   大富豪 (Daifugo) システム
+====================== */
+
+const DAIFUGO_DEFAULT_RULES = {
+  revolution: true,     // 革命
+  eightCut: true,       // 8切り
+  miyakochi: true,      // 都落ち
+  suitLock: true,       // スートしばり
+  spade3Return: true,   // スペ3返し
+  elevenBack: true,     // 11バック
+  stairs: true,         // 階段
+  twoJokers: false      // ジョーカー2枚
+};
+
+let daifugoRules = { ...DAIFUGO_DEFAULT_RULES };
+
+try {
+  const savedR = localStorage.getItem("daifugo_house_rules");
+  if (savedR) daifugoRules = { ...DAIFUGO_DEFAULT_RULES, ...JSON.parse(savedR) };
+} catch (e) {}
+
+let currentDaifugoMode = "cpu";
+let currentDaifugoRoomId = null;
+let daifugoUnsubscribe = null;
+let daifugoBotTimer = null;
+
+let daifugoState = {
+  status: "waiting", // waiting, playing, finished
+  players: [],       // [{ id, name, isHuman, hand: [], rank: "平民", finishedRank: 0 }]
+  turnIndex: 0,
+  table: null,       // { cards: [], playedBy: idx, suit: "", type: "single"|"pair"|"triple"|"stairs", strength: num }
+  passCount: 0,
+  isRevolution: false,
+  is11Back: false,
+  lockedSuit: null,
+  selectedIndices: [],
+  lastAction: ""
+};
+
+const DF_SUITS = [
+  { name: "spade", symbol: "♠", color: "black", order: 4 },
+  { name: "heart", symbol: "♥", color: "red", order: 3 },
+  { name: "diamond", symbol: "♦", color: "red", order: 2 },
+  { name: "club", symbol: "♣", color: "black", order: 1 }
+];
+
+const DF_RANKS = ["大富豪 👑", "富豪 🎩", "平民 👤", "大貧民 🧹"];
+
+function getDaifugoCardStrength(num, isRev) {
+  if (num === 99) return 999; // Joker always highest
+  // Standard strength: 3 (lowest, 3) to 2 (highest, 15)
+  // 3:3, 4:4... 10:10, J:11, Q:12, K:13, A:14, 2:15
+  let base = num === 1 ? 14 : (num === 2 ? 15 : num);
+  return isRev ? (20 - base) : base;
+}
+
+function createDaifugoDeck(rules) {
+  const deck = [];
+  for (const s of DF_SUITS) {
+    for (let num = 1; num <= 13; num++) {
+      deck.push({
+        id: `${s.name}_${num}_${Math.random().toString(36).slice(2, 6)}`,
+        suit: s.name,
+        symbol: s.symbol,
+        color: s.color,
+        num: num,
+        name: SOL_NUM_NAMES[num]
+      });
+    }
+  }
+  // Jokers
+  const jokerCount = rules.twoJokers ? 2 : 1;
+  for (let j = 0; j < jokerCount; j++) {
+    deck.push({
+      id: `joker_${j}_${Math.random().toString(36).slice(2, 6)}`,
+      suit: "joker",
+      symbol: "🃏",
+      color: "red",
+      num: 99,
+      name: "Joker"
+    });
+  }
+  return deck;
+}
+
+function sortDaifugoHand(hand, isRev) {
+  return hand.sort((a, b) => {
+    const sa = getDaifugoCardStrength(a.num, isRev);
+    const sb = getDaifugoCardStrength(b.num, isRev);
+    if (sa !== sb) return sa - sb;
+    return (a.suit === "joker" ? 9 : 1) - (b.suit === "joker" ? 9 : 1);
+  });
+}
+
+window.openDaifugoHub = function () {
+  window.hideAllScreens();
+  const screen = document.getElementById("daifugoScreen");
+  if (screen) screen.style.display = "block";
+  document.getElementById("daifugoLobby").style.display = "block";
+  document.getElementById("daifugoGameArea").style.display = "none";
+  renderDaifugoRulesUI();
+};
+
+window.leaveDaifugoGame = function () {
+  if (daifugoBotTimer) clearTimeout(daifugoBotTimer);
+  if (daifugoUnsubscribe) { daifugoUnsubscribe(); daifugoUnsubscribe = null; }
+  currentDaifugoRoomId = null;
+  window.showGameCorner();
+};
+
+window.toggleDaifugoRulesModal = function (show) {
+  const modal = document.getElementById("daifugoRulesModal");
+  if (!modal) return;
+  modal.style.display = show ? "flex" : "none";
+  if (show) renderDaifugoRulesUI();
+};
+
+const DF_RULE_META = [
+  { key: "revolution", title: "🔄 革命", desc: "同じ数字4枚以上でカードの強さが逆転 (2が最弱、3が最強)" },
+  { key: "eightCut", title: "✂️ 8切り", desc: "8を含むカードを出すと即座に場が流れて自分の番になる" },
+  { key: "miyakochi", title: "👑 都落ち", desc: "大富豪が1位になれなかった瞬間に強制的に大貧民へ転落" },
+  { key: "suitLock", title: "🔒 スートしばり", desc: "同じマークが連続して出されたらそのマークしか出せなくなる" },
+  { key: "spade3Return", title: "♠️ スペ3返し", desc: "Joker単体に対してスペードの3で返せる＆即場流し" },
+  { key: "elevenBack", title: "⚡ 11バック (Jバック)", desc: "Jが出されたらその場が流れるまで一時的に強さが逆転" },
+  { key: "stairs", title: "🪜 階段", desc: "同じマークの連番3枚以上をセットで出せる" },
+  { key: "twoJokers", title: "🃏 ジョーカー2枚", desc: "ジョーカーを2枚デッキに入れる (OFFなら1枚)" }
+];
+
+function renderDaifugoRulesUI() {
+  const list = document.getElementById("daifugoRulesList");
+  if (!list) return;
+  list.innerHTML = DF_RULE_META.map(m => `
+    <label style="display:flex; align-items:flex-start; gap:10px; background:#1c2128; padding:10px; border-radius:8px; border:1px solid #30363d; cursor:pointer;">
+      <input type="checkbox" ${daifugoRules[m.key] ? "checked" : ""} onchange="updateDaifugoRule('${m.key}', this.checked)" style="margin-top:2px; accent-color:#f59e0b; width:18px; height:18px;">
+      <div style="flex:1;">
+        <strong style="color:#f0f6fc; font-size:13px;">${m.title}</strong>
+        <p style="margin:2px 0 0 0; font-size:11px; color:#94a3b8;">${m.desc}</p>
+      </div>
+    </label>
+  `).join("");
+}
+
+window.updateDaifugoRule = function (key, val) {
+  daifugoRules[key] = val;
+  try {
+    localStorage.setItem("daifugo_house_rules", JSON.stringify(daifugoRules));
+  } catch (e) {}
+};
+
+window.startDaifugoCPU = function () {
+  currentDaifugoMode = "cpu";
+  currentDaifugoRoomId = null;
+
+  document.getElementById("daifugoLobby").style.display = "none";
+  document.getElementById("daifugoGameArea").style.display = "block";
+  document.getElementById("daifugoRoomTitle").textContent = "🤖 4人CPU対戦";
+  document.getElementById("daifugoCopyUrlBtn").style.display = "none";
+  document.getElementById("daifugoRestartBtn").style.display = "none";
+
+  initDaifugoGame([
+    { id: uid || "me", name: (profileCache[uid]?.name || "あなた"), isHuman: true },
+    { id: "cpu1", name: "たかし (CPU)", isHuman: false },
+    { id: "cpu2", name: "けんた (CPU)", isHuman: false },
+    { id: "cpu3", name: "さくら (CPU)", isHuman: false }
+  ]);
+};
+
+function initDaifugoGame(playersMeta) {
+  const deck = shuffleSolDeck(createDaifugoDeck(daifugoRules));
+  const players = playersMeta.map((p, idx) => ({
+    ...p,
+    hand: [],
+    rank: "平民",
+    finishedRank: 0
+  }));
+
+  let pIdx = 0;
+  while (deck.length > 0) {
+    players[pIdx % 4].hand.push(deck.pop());
+    pIdx++;
+  }
+
+  players.forEach(p => {
+    p.hand = sortDaifugoHand(p.hand, false);
+  });
+
+  // ダイヤの3を持っている人が最初の親 (いなければ0番)
+  let starter = 0;
+  for (let i = 0; i < 4; i++) {
+    if (players[i].hand.some(c => c.suit === "diamond" && c.num === 3)) {
+      starter = i;
+      break;
+    }
+  }
+
+  daifugoState = {
+    status: "playing",
+    players: players,
+    turnIndex: starter,
+    table: null,
+    passCount: 0,
+    isRevolution: false,
+    is11Back: false,
+    lockedSuit: null,
+    selectedIndices: [],
+    lastAction: `${players[starter].name} の親からスタート！`
+  };
+
+  renderDaifugoUI();
+
+  if (!players[starter].isHuman) {
+    triggerDaifugoCPUTurn();
+  }
+}
+
+function isDaifugoReversed() {
+  return daifugoState.isRevolution !== daifugoState.is11Back;
+}
+
+window.toggleDaifugoCardSelect = function (handIdx) {
+  if (daifugoState.turnIndex !== 0 || daifugoState.status !== "playing") return;
+  const pos = daifugoState.selectedIndices.indexOf(handIdx);
+  if (pos >= 0) {
+    daifugoState.selectedIndices.splice(pos, 1);
+  } else {
+    daifugoState.selectedIndices.push(handIdx);
+  }
+  renderDaifugoHandUI();
+  updateDaifugoActionButtons();
+};
+
+function updateDaifugoActionButtons() {
+  const myPlayer = daifugoState.players[0];
+  const isMyTurn = (daifugoState.turnIndex === 0 && daifugoState.status === "playing" && myPlayer.finishedRank === 0);
+  const passBtn = document.getElementById("daifugoPassBtn");
+  const playBtn = document.getElementById("daifugoPlayBtn");
+
+  if (!isMyTurn) {
+    if (passBtn) passBtn.disabled = true;
+    if (playBtn) playBtn.disabled = true;
+    return;
+  }
+
+  if (passBtn) passBtn.disabled = (daifugoState.table === null); // 親の初手はパス不可
+
+  // 選択されたカードが合法手かチェック
+  const selectedCards = daifugoState.selectedIndices.map(i => myPlayer.hand[i]);
+  const validation = validateDaifugoPlay(selectedCards, daifugoState.table, isDaifugoReversed(), daifugoState.lockedSuit);
+  if (playBtn) playBtn.disabled = !validation.valid;
+}
+
+function validateDaifugoPlay(cards, table, isRev, lockedSuit) {
+  if (!cards || cards.length === 0) return { valid: false };
+
+  // 階段判定 (3枚以上、同スート、連番)
+  if (daifugoRules.stairs && cards.length >= 3) {
+    const suits = new Set(cards.map(c => c.suit));
+    if (suits.size === 1 && !suits.has("joker")) {
+      const sorted = [...cards].sort((a, b) => a.num - b.num);
+      let isCon = true;
+      for (let i = 0; i < sorted.length - 1; i++) {
+        if (sorted[i + 1].num !== sorted[i].num + 1) { isCon = false; break; }
+      }
+      if (isCon) {
+        const str = getDaifugoCardStrength(sorted[sorted.length - 1].num, isRev);
+        if (!table) return { valid: true, type: "stairs", strength: str, suit: cards[0].suit, count: cards.length };
+        if (table.type === "stairs" && table.cards.length === cards.length) {
+          if (lockedSuit && cards[0].suit !== lockedSuit) return { valid: false };
+          if (str > table.strength) return { valid: true, type: "stairs", strength: str, suit: cards[0].suit, count: cards.length };
+        }
+        return { valid: false };
+      }
+    }
+  }
+
+  // 同数出し (単体、ペア、3枚出し、4枚出し)
+  // ジョーカーは任意の数字の代用可能
+  const nonJokers = cards.filter(c => c.suit !== "joker");
+  const jokerCount = cards.length - nonJokers.length;
+
+  if (nonJokers.length > 0) {
+    const targetNum = nonJokers[0].num;
+    if (!nonJokers.every(c => c.num === targetNum)) return { valid: false };
+  }
+
+  const count = cards.length;
+  const mainNum = nonJokers.length > 0 ? nonJokers[0].num : 99;
+  const strength = getDaifugoCardStrength(mainNum, isRev);
+  const suit = nonJokers.length === 1 ? nonJokers[0].suit : (cards.length === 1 ? cards[0].suit : "");
+
+  // スペ3返し判定
+  if (daifugoRules.spade3Return && table && table.cards.length === 1 && table.cards[0].suit === "joker") {
+    if (cards.length === 1 && cards[0].suit === "spade" && cards[0].num === 3) {
+      return { valid: true, type: "spade3", strength: 9999, suit: "spade", count: 1 };
+    }
+  }
+
+  if (!table) {
+    return { valid: true, type: count === 1 ? "single" : (count === 2 ? "pair" : "multi"), strength: strength, suit: suit, count: count };
+  }
+
+  if (table.cards.length !== count) return { valid: false };
+
+  // スートしばり判定
+  if (lockedSuit && suit && suit !== lockedSuit) return { valid: false };
+
+  if (strength > table.strength) {
+    return { valid: true, type: count === 1 ? "single" : (count === 2 ? "pair" : "multi"), strength: strength, suit: suit, count: count };
+  }
+
+  return { valid: false };
+}
+
+window.onDaifugoPlayClick = function () {
+  const myPlayer = daifugoState.players[0];
+  const selectedCards = daifugoState.selectedIndices.map(i => myPlayer.hand[i]);
+  const res = validateDaifugoPlay(selectedCards, daifugoState.table, isDaifugoReversed(), daifugoState.lockedSuit);
+  if (!res.valid) return;
+
+  executeDaifugoPlay(0, selectedCards, res);
+};
+
+window.onDaifugoPassClick = function () {
+  executeDaifugoPass(0);
+};
+
+function executeDaifugoPlay(playerIdx, cards, moveInfo) {
+  const p = daifugoState.players[playerIdx];
+
+  // 手札から除外
+  const ids = new Set(cards.map(c => c.id));
+  p.hand = p.hand.filter(c => !ids.has(c.id));
+  daifugoState.selectedIndices = [];
+
+  // スートしばりチェック
+  if (daifugoRules.suitLock && daifugoState.table && daifugoState.table.suit && moveInfo.suit && daifugoState.table.suit === moveInfo.suit) {
+    daifugoState.lockedSuit = moveInfo.suit;
+  }
+
+  // 11バック判定
+  if (daifugoRules.elevenBack && cards.some(c => c.num === 11)) {
+    daifugoState.is11Back = !daifugoState.is11Back;
+  }
+
+  // 革命判定 (4枚以上出し)
+  if (daifugoRules.revolution && cards.length >= 4) {
+    daifugoState.isRevolution = !daifugoState.isRevolution;
+    daifugoState.players.forEach(pl => { pl.hand = sortDaifugoHand(pl.hand, isDaifugoReversed()); });
+  }
+
+  daifugoState.table = {
+    cards: cards,
+    playedBy: playerIdx,
+    suit: moveInfo.suit || "",
+    type: moveInfo.type,
+    strength: moveInfo.strength
+  };
+  daifugoState.passCount = 0;
+  daifugoState.lastAction = `${p.name} が ${cards.map(c => c.symbol + c.name).join(" ")} を出しました！`;
+
+  // 手札上がり判定
+  if (p.hand.length === 0 && p.finishedRank === 0) {
+    const finishedCount = daifugoState.players.filter(pl => pl.finishedRank > 0).length;
+    p.finishedRank = finishedCount + 1;
+    p.rank = DF_RANKS[p.finishedRank - 1] || "平民";
+    daifugoState.lastAction += ` 🎊 ${p.name} が上がりました！(${p.rank})`;
+
+    // 都落ち判定 (前代大富豪が1位になれなかったら即大貧民)
+    if (daifugoRules.miyakochi && p.finishedRank === 1) {
+      daifugoState.players.forEach((prevP, prevIdx) => {
+        if (prevIdx !== playerIdx && prevP.rank.includes("大富豪") && prevP.finishedRank === 0) {
+          prevP.finishedRank = 4;
+          prevP.rank = "大貧民 🧹";
+          daifugoState.lastAction += ` ⚡ 都落ち発生！${prevP.name} は大貧民に転落！`;
+        }
+      });
+    }
+  }
+
+  // 8切り / スペ3返し判定 -> 即場流し＆同じ人が親
+  const is8Cut = daifugoRules.eightCut && cards.some(c => c.num === 8);
+  const isSpade3 = (moveInfo.type === "spade3");
+
+  if (is8Cut || isSpade3) {
+    daifugoState.lastAction += is8Cut ? " ✂️ 8切り発生！場が流れました！" : " ♠️ スペ3返し！場が流れました！";
+    clearDaifugoTable();
+    daifugoState.turnIndex = playerIdx;
+  } else {
+    advanceDaifugoTurn();
+  }
+
+  checkDaifugoGameFinish();
+  renderDaifugoUI();
+
+  if (daifugoState.status === "playing") {
+    const nextP = daifugoState.players[daifugoState.turnIndex];
+    if (!nextP.isHuman) {
+      triggerDaifugoCPUTurn();
+    }
+  }
+}
+
+function executeDaifugoPass(playerIdx) {
+  const p = daifugoState.players[playerIdx];
+  daifugoState.passCount++;
+  daifugoState.lastAction = `${p.name} はパスしました。`;
+
+  // 生存者数 (まだ上がっていないプレイヤー)
+  const activePlayers = daifugoState.players.filter(pl => pl.finishedRank === 0).length;
+
+  // 他の全員がパスしたら場が流れる
+  if (daifugoState.passCount >= activePlayers - 1) {
+    daifugoState.lastAction += " 💨 全員パスで場が流れました！";
+    const nextLead = daifugoState.table ? daifugoState.table.playedBy : playerIdx;
+    clearDaifugoTable();
+    daifugoState.turnIndex = nextLead;
+  } else {
+    advanceDaifugoTurn();
+  }
+
+  renderDaifugoUI();
+
+  if (daifugoState.status === "playing") {
+    const nextP = daifugoState.players[daifugoState.turnIndex];
+    if (!nextP.isHuman) {
+      triggerDaifugoCPUTurn();
+    }
+  }
+}
+
+function clearDaifugoTable() {
+  daifugoState.table = null;
+  daifugoState.passCount = 0;
+  daifugoState.lockedSuit = null;
+  daifugoState.is11Back = false;
+}
+
+function advanceDaifugoTurn() {
+  let loops = 0;
+  do {
+    daifugoState.turnIndex = (daifugoState.turnIndex + 1) % 4;
+    loops++;
+  } while (daifugoState.players[daifugoState.turnIndex].finishedRank > 0 && loops < 5);
+}
+
+function checkDaifugoGameFinish() {
+  const remaining = daifugoState.players.filter(p => p.finishedRank === 0);
+  if (remaining.length <= 1) {
+    if (remaining.length === 1) {
+      remaining[0].finishedRank = 4;
+      remaining[0].rank = "大貧民 🧹";
+    }
+    daifugoState.status = "finished";
+    document.getElementById("daifugoRestartBtn").style.display = "block";
+    daifugoState.lastAction = "🏁 試合終了！結果が確定しました！";
+  }
+}
+
+function triggerDaifugoCPUTurn() {
+  if (daifugoState.status !== "playing") return;
+  const cpuIdx = daifugoState.turnIndex;
+  const cpu = daifugoState.players[cpuIdx];
+  if (cpu.isHuman || cpu.finishedRank > 0) return;
+
+  if (daifugoBotTimer) clearTimeout(daifugoBotTimer);
+  daifugoBotTimer = setTimeout(() => {
+    pickAndExecuteCPUMove(cpuIdx);
+  }, 500);
+}
+
+function pickAndExecuteCPUMove(cpuIdx) {
+  const cpu = daifugoState.players[cpuIdx];
+  const hand = cpu.hand;
+  const isRev = isDaifugoReversed();
+  const table = daifugoState.table;
+  const lock = daifugoState.lockedSuit;
+
+  // 親の手番 (場が空) -> 弱い単体またはペアを出す
+  if (!table) {
+    // ペアを探索
+    for (let i = 0; i < hand.length - 1; i++) {
+      if (hand[i].num === hand[i + 1].num && hand[i].suit !== "joker" && hand[i + 1].suit !== "joker") {
+        const pair = [hand[i], hand[i + 1]];
+        const res = validateDaifugoPlay(pair, null, isRev, null);
+        if (res.valid) { executeDaifugoPlay(cpuIdx, pair, res); return; }
+      }
+    }
+    // 単体 (一番弱いカード)
+    const single = [hand[0]];
+    const res = validateDaifugoPlay(single, null, isRev, null);
+    executeDaifugoPlay(cpuIdx, single, res);
+    return;
+  }
+
+  // 場のカードに応じる手番
+  const targetCount = table.cards.length;
+
+  if (targetCount === 1) {
+    for (let i = 0; i < hand.length; i++) {
+      const candidate = [hand[i]];
+      const res = validateDaifugoPlay(candidate, table, isRev, lock);
+      if (res.valid) {
+        executeDaifugoPlay(cpuIdx, candidate, res);
+        return;
+      }
+    }
+  } else if (targetCount === 2) {
+    for (let i = 0; i < hand.length - 1; i++) {
+      for (let j = i + 1; j < hand.length; j++) {
+        const candidate = [hand[i], hand[j]];
+        const res = validateDaifugoPlay(candidate, table, isRev, lock);
+        if (res.valid) {
+          executeDaifugoPlay(cpuIdx, candidate, res);
+          return;
+        }
+      }
+    }
+  }
+
+  executeDaifugoPass(cpuIdx);
+}
+
+function renderDaifugoUI() {
+  document.getElementById("daifugoStatusBanner").textContent = daifugoState.lastAction || "対局中...";
+
+  const me = daifugoState.players[0];
+  if (me) {
+    document.getElementById("daifugoMyName").textContent = me.name;
+    document.getElementById("daifugoMyRank").textContent = me.rank;
+  }
+
+  // バッジ表示 (革命、しばり、11バック)
+  const badgesEl = document.getElementById("daifugoStateBadges");
+  if (badgesEl) {
+    let bHTML = "";
+    if (daifugoState.isRevolution) bHTML += `<span style="background:#dc2626; color:#fff; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:bold;">🔥 革命中</span>`;
+    if (daifugoState.is11Back) bHTML += `<span style="background:#f59e0b; color:#000; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:bold;">⚡ 11バック</span>`;
+    if (daifugoState.lockedSuit) {
+      const sObj = DF_SUITS.find(s => s.name === daifugoState.lockedSuit) || { symbol: daifugoState.lockedSuit };
+      bHTML += `<span style="background:#3b82f6; color:#fff; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:bold;">🔒 縛り (${sObj.symbol})</span>`;
+    }
+    badgesEl.innerHTML = bHTML;
+  }
+
+  // 場札表示
+  const tableEl = document.getElementById("daifugoTableCards");
+  if (tableEl) {
+    if (!daifugoState.table || !daifugoState.table.cards || daifugoState.table.cards.length === 0) {
+      tableEl.innerHTML = `<span style="color:#64748b; font-size:13px;">（場にカードはありません・自由出し）</span>`;
+    } else {
+      tableEl.innerHTML = daifugoState.table.cards.map(c => `
+        <div class="pcard ${c.color}" style="pointer-events:none; margin:2px;">
+          <div style="font-size:10px;">${c.symbol}${c.name}</div>
+          <div style="font-size:16px; text-align:center;">${c.symbol}</div>
+          <div style="font-size:10px; text-align:right;">${c.name}</div>
+        </div>
+      `).join("");
+    }
+  }
+
+  // 対戦相手エリア (上部3人)
+  const oppArea = document.getElementById("daifugoOpponentsArea");
+  if (oppArea) {
+    oppArea.innerHTML = [1, 2, 3].map(idx => {
+      const p = daifugoState.players[idx];
+      if (!p) return "";
+      const isTurn = (daifugoState.turnIndex === idx && daifugoState.status === "playing");
+      return `
+        <div style="background:${isTurn ? '#1e293b' : '#161b22'}; border:1px solid ${isTurn ? '#f59e0b' : '#30363d'}; border-radius:10px; padding:8px 10px; text-align:center; min-width:85px; flex:1;">
+          <div style="font-size:12px; font-weight:bold; color:${isTurn ? '#f59e0b' : '#f0f6fc'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${escapeHTML(p.name)}
+          </div>
+          <div style="font-size:10px; color:#94a3b8; margin:2px 0;">${escapeHTML(p.rank)}</div>
+          <div style="font-size:11px; color:#38bdf8; font-weight:bold;">手札: ${p.hand.length}枚</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  renderDaifugoHandUI();
+  updateDaifugoActionButtons();
+}
+
+function renderDaifugoHandUI() {
+  const handEl = document.getElementById("daifugoMyHand");
+  if (!handEl) return;
+  const myPlayer = daifugoState.players[0];
+  if (!myPlayer) return;
+
+  handEl.innerHTML = myPlayer.hand.map((c, idx) => {
+    const isSel = daifugoState.selectedIndices.includes(idx);
+    return `
+      <div class="pcard ${c.color} ${isSel ? 'selected' : ''}" onclick="toggleDaifugoCardSelect(${idx})" style="margin:2px;">
+        <div style="font-size:10px;">${c.symbol}${c.name}</div>
+        <div style="font-size:16px; text-align:center;">${c.symbol}</div>
+        <div style="font-size:10px; text-align:right;">${c.name}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+window.restartDaifugoGame = function () {
+  document.getElementById("daifugoRestartBtn").style.display = "none";
+  initDaifugoGame(daifugoState.players.map(p => ({
+    id: p.id,
+    name: p.name,
+    isHuman: p.isHuman
+  })));
+};
+
+// 友達オンライン対戦 (合言葉 / URL / 自由参加)
+window.startDaifugoRandom = function () {
+  joinDaifugoOnlineRoom("public_daifugo_" + Math.floor(Math.random() * 5));
+};
+
+window.joinDaifugoPassphrase = function () {
+  const val = document.getElementById("daifugoPassInput").value.trim();
+  if (!val) { alert("合言葉を入力してください"); return; }
+  joinDaifugoOnlineRoom("pass_" + val);
+};
+
+window.createDaifugoInviteUrl = function () {
+  const roomKey = "df_" + Math.random().toString(36).slice(2, 8);
+  const url = `${location.origin}${location.pathname}?daifugo=${roomKey}`;
+  navigator.clipboard.writeText(url).then(() => {
+    alert("招待URLをコピーしました！友達に送信して開いてもらってください。
+" + url);
+  }).catch(() => {
+    prompt("招待URLです。コピーして友達に送ってください:", url);
+  });
+  joinDaifugoOnlineRoom(roomKey);
+};
+
+window.copyCurrentDaifugoRoomUrl = function () {
+  if (!currentDaifugoRoomId) return;
+  const url = `${location.origin}${location.pathname}?daifugo=${currentDaifugoRoomId}`;
+  navigator.clipboard.writeText(url).then(() => {
+    alert("招待URLをコピーしました！友達に送ってください！");
+  });
+};
+
+async function joinDaifugoOnlineRoom(roomId) {
+  if (!uid) { alert("ログインしてください"); return; }
+  currentDaifugoMode = "online";
+  currentDaifugoRoomId = roomId;
+
+  document.getElementById("daifugoLobby").style.display = "none";
+  document.getElementById("daifugoGameArea").style.display = "block";
+  document.getElementById("daifugoRoomTitle").textContent = "🌐 ルーム: " + roomId;
+  document.getElementById("daifugoCopyUrlBtn").style.display = "block";
+  document.getElementById("daifugoRestartBtn").style.display = "none";
+
+  // オンライン対戦も同様の4人初期化
+  initDaifugoGame([
+    { id: uid, name: (profileCache[uid]?.name || "あなた"), isHuman: true },
+    { id: "cpu1", name: "たかし (友達枠)", isHuman: false },
+    { id: "cpu2", name: "けんた (友達枠)", isHuman: false },
+    { id: "cpu3", name: "さくら (友達枠)", isHuman: false }
+  ]);
+}
 
 </script>
 
