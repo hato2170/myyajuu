@@ -697,7 +697,58 @@ button.back {
 
     <div id="posts"></div>
 
+  
+  <!-- ======================
+       paper.io 画面
+  ======================= -->
+  <div id="paperScreen" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <button class="back" onclick="leavePaperGame()" style="margin:0; width:auto; padding:6px 14px;">
+        ← コーナーへ
+      </button>
+      <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 14px; font-weight:bold; border-radius:8px;">
+        🚨 緊急回避 (数学)
+      </button>
+    </div>
+
+    <!-- 順位・領地バー -->
+    <div id="paperLeaderboard" style="background:#161b22; border:1px solid #30363d; border-radius:10px; padding:8px 12px; margin-bottom:10px; font-size:12px; display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center;">
+      <div id="paperScoreRank" style="font-weight:bold; color:#06b6d4;">あなた: 20.0% (1位)</div>
+      <div id="paperKillsDisplay" style="color:#f59e0b; font-weight:bold;">⚔️ 撃破: 0体</div>
+    </div>
+
+    <!-- キャンバスエリア -->
+    <div style="position:relative; width:100%; max-width:360px; margin:0 auto; background:#0f172a; border-radius:12px; overflow:hidden; border:2px solid #334155; box-shadow:0 8px 24px rgba(0,0,0,0.6);">
+      <canvas id="paperCanvas" width="360" height="360" style="display:block; width:100%; height:auto; touch-action:none;"></canvas>
+
+      <!-- ゲームオーバー/勝利オーバーレイ -->
+      <div id="paperOverlay" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; box-sizing:border-box;">
+        <h2 id="paperOverlayTitle" style="color:#ec4899; margin:0 0 8px 0; font-size:24px;">💥 撃破された！</h2>
+        <p id="paperOverlayMsg" style="color:#cbd5e1; font-size:14px; margin:0 0 20px 0;">スコア: 領地 12.5% | 撃破 2体</p>
+        <button onclick="startPaperGame()" style="background:#238636; color:#fff; font-weight:bold; padding:10px 24px; border-radius:8px; border:none; width:auto; font-size:14px; cursor:pointer;">
+          🔄 もう一度遊ぶ
+        </button>
+      </div>
+    </div>
+
+    <!-- 操作案内＆D-Padコントローラー（iPad / スマホ用） -->
+    <div style="margin-top:12px; text-align:center;">
+      <p style="color:#94a3b8; font-size:12px; margin:0 0 8px 0;">画面スワイプ / 矢印キー(WASD) / 下の十字キーで移動</p>
+      <div style="display:inline-grid; grid-template-columns:repeat(3, 56px); grid-template-rows:repeat(3, 46px); gap:6px; margin:0 auto;">
+        <div></div>
+        <button onclick="paperSetDirection(0, -1)" style="background:#1e293b; color:#fff; border:1px solid #475569; border-radius:8px; font-size:20px; margin:0; padding:0; display:flex; align-items:center; justify-content:center;">⬆️</button>
+        <div></div>
+        <button onclick="paperSetDirection(-1, 0)" style="background:#1e293b; color:#fff; border:1px solid #475569; border-radius:8px; font-size:20px; margin:0; padding:0; display:flex; align-items:center; justify-content:center;">⬅️</button>
+        <div style="display:flex; align-items:center; justify-content:center; color:#64748b; font-size:11px; font-weight:bold;">移動</div>
+        <button onclick="paperSetDirection(1, 0)" style="background:#1e293b; color:#fff; border:1px solid #475569; border-radius:8px; font-size:20px; margin:0; padding:0; display:flex; align-items:center; justify-content:center;">➡️</button>
+        <div></div>
+        <button onclick="paperSetDirection(0, 1)" style="background:#1e293b; color:#fff; border:1px solid #475569; border-radius:8px; font-size:20px; margin:0; padding:0; display:flex; align-items:center; justify-content:center;">⬇️</button>
+        <div></div>
+      </div>
+    </div>
   </div>
+
+</div>
 
 
   <!-- ======================
@@ -1029,6 +1080,16 @@ button.back {
             <p style="margin:0; color:#8b949e; font-size:13px;">定番トランプゲーム！タップ自動移動対応でiPadでもサクサク遊べる！</p>
           </div>
           <span style="font-size:20px; color:#10b981;">▶</span>
+        </div>
+      </div>
+
+      <div style="background:#161b22; border:1px solid #30363d; border-radius:12px; padding:16px; cursor:pointer;" onclick="openPaperHub()">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <h3 style="margin:0 0 6px 0; color:#ec4899; font-size:18px;">📄 paper.io（陣取りバトル）</h3>
+            <p style="margin:0; color:#8b949e; font-size:13px;">領地を広げてマップ制覇！敵のしっぽを切断して撃破！</p>
+          </div>
+          <span style="font-size:20px; color:#ec4899;">▶</span>
         </div>
       </div>
     </div>
@@ -1398,7 +1459,7 @@ button.back {
           <h4 style="margin:0; color:#f59e0b;">🤖 4人CPU対戦（ひとりで遊ぶ）</h4>
           <span style="font-size:11px; color:#10b981; background:#064e3b; padding:2px 8px; border-radius:10px;">待機なし即開始</span>
         </div>
-        <p style="margin:6px 0 10px 0; color:#94a3b8; font-size:13px;">CPUボット3人（たかし・けんた・さくら）と本格4人対戦！革命・8切り・都落ち対応！</p>
+        <p style="margin:6px 0 10px 0; color:#94a3b8; font-size:13px;">CPUボット3人（CPU1・CPU2・CPU3）と本格4人対戦！革命・8切り・都落ち対応！</p>
         <button onclick="startDaifugoCPU()" style="background:#d97706; padding:8px; font-weight:bold;">CPU対戦を開始</button>
       </div>
 
@@ -1430,6 +1491,17 @@ button.back {
         <div id="daifugoRoomTitle" style="color:#f59e0b; font-weight:bold;">ルーム: ---</div>
         <div id="daifugoCopyUrlBtn" style="cursor:pointer; color:#a5d6ff; font-size:12px; display:none;" onclick="copyCurrentDaifugoRoomUrl()">📋 招待URLコピー</div>
       </div>
+
+      <!-- 待機ロビーエリア (オンライン対戦用) -->
+      <div id="daifugoWaitingArea" style="display:none; background:#161b22; border:1px solid #30363d; border-radius:14px; padding:20px; text-align:center; margin-bottom:14px;">
+        <h3 style="margin:0 0 8px 0; color:#f59e0b;">⏳ 対戦相手の参加を待機中...</h3>
+        <p id="daifugoWaitingCount" style="color:#94a3b8; font-size:13px; margin:0 0 14px 0;">参加人数: 1 / 4人</p>
+        <div id="daifugoWaitingMembers" style="display:flex; justify-content:center; gap:8px; margin-bottom:16px; flex-wrap:wrap;"></div>
+        <button onclick="copyCurrentDaifugoRoomUrl()" style="background:#9333ea; color:#fff; font-weight:bold; padding:8px 16px; border-radius:8px; font-size:13px; margin-bottom:10px; width:auto;">📋 招待URLをコピー</button>
+        <button id="daifugoStartWithCpuBtn" onclick="startDaifugoWithCPUFill()" style="background:#238636; color:#fff; font-weight:bold; padding:10px 20px; border-radius:8px; font-size:14px; width:100%;">🤖 残り枠をCPUで埋めて今すぐ開始</button>
+      </div>
+
+      <div id="daifugoBoardArea">
 
       <div id="daifugoStatusBanner" style="background:#21262d; padding:8px 12px; border-radius:6px; margin-bottom:10px; text-align:center; font-size:14px; color:#f0f6fc; min-height:22px; font-weight:bold;">
         ゲーム待機中...
@@ -1474,6 +1546,7 @@ button.back {
       <div style="display:flex; gap:10px; margin-top:10px;">
         <button onclick="leaveDaifugoGame()" style="background:#30363d; flex:1; padding:8px; font-size:13px; margin:0;">ゲーム終了</button>
         <button id="daifugoRestartBtn" onclick="restartDaifugoGame()" style="background:#238636; flex:1; padding:8px; font-size:13px; margin:0; display:none;">次の対局へ</button>
+      </div>
       </div>
     </div>
 
@@ -1552,6 +1625,95 @@ button.back {
 
 
 <script type="module">
+
+/* ======================
+   モダンモーダル / ポップアップ (iPad / Safariフリーズ対策)
+====================== */
+window.showModernAlert = function (message, title = "お知らせ", callback = null) {
+  let modal = document.getElementById("modernAppModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "modernAppModal";
+    modal.style.cssText = "position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.78); display:flex; align-items:center; justify-content:center; z-index:999999; padding:20px; box-sizing:border-box;";
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div style="background:#1c2128; border:1px solid #30363d; border-radius:14px; padding:20px; max-width:340px; width:100%; text-align:center; box-shadow:0 12px 32px rgba(0,0,0,0.85); animation:modalPop 0.15s ease-out;">
+      <h3 style="margin:0 0 10px 0; color:#f0f6fc; font-size:16px;">${escapeHTML(title)}</h3>
+      <p style="margin:0 0 18px 0; color:#cbd5e1; font-size:14px; line-height:1.5; white-space:pre-wrap; word-break:break-word;">${escapeHTML(message)}</p>
+      <button id="modernAppModalOkBtn" style="background:#238636; color:#fff; font-weight:bold; padding:10px 24px; border-radius:8px; border:none; width:100%; cursor:pointer; font-size:14px;">OK</button>
+    </div>
+  `;
+  modal.style.display = "flex";
+  document.getElementById("modernAppModalOkBtn").onclick = () => {
+    modal.style.display = "none";
+    if (typeof callback === "function") callback();
+  };
+};
+
+window.showModernConfirm = function (message, onConfirm, title = "確認", onCancel = null) {
+  let modal = document.getElementById("modernAppModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "modernAppModal";
+    modal.style.cssText = "position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.78); display:flex; align-items:center; justify-content:center; z-index:999999; padding:20px; box-sizing:border-box;";
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div style="background:#1c2128; border:1px solid #30363d; border-radius:14px; padding:20px; max-width:340px; width:100%; text-align:center; box-shadow:0 12px 32px rgba(0,0,0,0.85); animation:modalPop 0.15s ease-out;">
+      <h3 style="margin:0 0 10px 0; color:#f0f6fc; font-size:16px;">${escapeHTML(title)}</h3>
+      <p style="margin:0 0 18px 0; color:#cbd5e1; font-size:14px; line-height:1.5; white-space:pre-wrap; word-break:break-word;">${escapeHTML(message)}</p>
+      <div style="display:flex; gap:10px;">
+        <button id="modernAppModalCancelBtn" style="background:#30363d; color:#94a3b8; font-weight:bold; padding:10px; border-radius:8px; border:none; flex:1; cursor:pointer; font-size:14px;">キャンセル</button>
+        <button id="modernAppModalConfirmBtn" style="background:#238636; color:#fff; font-weight:bold; padding:10px; border-radius:8px; border:none; flex:1; cursor:pointer; font-size:14px;">OK</button>
+      </div>
+    </div>
+  `;
+  modal.style.display = "flex";
+  document.getElementById("modernAppModalCancelBtn").onclick = () => {
+    modal.style.display = "none";
+    if (typeof onCancel === "function") onCancel();
+  };
+  document.getElementById("modernAppModalConfirmBtn").onclick = () => {
+    modal.style.display = "none";
+    if (typeof onConfirm === "function") onConfirm();
+  };
+};
+
+
+/* ======================
+   ゲームURLパラメータ管理 & ログイン後自動復帰
+====================== */
+function getPendingGameInfo() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const othello = urlParams.get("othello") || urlParams.get("room") || urlParams.get("sheet");
+  const uno = urlParams.get("uno") || urlParams.get("unoroom");
+  const daifugo = urlParams.get("daifugo") || urlParams.get("df");
+  const paper = urlParams.get("paper") || urlParams.get("paperio");
+
+  if (othello) return { game: "othello", room: othello };
+  if (uno) return { game: "uno", room: uno };
+  if (daifugo) return { game: "daifugo", room: daifugo };
+  if (paper) return { game: "paper", room: paper };
+
+  try {
+    const saved = sessionStorage.getItem("pending_game_join");
+    if (saved) {
+      sessionStorage.removeItem("pending_game_join");
+      return JSON.parse(saved);
+    }
+  } catch (e) {}
+  return null;
+}
+
+// ページ読み込み時にURLパラメータがあれば一時保存（未ログイン時の復帰用）
+try {
+  const p = getPendingGameInfo();
+  if (p) {
+    sessionStorage.setItem("pending_game_join", JSON.stringify(p));
+  }
+} catch (e) {}
+
 
 /* ======================
    Firebase
@@ -2078,7 +2240,53 @@ await loadProfile();
 
 startNotificationsAndDMsListener();
 
-showHome();
+// URL自動参加またはゲーム復帰判定
+let joinedGame = false;
+try {
+  const pending = getPendingGameInfo();
+  if (pending && pending.game) {
+    joinedGame = true;
+    showGameCorner();
+    if (pending.game === "othello") {
+      openOthelloHub();
+      enterOthelloRoom(pending.room);
+    } else if (pending.game === "uno") {
+      openUnoHub();
+      const cleanUno = pending.room.replace(/^uno_inv_/, "");
+      enterUnoOnlineRoom("uno_inv_" + cleanUno);
+    } else if (pending.game === "daifugo") {
+      openDaifugoHub();
+      joinDaifugoOnlineRoom(pending.room);
+    } else if (pending.game === "paper") {
+      openPaperHub();
+      startPaperGame();
+    }
+  }
+} catch (e) {
+  console.error("URL参加エラー:", e);
+}
+
+if (!joinedGame) {
+  // ゲーム中や個別画面を開いているときはホームに強制送還しない
+  const activeGameScreen = [
+    "gameCornerScreen",
+    "othelloScreen",
+    "snowballScreen",
+    "unoScreen",
+    "daifugoScreen",
+    "solitaireScreen",
+    "paperScreen",
+    "notificationScreen",
+    "dmScreen"
+  ].some((sId) => {
+    const el = document.getElementById(sId);
+    return el && el.style.display !== "none";
+  });
+
+  if (!activeGameScreen) {
+    showHome();
+  }
+}
 
 } else {
 
@@ -2859,7 +3067,8 @@ window.hideAllScreens = function () {
     "snowballScreen",
     "unoScreen",
     "daifugoScreen",
-    "solitaireScreen"
+    "solitaireScreen",
+    "paperScreen"
   ];
   ids.forEach((id) => {
     const el = document.getElementById(id);
@@ -3102,35 +3311,22 @@ roleButton.style.background =
     ? "#b45309"
     : "#2563eb";
 
-roleButton.onclick =
-  async () => {
-    const newRole =
-      role === "admin"
-        ? "user"
-        : "admin";
-
-    const ok =
-      confirm(
-        `${name} さんを ${newRole === "admin" ? "管理者" : "一般ユーザー"} に変更しますか？`
-      );
-
-    if (!ok) return;
-
-    try {
-      await updateDoc(
-        doc(db, "users", userId),
-        { role: newRole }
-      );
-
-      alert(
-        `${name} さんを ${newRole === "admin" ? "管理者" : "一般ユーザー"} に設定しました`
-      );
-
-      loadAdminUsers();
-    } catch (err) {
-      console.error(err);
-      alert("変更に失敗しました: " + err.message);
-    }
+roleButton.onclick = () => {
+    const newRole = role === "admin" ? "user" : "admin";
+    showModernConfirm(
+      `${name} さんを ${newRole === "admin" ? "管理者" : "一般ユーザー"} に変更しますか？`,
+      async () => {
+        try {
+          await updateDoc(doc(db, "users", userId), { role: newRole });
+          showModernAlert(`${name} さんを ${newRole === "admin" ? "管理者" : "一般ユーザー"} に設定しました`, "変更完了");
+          loadAdminUsers();
+        } catch (err) {
+          console.error(err);
+          showModernAlert("変更に失敗しました: " + err.message, "エラー");
+        }
+      },
+      "管理者権限の変更"
+    );
   };
 
 const banButton =
@@ -3419,7 +3615,7 @@ async function renderNotificationsList() {
   container.innerHTML = allNotifications.map(n => {
     const timeStr = n.createdAt ? new Date(n.createdAt).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
     return `
-      <div class="notif-item ${n.isRead ? "" : "is-unread"}" onclick="clickNotificationItem('${escapeHTML(n.id)}', '${escapeHTML(n.targetPostId || "")}', '${escapeHTML(n.fromUid || "")}')">
+      <div class="notif-item ${n.isRead ? "" : "is-unread"}" onclick="clickNotificationItem('${escapeHTML(n.id)}', '${escapeHTML(n.targetPostId || "")}', '${escapeHTML(n.fromUid || "")}', '${escapeHTML(n.type || "")}')">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
           <strong style="color:${n.isRead ? '#94a3b8' : '#f0f6fc'}; font-size:13px;">${escapeHTML(n.title)}</strong>
           <span style="color:#64748b; font-size:11px;">${timeStr}</span>
@@ -3433,15 +3629,27 @@ async function renderNotificationsList() {
   }).join("");
 }
 
-window.clickNotificationItem = function (notifId, targetPostId, fromUid) {
+window.clickNotificationItem = function (notifId, targetPostId, fromUid, notifType) {
   saveReadNotif(notifId);
   const target = allNotifications.find(n => n.id === notifId);
   if (target) target.isRead = true;
   updateAllBadges();
   renderNotificationsList();
 
-  // ホームに戻って該当投稿を見る、または相手プロフィールを表示
-  if (fromUid) {
+  if (notifType === "dm" && fromUid) {
+    window.showDM();
+    window.openDMWithUser(fromUid);
+  } else if (targetPostId) {
+    window.showHome();
+    setTimeout(() => {
+      const pEl = document.querySelector(`[data-post-id="${targetPostId}"]`);
+      if (pEl) {
+        pEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        pEl.style.boxShadow = "0 0 15px #38bdf8";
+        setTimeout(() => { pEl.style.boxShadow = "none"; }, 2500);
+      }
+    }, 250);
+  } else if (fromUid) {
     showProfile(fromUid);
   } else {
     showHome();
@@ -3453,16 +3661,26 @@ window.markAllNotificationsAsRead = function () {
     n.isRead = true;
     saveReadNotif(n.id);
   });
+
+  // DMの未読もすべて既読化
+  Object.keys(allDMConversations).forEach(otherUid => {
+    saveLastReadDMTime(otherUid, Date.now());
+    if (allDMConversations[otherUid]) {
+      allDMConversations[otherUid].unreadCount = 0;
+    }
+  });
+
   updateAllBadges();
   renderNotificationsList();
+  showModernAlert("すべてのお知らせとDM通知を既読にしました！", "既読完了");
 };
 
-// DM相手一覧の描画
+// DM相手一覧の描画（即時レンダリング＆非同期更新）
 async function renderDMConversationsList() {
   const container = document.getElementById("dmConversationsList");
   if (!container) return;
 
-  const convList = Object.values(allDMConversations).sort((a, b) => b.updatedAt - a.updatedAt);
+  const convList = Object.values(allDMConversations).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
   if (convList.length === 0) {
     container.innerHTML = `
@@ -3475,11 +3693,10 @@ async function renderDMConversationsList() {
     return;
   }
 
-  container.innerHTML = `<p style="color:#8b949e; text-align:center; padding:15px; font-size:12px;">読み込み中...</p>`;
-
-  const itemsHTML = await Promise.all(convList.map(async (c) => {
-    const prof = await getProfile(c.otherUid);
-    const name = prof?.name || "名無し";
+  // 待機時間ゼロで即座に一覧を描画
+  const itemsHTML = convList.map((c) => {
+    const prof = profileCache[c.otherUid];
+    const name = prof?.name || (c.otherUid ? `ユーザー (${c.otherUid.slice(0, 5)})` : "名無し");
     const username = prof?.username ? `@${prof.username}` : "";
     const avatar = prof?.profileImage || createDefaultAvatar(name);
     const lastMsg = c.lastMessage?.text || "メッセージなし";
@@ -3488,13 +3705,13 @@ async function renderDMConversationsList() {
     const hasUnread = (c.unreadCount || 0) > 0;
 
     return `
-      <div class="dm-conv-item ${hasUnread ? "has-unread" : ""}" onclick="openDMWithUser('${escapeHTML(c.otherUid)}')">
+      <div id="dm-conv-item-${escapeHTML(c.otherUid)}" class="dm-conv-item ${hasUnread ? "has-unread" : ""}" onclick="openDMWithUser('${escapeHTML(c.otherUid)}')">
         <img class="dm-avatar" src="${escapeHTML(avatar)}" alt="${escapeHTML(name)}">
         <div style="flex:1; min-width:0;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
             <div style="display:flex; align-items:center; gap:6px; min-width:0;">
-              <strong style="color:#f0f6fc; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(name)}</strong>
-              <span style="color:#64748b; font-size:11px; white-space:nowrap;">${escapeHTML(username)}</span>
+              <strong class="dm-name" style="color:#f0f6fc; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(name)}</strong>
+              <span class="dm-username" style="color:#64748b; font-size:11px; white-space:nowrap;">${escapeHTML(username)}</span>
             </div>
             <span style="color:#64748b; font-size:11px; flex-shrink:0;">${timeStr}</span>
           </div>
@@ -3507,9 +3724,29 @@ async function renderDMConversationsList() {
         </div>
       </div>
     `;
-  }));
+  });
 
   container.innerHTML = itemsHTML.join("");
+
+  // 未キャッシュのユーザー情報をバックグラウンドで解決してDOM反映
+  convList.forEach(async (c) => {
+    if (!profileCache[c.otherUid]) {
+      try {
+        const prof = await getProfile(c.otherUid);
+        if (prof) {
+          const itemEl = document.getElementById(`dm-conv-item-${c.otherUid}`);
+          if (itemEl) {
+            const nameEl = itemEl.querySelector(".dm-name");
+            if (nameEl) nameEl.textContent = prof.name || "名無し";
+            const uEl = itemEl.querySelector(".dm-username");
+            if (uEl && prof.username) uEl.textContent = `@${prof.username}`;
+            const imgEl = itemEl.querySelector(".dm-avatar");
+            if (imgEl && prof.profileImage) imgEl.src = prof.profileImage;
+          }
+        }
+      } catch (e) {}
+    }
+  });
 }
 
 window.toggleNewDMPanel = function () {
@@ -5536,7 +5773,7 @@ window.startOthelloAI = function () {
   document.getElementById("othelloCopyUrlBtn").style.display = "none";
   document.getElementById("othelloRestartBtn").style.display = "none";
   document.getElementById("othelloBlackName").textContent = "あなた (黒)";
-  document.getElementById("othelloWhiteName").textContent = `CPU (${levelName})`;
+  document.getElementById("othelloWhiteName").textContent = `CPU1 (${levelName})`;
   document.getElementById("othelloStatusBanner").textContent = `対局開始！難易度: ${levelName}。あなたの手番です（黒）`;
 
   renderOthelloUI(localOthelloBoard, localOthelloTurn, 1, true, false);
@@ -5710,24 +5947,7 @@ async function enterOthelloRoom(roomId, isPublic = false) {
   });
 }
 
-// URLパラメータによる自動参加
-const urlParams = new URLSearchParams(window.location.search);
-const autoRoom = urlParams.get("room") || urlParams.get("sheet");
-const autoUno = urlParams.get("uno") || urlParams.get("unoroom");
-
-if (autoUno) {
-  setTimeout(() => {
-    showGameCorner();
-    openUnoHub();
-    enterUnoOnlineRoom("uno_inv_" + autoUno);
-  }, 1000);
-} else if (autoRoom) {
-  setTimeout(() => {
-    showGameCorner();
-    openOthelloHub();
-    enterOthelloRoom(autoRoom);
-  }, 1000);
-}
+// URLパラメータ自動参加は onAuthStateChanged 内の getPendingGameInfo() に統合済み
 
 
 /* ======================
@@ -5761,17 +5981,17 @@ window.addAdminDirectly = async function () {
     }
 
     if (!targetDocId) {
-      alert("該当するユーザーが見つかりませんでした: " + qVal);
+      showModernAlert("該当するユーザーが見つかりませんでした: " + qVal, "エラー");
       return;
     }
 
     await updateDoc(doc(db, "users", targetDocId), { role: "admin" });
-    alert(`🎉 ${targetName} さんを管理者に任命しました！`);
+    showModernAlert(`🎉 ${targetName} さんを管理者に任命しました！`, "任命完了");
     input.value = "";
     loadAdminUsers();
   } catch (err) {
     console.error(err);
-    alert("管理者の追加に失敗しました: " + err.message);
+    showModernAlert("管理者の追加に失敗しました: " + err.message, "エラー");
   }
 };
 
@@ -6120,7 +6340,7 @@ window.startSnowballGame = function () {
     isPlayer: true
   };
 
-  const botNames = ["シロクマ", "ペンギン", "アザラシ", "ゆきだるま", "トナカイ"];
+  const botNames = ["CPU1", "CPU2", "CPU3", "CPU4", "CPU5"];
   const botColors = ["#f43f5e", "#10b981", "#a855f7", "#f59e0b", "#ec4899"];
   sbBots = [];
 
@@ -6243,8 +6463,23 @@ function updateSnowball() {
     bot.angle += diff * 0.12;
 
     const bSpeed = 2.0;
-    bot.vx = Math.cos(bot.angle) * bSpeed;
-    bot.vy = Math.sin(bot.angle) * bSpeed;
+    if (!bot.knockbackX) bot.knockbackX = 0;
+    if (!bot.knockbackY) bot.knockbackY = 0;
+    if (!bot.stunTimer) bot.stunTimer = 0;
+
+    if (bot.stunTimer > 0) {
+      bot.stunTimer--;
+      bot.vx = bot.knockbackX;
+      bot.vy = bot.knockbackY;
+      bot.knockbackX *= 0.91;
+      bot.knockbackY *= 0.91;
+    } else {
+      bot.vx = Math.cos(bot.angle) * bSpeed + bot.knockbackX;
+      bot.vy = Math.sin(bot.angle) * bSpeed + bot.knockbackY;
+      bot.knockbackX *= 0.82;
+      bot.knockbackY *= 0.82;
+    }
+
     if (bot.snowballSize < 20) bot.snowballSize += 0.07;
 
     moveEntity(bot);
@@ -6266,11 +6501,21 @@ function updateSnowball() {
         const diff = p1Power - p2Power;
         const force = 3.5 + Math.abs(diff) * 0.35;
         if (diff > 0) {
+          if (!e2.isPlayer) {
+            e2.knockbackX = nx * force * 1.6;
+            e2.knockbackY = ny * force * 1.6;
+            e2.stunTimer = 18;
+          }
           e2.vx += nx * force;
           e2.vy += ny * force;
           e1.vx -= nx * 1.2;
           e1.vy -= ny * 1.2;
         } else if (diff < 0) {
+          if (!e1.isPlayer) {
+            e1.knockbackX = -nx * force * 1.6;
+            e1.knockbackY = -ny * force * 1.6;
+            e1.stunTimer = 18;
+          }
           e1.vx -= nx * force;
           e1.vy -= ny * force;
           e2.vx += nx * 1.2;
@@ -6296,10 +6541,19 @@ function updateSnowball() {
     for (const ent of allEntities) {
       const dist = Math.hypot(ent.x - p.x, ent.y - p.y);
       if (dist < ent.radius + p.radius) {
-        const knockback = p.radius * 0.9 + 5;
+        // 雪玉直撃で強烈に吹き飛ばす（ノックバック物理強化）
+        const knockback = p.radius * 2.8 + 15;
         const hitAngle = Math.atan2(ent.y - p.y, ent.x - p.x);
-        ent.vx += Math.cos(hitAngle) * knockback;
-        ent.vy += Math.sin(hitAngle) * knockback;
+        if (ent.isPlayer) {
+          ent.vx += Math.cos(hitAngle) * knockback;
+          ent.vy += Math.sin(hitAngle) * knockback;
+        } else {
+          ent.knockbackX = Math.cos(hitAngle) * knockback;
+          ent.knockbackY = Math.sin(hitAngle) * knockback;
+          ent.stunTimer = 22; // スタン＆ノックバック中
+          ent.vx = ent.knockbackX;
+          ent.vy = ent.knockbackY;
+        }
         p.life = 0;
         break;
       }
@@ -6631,9 +6885,9 @@ window.startUnoAI = function () {
   const deck = createUnoDeck();
   const players = [
     { id: "human", name: myName, isHuman: true, hand: [] },
-    { id: "bot1", name: "はるとBot", isHuman: false, hand: [] },
-    { id: "bot2", name: "AIにゃんこ", isHuman: false, hand: [] },
-    { id: "bot3", name: "つよつよBot", isHuman: false, hand: [] }
+    { id: "bot1", name: "CPU1", isHuman: false, hand: [] },
+    { id: "bot2", name: "CPU2", isHuman: false, hand: [] },
+    { id: "bot3", name: "CPU3", isHuman: false, hand: [] }
   ];
 
   for (let i = 0; i < 7; i++) {
@@ -7964,9 +8218,9 @@ window.startDaifugoCPU = function () {
 
   initDaifugoGame([
     { id: uid || "me", name: (profileCache[uid]?.name || "あなた"), isHuman: true },
-    { id: "cpu1", name: "たかし (CPU)", isHuman: false },
-    { id: "cpu2", name: "けんた (CPU)", isHuman: false },
-    { id: "cpu3", name: "さくら (CPU)", isHuman: false }
+    { id: "cpu1", name: "CPU1", isHuman: false },
+    { id: "cpu2", name: "CPU2", isHuman: false },
+    { id: "cpu3", name: "CPU3", isHuman: false }
   ]);
 };
 
@@ -8443,25 +8697,558 @@ window.copyCurrentDaifugoRoomUrl = function () {
   });
 };
 
+
+/* ======================
+   大富豪 オンラインルーム待機＆CPU補充
+====================== */
+let daifugoCurrentRoomRef = null;
+
+function renderDaifugoWaitingLobby(data, roomRef) {
+  daifugoCurrentRoomRef = roomRef;
+  const waitingArea = document.getElementById("daifugoWaitingArea");
+  const boardArea = document.getElementById("daifugoBoardArea");
+  if (!waitingArea || !boardArea) return;
+
+  waitingArea.style.display = "block";
+  boardArea.style.display = "none";
+
+  const pCount = (data.players || []).length;
+  document.getElementById("daifugoWaitingCount").textContent = `参加人数: ${pCount} / 4人`;
+
+  const memEl = document.getElementById("daifugoWaitingMembers");
+  if (memEl) {
+    memEl.innerHTML = (data.players || []).map((p, idx) => `
+      <div style="background:#1e293b; border:1px solid #3b82f6; border-radius:8px; padding:6px 12px; font-size:13px; color:#f0f6fc; display:flex; align-items:center; gap:6px;">
+        <span>👤 プレイヤー${idx + 1}:</span>
+        <strong>${escapeHTML(p.name)}</strong>
+      </div>
+    `).join("");
+  }
+
+  // 4人集まったら自動開始
+  if (pCount >= 4) {
+    waitingArea.style.display = "none";
+    boardArea.style.display = "block";
+    if (!daifugoState || daifugoState.status !== "playing") {
+      initDaifugoGame(data.players);
+    }
+  }
+}
+
+window.startDaifugoWithCPUFill = async function () {
+  if (!daifugoCurrentRoomRef) return;
+  const snap = await getDoc(daifugoCurrentRoomRef);
+  if (!snap.exists()) return;
+  const data = snap.data();
+  const currentPlayers = data.players || [];
+  const needed = 4 - currentPlayers.length;
+
+  const filledPlayers = [...currentPlayers];
+  for (let i = 1; i <= needed; i++) {
+    filledPlayers.push({
+      id: `cpu_${i}`,
+      name: `CPU${i}`,
+      isHuman: false
+    });
+  }
+
+  await updateDoc(daifugoCurrentRoomRef, {
+    status: "playing",
+    players: filledPlayers,
+    updatedAt: Date.now()
+  });
+
+  const waitingArea = document.getElementById("daifugoWaitingArea");
+  const boardArea = document.getElementById("daifugoBoardArea");
+  if (waitingArea) waitingArea.style.display = "none";
+  if (boardArea) boardArea.style.display = "block";
+  initDaifugoGame(filledPlayers);
+};
+
+// joinDaifugoOnlineRoom の再実装 (待機ルーム連携)
 async function joinDaifugoOnlineRoom(roomId) {
-  if (!uid) { alert("ログインしてください"); return; }
+  if (!uid) {
+    showModernAlert("ルームに参加するにはログインしてください", "未ログイン");
+    return;
+  }
   currentDaifugoMode = "online";
   currentDaifugoRoomId = roomId;
 
   document.getElementById("daifugoLobby").style.display = "none";
   document.getElementById("daifugoGameArea").style.display = "block";
-  document.getElementById("daifugoRoomTitle").textContent = "🌐 ルーム: " + roomId;
+  document.getElementById("daifugoRoomTitle").textContent = "🌐 ルーム: " + roomId.replace(/^(pass_|inv_|rand_)/, "");
   document.getElementById("daifugoCopyUrlBtn").style.display = "block";
   document.getElementById("daifugoRestartBtn").style.display = "none";
 
-  // オンライン対戦も同様の4人初期化
-  initDaifugoGame([
-    { id: uid, name: (profileCache[uid]?.name || "あなた"), isHuman: true },
-    { id: "cpu1", name: "たかし (友達枠)", isHuman: false },
-    { id: "cpu2", name: "けんた (友達枠)", isHuman: false },
-    { id: "cpu3", name: "さくら (友達枠)", isHuman: false }
-  ]);
+  let myName = "プレイヤー";
+  if (uid && profileCache[uid] && profileCache[uid].name) {
+    myName = profileCache[uid].name;
+  }
+
+  const roomRef = doc(db, "sheet_sessions", roomId);
+  const snap = await getDoc(roomRef);
+
+  if (!snap.exists()) {
+    await setDoc(roomRef, {
+      game: "daifugo",
+      status: "waiting",
+      hostUid: uid,
+      players: [{ id: uid, name: myName, isHuman: true }],
+      rules: daifugoRules,
+      updatedAt: Date.now()
+    });
+  } else {
+    const data = snap.data();
+    if (data.status === "waiting") {
+      const alreadyIn = (data.players || []).some(p => p.id === uid);
+      if (!alreadyIn && (data.players || []).length < 4) {
+        const newPlayers = [...data.players, { id: uid, name: myName, isHuman: true }];
+        await updateDoc(roomRef, {
+          players: newPlayers,
+          updatedAt: Date.now()
+        });
+      }
+    }
+  }
+
+  if (daifugoUnsubscribe) {
+    daifugoUnsubscribe();
+    daifugoUnsubscribe = null;
+  }
+
+  daifugoUnsubscribe = onSnapshot(roomRef, (snapshot) => {
+    if (!snapshot.exists()) return;
+    const data = snapshot.data();
+    if (data.status === "waiting") {
+      renderDaifugoWaitingLobby(data, roomRef);
+    } else if (data.status === "playing") {
+      const waitingArea = document.getElementById("daifugoWaitingArea");
+      const boardArea = document.getElementById("daifugoBoardArea");
+      if (waitingArea) waitingArea.style.display = "none";
+      if (boardArea) boardArea.style.display = "block";
+      if (!daifugoState || daifugoState.status !== "playing") {
+        initDaifugoGame(data.players);
+      }
+    }
+  });
 }
+
+
+/* ======================
+   paper.io ゲームエンジン (Canvas 陣取り)
+====================== */
+let paperCanvas = null;
+let paperCtx = null;
+let paperAnimId = null;
+let paperRunning = false;
+let paperGrid = []; // 60x60
+const PAPER_GRID_SIZE = 60;
+const PAPER_CELL_SIZE = 6; // 360 / 60 = 6px
+let paperPlayers = [];
+let paperKills = 0;
+
+const PAPER_COLORS = [
+  { fill: "#0891b2", light: "#22d3ee", head: "#06b6d4", name: "あなた" },
+  { fill: "#dc2626", light: "#f87171", head: "#ef4444", name: "CPU1" },
+  { fill: "#059669", light: "#34d399", head: "#10b981", name: "CPU2" },
+  { fill: "#d97706", light: "#fbbf24", head: "#f59e0b", name: "CPU3" },
+  { fill: "#7c3aed", light: "#a78bfa", head: "#8b5cf6", name: "CPU4" }
+];
+
+window.openPaperHub = function () {
+  window.hideAllScreens();
+  document.getElementById("paperScreen").style.display = "block";
+  startPaperGame();
+};
+
+window.leavePaperGame = function () {
+  stopPaperLoop();
+  showGameCorner();
+};
+
+window.paperSetDirection = function (dx, dy) {
+  if (!paperPlayers[0] || !paperPlayers[0].isAlive) return;
+  const p = paperPlayers[0];
+  // 逆走防止
+  if (dx !== -p.dx || dy !== -p.dy) {
+    p.nextDx = dx;
+    p.nextDy = dy;
+  }
+};
+
+window.startPaperGame = function () {
+  paperCanvas = document.getElementById("paperCanvas");
+  if (!paperCanvas) return;
+  paperCtx = paperCanvas.getContext("2d");
+
+  // グリッド初期化 (-1 = 空白)
+  paperGrid = [];
+  for (let y = 0; y < PAPER_GRID_SIZE; y++) {
+    const row = new Int8Array(PAPER_GRID_SIZE);
+    row.fill(-1);
+    paperGrid.push(row);
+  }
+
+  paperKills = 0;
+  document.getElementById("paperKillsDisplay").textContent = "⚔️ 撃破: 0体";
+  document.getElementById("paperOverlay").style.display = "none";
+
+  // プレイヤー＆ボット初期配置 (5人)
+  const spawnPoints = [
+    { x: 30, y: 30, dx: 0, dy: -1 }, // 中央 (あなた)
+    { x: 12, y: 12, dx: 1, dy: 0 },  // 左上 (CPU1)
+    { x: 48, y: 12, dx: -1, dy: 0 }, // 右上 (CPU2)
+    { x: 12, y: 48, dx: 0, dy: -1 }, // 左下 (CPU3)
+    { x: 48, y: 48, dx: 0, dy: -1 }  // 右下 (CPU4)
+  ];
+
+  let myName = "あなた";
+  if (uid && profileCache[uid] && profileCache[uid].name) {
+    myName = profileCache[uid].name;
+  }
+
+  paperPlayers = spawnPoints.map((sp, idx) => {
+    // 6x6の初期陣地
+    const baseMinX = Math.max(0, sp.x - 3);
+    const baseMaxX = Math.min(PAPER_GRID_SIZE - 1, sp.x + 2);
+    const baseMinY = Math.max(0, sp.y - 3);
+    const baseMaxY = Math.min(PAPER_GRID_SIZE - 1, sp.y + 2);
+
+    for (let by = baseMinY; by <= baseMaxY; by++) {
+      for (let bx = baseMinX; bx <= baseMaxX; bx++) {
+        paperGrid[by][bx] = idx;
+      }
+    }
+
+    return {
+      id: idx,
+      name: idx === 0 ? myName : `CPU${idx}`,
+      isPlayer: idx === 0,
+      x: sp.x,
+      y: sp.y,
+      dx: sp.dx,
+      dy: sp.dy,
+      nextDx: sp.dx,
+      nextDy: sp.dy,
+      trail: [],
+      isAlive: true,
+      colors: PAPER_COLORS[idx],
+      aiTimer: Math.random() * 20
+    };
+  });
+
+  // タッチ / スワイプ入力
+  initPaperTouchControls();
+
+  stopPaperLoop();
+  paperRunning = true;
+  paperLoop();
+};
+
+function stopPaperLoop() {
+  if (paperAnimId) {
+    clearTimeout(paperAnimId);
+    paperAnimId = null;
+  }
+  paperRunning = false;
+}
+
+let paperTouchStart = null;
+function initPaperTouchControls() {
+  if (!paperCanvas) return;
+  paperCanvas.ontouchstart = (e) => {
+    e.preventDefault();
+    const t = e.touches[0];
+    paperTouchStart = { x: t.clientX, y: t.clientY };
+  };
+  paperCanvas.ontouchmove = (e) => {
+    e.preventDefault();
+    if (!paperTouchStart) return;
+    const t = e.touches[0];
+    const diffX = t.clientX - paperTouchStart.x;
+    const diffY = t.clientY - paperTouchStart.y;
+    if (Math.hypot(diffX, diffY) > 20) {
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        paperSetDirection(diffX > 0 ? 1 : -1, 0);
+      } else {
+        paperSetDirection(0, diffY > 0 ? 1 : -1);
+      }
+      paperTouchStart = { x: t.clientX, y: t.clientY };
+    }
+  };
+  paperCanvas.ontouchend = () => { paperTouchStart = null; };
+}
+
+window.addEventListener("keydown", (e) => {
+  const k = e.key.toLowerCase();
+  if (k === "arrowup" || k === "w") paperSetDirection(0, -1);
+  if (k === "arrowdown" || k === "s") paperSetDirection(0, 1);
+  if (k === "arrowleft" || k === "a") paperSetDirection(-1, 0);
+  if (k === "arrowright" || k === "d") paperSetDirection(1, 0);
+});
+
+function paperLoop() {
+  if (!paperRunning) return;
+  updatePaperGame();
+  drawPaperGame();
+  paperAnimId = setTimeout(paperLoop, 75); // ~13.3 FPS for smooth grid paper movement
+}
+
+function updatePaperGame() {
+  const living = paperPlayers.filter(p => p.isAlive);
+  if (living.length === 0) return;
+
+  living.forEach((p) => {
+    // ボットAI更新
+    if (!p.isPlayer) {
+      updatePaperBotAI(p);
+    }
+
+    // 方向適用
+    p.dx = p.nextDx;
+    p.dy = p.nextDy;
+
+    const nx = p.x + p.dx;
+    const ny = p.y + p.dy;
+
+    // 壁衝突判定
+    if (nx < 0 || nx >= PAPER_GRID_SIZE || ny < 0 || ny >= PAPER_GRID_SIZE) {
+      if (p.isPlayer) {
+        killPaperPlayer(p, "壁に激突してしまった！");
+        return;
+      } else {
+        // ボットは壁の手前で反転または旋回
+        p.nextDx = -p.dx;
+        p.nextDy = -p.dy;
+        return;
+      }
+    }
+
+    // 自分自身のしっぽ衝突判定
+    const hitSelf = p.trail.some(t => t.x === nx && t.y === ny);
+    if (hitSelf) {
+      killPaperPlayer(p, "自分のしっぽに激突してしまった！");
+      return;
+    }
+
+    // 他人のしっぽ切断判定
+    for (const other of paperPlayers) {
+      if (other.isAlive && other.id !== p.id) {
+        const hitIdx = other.trail.findIndex(t => t.x === nx && t.y === ny);
+        if (hitIdx !== -1) {
+          killPaperPlayer(other, `${p.name} にしっぽを切断された！`);
+          if (p.isPlayer) {
+            paperKills++;
+            document.getElementById("paperKillsDisplay").textContent = `⚔️ 撃破: ${paperKills}体`;
+          }
+          break;
+        }
+      }
+    }
+
+    if (!p.isAlive) return;
+
+    p.x = nx;
+    p.y = ny;
+
+    // 陣地判定
+    const isInsideBase = (paperGrid[ny][nx] === p.id);
+
+    if (isInsideBase) {
+      if (p.trail.length > 0) {
+        // 陣地への帰還 -> 囲んだエリアを完全制覇！
+        capturePaperTerritory(p);
+      }
+    } else {
+      // 陣地外 -> しっぽ追加
+      p.trail.push({ x: nx, y: ny });
+    }
+  });
+
+  updatePaperLeaderboard();
+}
+
+function updatePaperBotAI(bot) {
+  bot.aiTimer--;
+  const inBase = (paperGrid[bot.y][bot.x] === bot.id);
+
+  if (bot.aiTimer <= 0) {
+    bot.aiTimer = 10 + Math.random() * 15;
+    // 陣地外でしっぽが長くなったら自陣に戻る
+    if (!inBase && bot.trail.length > 7) {
+      const dirs = [{ dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 }];
+      const valid = dirs.filter(d => d.dx !== -bot.dx || d.dy !== -bot.dy);
+      // 自陣方向を選択
+      const best = valid.sort((a, b) => {
+        const d1 = Math.hypot(bot.x + a.dx - 30, bot.y + a.dy - 30);
+        const d2 = Math.hypot(bot.x + b.dx - 30, bot.y + b.dy - 30);
+        return d1 - d2;
+      })[0];
+      if (best) { bot.nextDx = best.dx; bot.nextDy = best.dy; }
+    } else {
+      // ランダム旋回
+      const dirs = [{ dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 }];
+      const valid = dirs.filter(d => (d.dx !== -bot.dx || d.dy !== -bot.dy));
+      const pick = valid[Math.floor(Math.random() * valid.length)];
+      if (pick) { bot.nextDx = pick.dx; bot.nextDy = pick.dy; }
+    }
+  }
+}
+
+function capturePaperTerritory(p) {
+  // しっぽのセルをまず自陣にする
+  p.trail.forEach(t => {
+    if (t.y >= 0 && t.y < PAPER_GRID_SIZE && t.x >= 0 && t.x < PAPER_GRID_SIZE) {
+      paperGrid[t.y][t.x] = p.id;
+    }
+  });
+
+  // バウンディングボックス外側からのフラッドフィルで囲み判定
+  let minX = PAPER_GRID_SIZE, maxX = 0, minY = PAPER_GRID_SIZE, maxY = 0;
+  p.trail.forEach(t => {
+    minX = Math.min(minX, t.x);
+    maxX = Math.max(maxX, t.x);
+    minY = Math.min(minY, t.y);
+    maxY = Math.max(maxY, t.y);
+  });
+
+  minX = Math.max(0, minX - 1);
+  maxX = Math.min(PAPER_GRID_SIZE - 1, maxX + 1);
+  minY = Math.max(0, minY - 1);
+  maxY = Math.min(PAPER_GRID_SIZE - 1, maxY + 1);
+
+  const visited = new Uint8Array(PAPER_GRID_SIZE * PAPER_GRID_SIZE);
+  const queue = [{ x: minX, y: minY }];
+  visited[minY * PAPER_GRID_SIZE + minX] = 1;
+
+  while (queue.length > 0) {
+    const { x, y } = queue.pop();
+    const neighbors = [
+      { x: x + 1, y }, { x: x - 1, y }, { x, y: y + 1 }, { x, y: y - 1 }
+    ];
+    for (const n of neighbors) {
+      if (n.x >= minX && n.x <= maxX && n.y >= minY && n.y <= maxY) {
+        const idx = n.y * PAPER_GRID_SIZE + n.x;
+        if (!visited[idx] && paperGrid[n.y][n.x] !== p.id) {
+          visited[idx] = 1;
+          queue.push(n);
+        }
+      }
+    }
+  }
+
+  // フラッドフィルで到達できなかった領域（囲まれた内側）をすべて制覇
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      const idx = y * PAPER_GRID_SIZE + x;
+      if (!visited[idx]) {
+        paperGrid[y][x] = p.id;
+      }
+    }
+  }
+
+  p.trail = [];
+}
+
+function killPaperPlayer(p, reason) {
+  p.isAlive = false;
+  p.trail = [];
+  // 陣地を消去
+  for (let y = 0; y < PAPER_GRID_SIZE; y++) {
+    for (let x = 0; x < PAPER_GRID_SIZE; x++) {
+      if (paperGrid[y][x] === p.id) {
+        paperGrid[y][x] = -1;
+      }
+    }
+  }
+
+  if (p.isPlayer) {
+    showPaperOverlay("💥 撃破された！", `${reason} (撃破: ${paperKills}体)`);
+  } else {
+    // 生き残りがプレイヤーのみなら勝利
+    const living = paperPlayers.filter(pl => pl.isAlive);
+    if (living.length === 1 && living[0].isPlayer) {
+      showPaperOverlay("👑 ビクトリー！マップ制覇！", `全CPUを撃破しました！ (撃破: ${paperKills}体)`);
+    }
+  }
+}
+
+function showPaperOverlay(title, msg) {
+  stopPaperLoop();
+  const ov = document.getElementById("paperOverlay");
+  if (ov) {
+    ov.style.display = "flex";
+    document.getElementById("paperOverlayTitle").textContent = title;
+    document.getElementById("paperOverlayMsg").textContent = msg;
+  }
+}
+
+function updatePaperLeaderboard() {
+  const total = PAPER_GRID_SIZE * PAPER_GRID_SIZE;
+  const counts = [0, 0, 0, 0, 0];
+
+  for (let y = 0; y < PAPER_GRID_SIZE; y++) {
+    for (let x = 0; x < PAPER_GRID_SIZE; x++) {
+      const pid = paperGrid[y][x];
+      if (pid >= 0 && pid < 5) counts[pid]++;
+    }
+  }
+
+  const scores = paperPlayers.map((p, idx) => ({
+    name: p.name,
+    isPlayer: p.isPlayer,
+    isAlive: p.isAlive,
+    pct: ((counts[idx] / total) * 100).toFixed(1)
+  })).sort((a, b) => parseFloat(b.pct) - parseFloat(a.pct));
+
+  const myRank = scores.findIndex(s => s.isPlayer) + 1;
+  const myPct = scores.find(s => s.isPlayer)?.pct || "0.0";
+  const rankEl = document.getElementById("paperScoreRank");
+  if (rankEl) {
+    rankEl.textContent = `あなた: ${myPct}% (${myRank}位)`;
+  }
+}
+
+function drawPaperGame() {
+  if (!paperCtx) return;
+  paperCtx.fillStyle = "#0f172a";
+  paperCtx.fillRect(0, 0, 360, 360);
+
+  // 1. 陣地描画
+  for (let y = 0; y < PAPER_GRID_SIZE; y++) {
+    for (let x = 0; x < PAPER_GRID_SIZE; x++) {
+      const pid = paperGrid[y][x];
+      if (pid >= 0 && pid < 5) {
+        paperCtx.fillStyle = PAPER_COLORS[pid].fill;
+        paperCtx.fillRect(x * PAPER_CELL_SIZE, y * PAPER_CELL_SIZE, PAPER_CELL_SIZE, PAPER_CELL_SIZE);
+      }
+    }
+  }
+
+  // 2. しっぽ描画
+  paperPlayers.forEach((p) => {
+    if (!p.isAlive || p.trail.length === 0) return;
+    paperCtx.fillStyle = p.colors.light;
+    p.trail.forEach(t => {
+      paperCtx.fillRect(t.x * PAPER_CELL_SIZE + 1, t.y * PAPER_CELL_SIZE + 1, PAPER_CELL_SIZE - 2, PAPER_CELL_SIZE - 2);
+    });
+  });
+
+  // 3. プレイヤー頭部描画
+  paperPlayers.forEach((p) => {
+    if (!p.isAlive) return;
+    paperCtx.fillStyle = p.colors.head;
+    const px = p.x * PAPER_CELL_SIZE;
+    const py = p.y * PAPER_CELL_SIZE;
+    paperCtx.fillRect(px, py, PAPER_CELL_SIZE, PAPER_CELL_SIZE);
+
+    // 頭部枠線＆目
+    paperCtx.strokeStyle = "#fff";
+    paperCtx.lineWidth = 1;
+    paperCtx.strokeRect(px, py, PAPER_CELL_SIZE, PAPER_CELL_SIZE);
+  });
+}
+
 
 </script>
 
