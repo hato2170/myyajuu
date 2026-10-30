@@ -1710,25 +1710,21 @@ async function () {
 
 
 /* ======================
-   現在のUID
+   現在のUID & グローバル状態
 ====================== */
 
 let uid = null;
-
-
-/* ======================
-   現在表示しているプロフィール
-====================== */
-
-let viewingProfileUserId =
-  null;
-
-
-/* ======================
-   プロフィールキャッシュ
-====================== */
-
+let viewingProfileUserId = null;
 const profileCache = {};
+
+// DM & 通知用ステート変数
+let dmTargetUserId = null;
+let dmUnsubscribe = null;
+let notifUnsubReplies = null;
+let notifUnsubDMs = null;
+let allNotifications = [];
+let allDMConversations = {};
+let dmTargetProfile = null;
 
 
 /* ======================
@@ -2916,12 +2912,6 @@ userDiv.appendChild(
 /* ======================
    お知らせ・DM通知・会話一覧管理
 ====================== */
-
-let notifUnsubReplies = null;
-let notifUnsubDMs = null;
-let allNotifications = [];
-let allDMConversations = {}; // targetUid -> { lastMessage, unreadCount, targetProfile }
-let dmTargetProfile = null;
 
 // 既読トラッキング用 (localStorage)
 function getReadNotifsMap() {
