@@ -36,6 +36,11 @@ img, video, canvas, svg {
   overflow-x: hidden !important;
 }
 
+#sbExitFsBtn:hover, #sbExitFsBtn:active {
+  opacity: 0.95 !important;
+  background: rgba(0,0,0,0.85) !important;
+}
+
 .post {
   border-bottom: 1px solid #222;
   padding: 12px 0;
@@ -988,9 +993,7 @@ button.back {
         </div>
       </div>
       <div id="snowballIframeWrapper" style="width:100%; height:70vh; max-height:640px; position:relative; background:#000; border-radius:12px; overflow:hidden; border:2px solid #334155; transition: all 0.2s ease;">
-        <button id="sbExitFsBtn" onclick="exitSnowballFullscreen()" style="display:none; position:fixed; top:12px; right:12px; z-index:2147483647; background:rgba(15,23,42,0.9); color:#fff; border:1px solid #475569; padding:8px 16px; font-size:13px; font-weight:bold; border-radius:8px; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.7);">
-          ✕ 全画面を終了
-        </button>
+        <button id="sbExitFsBtn" onclick="exitSnowballFullscreen()" style="display:none; position:fixed; top:12px; right:12px; z-index:2147483647; width:34px !important; min-width:34px !important; max-width:34px !important; height:34px !important; border-radius:50% !important; background:rgba(0,0,0,0.35) !important; color:#fff !important; border:1px solid rgba(255,255,255,0.25) !important; font-size:16px !important; font-weight:bold !important; cursor:pointer !important; box-shadow:0 2px 8px rgba(0,0,0,0.4) !important; opacity:0.4; transition:opacity 0.2s, background 0.2s; padding:0 !important; margin:0 !important; line-height:32px; text-align:center;">✕</button>
         <iframe id="snowballOfficialIframe" src="about:blank" style="width:100%; height:100%; border:none; display:block;" allow="autoplay; fullscreen; web-share" allowfullscreen></iframe>
       </div>
     </div>
