@@ -1163,6 +1163,23 @@ button.back {
         <div id="othelloCopyUrlBtn" style="cursor:pointer; color:#a5d6ff; font-size:12px; display:none;" onclick="copyCurrentRoomUrl()">📋 招待URLコピー</div>
       </div>
 
+      <!-- 待機ロビー画面 (オンライン対戦用) -->
+      <div id="othelloWaitingArea" style="display:none; background:#161b22; border:1px solid #30363d; border-radius:14px; padding:24px 16px; text-align:center; margin-bottom:14px;">
+        <h3 style="margin:0 0 8px 0; color:#58a6ff;">⏳ 対戦相手（白番）の参加を待機中...</h3>
+        <p style="color:#94a3b8; font-size:13px; margin:0 0 16px 0;">友達に合言葉または招待URLを送って参加してもらってください。</p>
+        <div style="background:#0d1117; border:1px solid #30363d; border-radius:10px; padding:12px 20px; margin-bottom:16px; display:inline-block; min-width:200px;">
+          <div style="font-size:12px; color:#8b949e; margin-bottom:4px;">あなたの名前 (先手・黒)</div>
+          <div id="othelloWaitingHostName" style="font-size:16px; font-weight:bold; color:#f0f6fc;">あなた</div>
+        </div>
+        <div>
+          <button onclick="copyCurrentRoomUrl()" style="background:#9333ea; color:#fff; font-weight:bold; padding:10px 20px; border-radius:8px; font-size:14px; width:auto; margin-bottom:12px;">📋 招待URLをコピー</button>
+        </div>
+        <p style="color:#64748b; font-size:12px; margin:0 0 10px 0;">友達がURLを開くか合言葉を入力すると自動で対局が始まります！</p>
+        <button onclick="startOthelloAIFallback()" style="background:#1e293b; border:1px solid #475569; color:#94a3b8; padding:8px 16px; border-radius:8px; font-size:12px; width:auto;">🤖 待たずにCPUと対戦する</button>
+      </div>
+
+      <div id="othelloBoardArea">
+
       <div id="othelloStatusBanner" style="background:#21262d; padding:8px 12px; border-radius:6px; margin-bottom:10px; text-align:center; font-size:14px; color:#f0f6fc;">
         対戦待機中...
       </div>
@@ -1187,6 +1204,7 @@ button.back {
       <div style="display:flex; gap:10px;">
         <button onclick="leaveOthelloGame()" style="background:#30363d; padding:8px; font-size:13px;">ゲームを終了して戻る</button>
         <button id="othelloRestartBtn" onclick="restartOthelloGame()" style="background:#238636; padding:8px; font-size:13px; display:none;">もう一度遊ぶ</button>
+      </div>
       </div>
     </div>
 
@@ -5317,10 +5335,28 @@ window.leaveOthelloGame = function () {
     othelloUnsub();
     othelloUnsub = null;
   }
+  const wEl = document.getElementById("othelloWaitingArea");
+  const bEl = document.getElementById("othelloBoardArea");
+  if (wEl) wEl.style.display = "none";
+  if (bEl) bEl.style.display = "block";
   document.getElementById("othelloGameArea").style.display = "none";
   document.getElementById("othelloLobby").style.display = "block";
   currentOthelloMode = null;
   currentOthelloRoomId = null;
+  localOthelloBoard = null;
+  localOthelloStatus = "finished";
+};
+
+window.startOthelloAIFallback = function () {
+  if (othelloUnsub) {
+    othelloUnsub();
+    othelloUnsub = null;
+  }
+  const wEl = document.getElementById("othelloWaitingArea");
+  const bEl = document.getElementById("othelloBoardArea");
+  if (wEl) wEl.style.display = "none";
+  if (bEl) bEl.style.display = "block";
+  startOthelloAI();
 };
 
 /* --- オセロロジック --- */
@@ -5851,6 +5887,11 @@ window.startOthelloRandom = async function () {
 };
 
 async function enterOthelloRoom(roomId, isPublic = false) {
+  // 前のCPU戦の状態を完全に初期化・リセット
+  localOthelloBoard = null;
+  localOthelloTurn = 1;
+  localOthelloStatus = "finished";
+
   currentOthelloMode = "online";
   currentOthelloRoomId = roomId;
 
@@ -5918,10 +5959,21 @@ async function enterOthelloRoom(roomId, isPublic = false) {
     document.getElementById("othelloBlackName").textContent = (data.p1Name || "先手(黒)") + (myOthelloRole === 1 ? " (あなた)" : "");
     document.getElementById("othelloWhiteName").textContent = (data.p2Name || "後手(白)") + (myOthelloRole === 2 ? " (あなた)" : "");
 
+    const wArea = document.getElementById("othelloWaitingArea");
+    const bArea = document.getElementById("othelloBoardArea");
+
     if (data.status === "waiting") {
-      document.getElementById("othelloStatusBanner").textContent = "相手の参加を待機中... (合言葉/URLを友達に共有してください)";
-      renderOthelloUI(board, turn, myOthelloRole, false, false);
+      if (wArea) wArea.style.display = "block";
+      if (bArea) bArea.style.display = "none";
+      const hostNameEl = document.getElementById("othelloWaitingHostName");
+      if (hostNameEl) hostNameEl.textContent = data.p1Name || "あなた";
+      document.getElementById("othelloStatusBanner").textContent = "⏳ 相手の参加を待機中... (招待URLを送ってください)";
       return;
+    } else {
+      if (wArea) wArea.style.display = "none";
+      if (bArea) bArea.style.display = "block";
+      document.getElementById("othelloBlackName").textContent = (data.p1Name || "プレイヤー1") + " (黒)";
+      document.getElementById("othelloWhiteName").textContent = (data.p2Name || "プレイヤー2") + " (白)";
     }
 
     if (isGameOver) {
@@ -8713,7 +8765,7 @@ function renderDaifugoWaitingLobby(data, roomRef) {
   boardArea.style.display = "none";
 
   const pCount = (data.players || []).length;
-  document.getElementById("daifugoWaitingCount").textContent = `参加人数: ${pCount} / 4人`;
+  document.getElementById("daifugoWaitingCount").textContent = `参加人数: ${pCount} / 4人 (2人以上で開始可能)`;
 
   const memEl = document.getElementById("daifugoWaitingMembers");
   if (memEl) {
@@ -8723,6 +8775,19 @@ function renderDaifugoWaitingLobby(data, roomRef) {
         <strong>${escapeHTML(p.name)}</strong>
       </div>
     `).join("");
+  }
+
+  const startBtn = document.getElementById("daifugoStartWithCpuBtn");
+  if (startBtn) {
+    if (pCount >= 2) {
+      startBtn.style.background = "#238636";
+      startBtn.style.boxShadow = "0 0 12px rgba(35, 134, 54, 0.6)";
+      startBtn.textContent = `🎮 2人以上揃いました！対戦開始（不足${4 - pCount}枠はCPU自動補充）`;
+    } else {
+      startBtn.style.background = "#1e293b";
+      startBtn.style.boxShadow = "none";
+      startBtn.textContent = "🤖 待たずに練習開始（自分 ＋ CPU3人で即時対戦）";
+    }
   }
 
   // 4人集まったら自動開始
