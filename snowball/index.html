@@ -75,15 +75,55 @@ height:screen.height?screen.height:0,browser:i,browserVersion:s,mobile:l,os:u,os
       text-decoration: none;
       box-shadow: 0 2px 8px rgba(0,0,0,0.5);
     }
+    #fsBtn {
+      position: fixed;
+      top: 8px;
+      right: 170px;
+      z-index: 99999;
+      background: rgba(15, 23, 42, 0.85);
+      color: #f1f5f9;
+      border: 1px solid #334155;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
     </style>
 </head>
 <body>
     <a id="backBtn" href="../sns.html">← チャットへ戻る</a>
+    <button id="fsBtn" onclick="toggleUnityFullscreen()">⛶ 全画面</button>
     <button id="escapeBtn" onclick="window.location.href='https://www.google.com/search?q=%E6%95%B0%E5%AD%A6+%E4%B8%80%E6%AC%A1%E9%96%A2%E6%95%B0'">🚨 緊急回避 (数学)</button>
     <div class="webgl-content">
         <div id="gameContainer" style="width: 100%; height: 100%; margin: auto;"></div>
     </div>
     <script>
+      function toggleUnityFullscreen() {
+        try {
+          if (typeof gameInstance !== "undefined" && gameInstance && gameInstance.SetFullscreen) {
+            gameInstance.SetFullscreen(1);
+            return;
+          }
+        } catch (e) {}
+
+        const doc = document.documentElement;
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          if (doc.requestFullscreen) {
+            doc.requestFullscreen().catch(() => {});
+          } else if (doc.webkitRequestFullscreen) {
+            doc.webkitRequestFullscreen();
+          }
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen().catch(() => {});
+          } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+          }
+        }
+      }
+
       window.addEventListener("keydown", function(e) {
         if (e.key === "Escape") {
           window.location.href = "https://www.google.com/search?q=%E6%95%B0%E5%AD%A6+%E4%B8%80%E6%AC%A1%E9%96%A2%E6%95%B0";

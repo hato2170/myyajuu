@@ -987,7 +987,10 @@ button.back {
           サーバー1 (内蔵): チャットサイト内蔵の公式3D日本語版です。同一URL・ブロック完全回避！
         </div>
       </div>
-      <div style="width:100%; height:70vh; max-height:640px; position:relative; background:#000; border-radius:12px; overflow:hidden; border:2px solid #334155;">
+      <div id="snowballIframeWrapper" style="width:100%; height:70vh; max-height:640px; position:relative; background:#000; border-radius:12px; overflow:hidden; border:2px solid #334155; transition: all 0.2s ease;">
+        <button id="sbExitFsBtn" onclick="exitSnowballFullscreen()" style="display:none; position:fixed; top:12px; right:12px; z-index:2147483647; background:rgba(15,23,42,0.9); color:#fff; border:1px solid #475569; padding:8px 16px; font-size:13px; font-weight:bold; border-radius:8px; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.7);">
+          ✕ 全画面を終了
+        </button>
         <iframe id="snowballOfficialIframe" src="about:blank" style="width:100%; height:100%; border:none; display:block;" allow="autoplay; fullscreen; web-share" allowfullscreen></iframe>
       </div>
     </div>
@@ -5049,21 +5052,85 @@ window.switchSnowballTab = function (mode) {
   }
 };
 
+let sbIsFullscreen = false;
+
 window.toggleSnowballFullscreen = function () {
-  const container = document.getElementById("snowballOfficialContainer");
-  if (!container) return;
-  if (!document.fullscreenElement) {
-    if (container.requestFullscreen) {
-      container.requestFullscreen();
-    } else if (container.webkitRequestFullscreen) {
-      container.webkitRequestFullscreen();
-    }
+  const wrapper = document.getElementById("snowballIframeWrapper");
+  const exitBtn = document.getElementById("sbExitFsBtn");
+  if (!wrapper) return;
+
+  sbIsFullscreen = !sbIsFullscreen;
+
+  if (sbIsFullscreen) {
+    wrapper.style.position = "fixed";
+    wrapper.style.top = "0";
+    wrapper.style.left = "0";
+    wrapper.style.right = "0";
+    wrapper.style.bottom = "0";
+    wrapper.style.width = "100vw";
+    wrapper.style.height = "100vh";
+    wrapper.style.maxHeight = "100vh";
+    wrapper.style.zIndex = "2147483646";
+    wrapper.style.borderRadius = "0";
+    wrapper.style.border = "none";
+    wrapper.style.margin = "0";
+    wrapper.style.padding = "0";
+    if (exitBtn) exitBtn.style.display = "block";
+
+    try {
+      if (wrapper.requestFullscreen) {
+        wrapper.requestFullscreen().catch(() => {});
+      } else if (wrapper.webkitRequestFullscreen) {
+        wrapper.webkitRequestFullscreen();
+      }
+    } catch (e) {}
   } else {
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
-    }
+    window.exitSnowballFullscreen();
   }
 };
+
+window.exitSnowballFullscreen = function () {
+  sbIsFullscreen = false;
+  const wrapper = document.getElementById("snowballIframeWrapper");
+  const exitBtn = document.getElementById("sbExitFsBtn");
+  if (wrapper) {
+    wrapper.style.position = "relative";
+    wrapper.style.top = "auto";
+    wrapper.style.left = "auto";
+    wrapper.style.right = "auto";
+    wrapper.style.bottom = "auto";
+    wrapper.style.width = "100%";
+    wrapper.style.height = "70vh";
+    wrapper.style.maxHeight = "640px";
+    wrapper.style.zIndex = "auto";
+    wrapper.style.borderRadius = "12px";
+    wrapper.style.border = "2px solid #334155";
+    wrapper.style.margin = "0";
+    wrapper.style.padding = "0";
+  }
+  if (exitBtn) exitBtn.style.display = "none";
+
+  try {
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
+  } catch (e) {}
+};
+
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement && sbIsFullscreen) {
+    window.exitSnowballFullscreen();
+  }
+});
+document.addEventListener("webkitfullscreenchange", () => {
+  if (!document.webkitFullscreenElement && sbIsFullscreen) {
+    window.exitSnowballFullscreen();
+  }
+});
 
 // D-Pad用関数
 window.sbPressDir = function (dx, dy) {
