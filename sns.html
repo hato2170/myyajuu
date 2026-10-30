@@ -962,13 +962,13 @@ button.back {
           <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
             <span style="color:#38bdf8; font-size:12px; font-weight:bold;">🌐 サーバー:</span>
             <button id="sbServer1Btn" onclick="switchSnowball3DServer(1)" style="background:#0284c7; color:#fff; width:auto; padding:4px 10px; font-size:11px; border-radius:6px; border:none; cursor:pointer;">
-              ⚡ サーバー1 (推奨・日本語)
+              ⚡ サーバー1 (サイト内蔵・同一URL)
             </button>
             <button id="sbServer2Btn" onclick="switchSnowball3DServer(2)" style="background:#1e293b; color:#94a3b8; width:auto; padding:4px 10px; font-size:11px; border-radius:6px; border:1px solid #334155; cursor:pointer;">
-              🌐 サーバー2 (CrazyGames)
+              🌐 サーバー2 (GitLab)
             </button>
             <button id="sbServer3Btn" onclick="switchSnowball3DServer(3)" style="background:#1e293b; color:#94a3b8; width:auto; padding:4px 10px; font-size:11px; border-radius:6px; border:1px solid #334155; cursor:pointer;">
-              🚀 サーバー3 (予備)
+              🚀 サーバー3 (CrazyGames)
             </button>
           </div>
           <div style="display:flex; gap:6px;">
@@ -984,7 +984,7 @@ button.back {
           </div>
         </div>
         <div id="sbServerDesc" style="color:#8b949e; font-size:11px; margin-top:6px;">
-          サーバー1: GitLabホストの公式Unity WebGL日本語版です。広告なし・ブロック対策済み。
+          サーバー1 (内蔵): チャットサイト内蔵の公式3D日本語版です。同一URL・ブロック完全回避！
         </div>
       </div>
       <div style="width:100%; height:70vh; max-height:640px; position:relative; background:#000; border-radius:12px; overflow:hidden; border:2px solid #334155;">
@@ -4946,16 +4946,16 @@ let sbCanvasInitialized = false;
 
 const SB_SERVERS = {
   1: {
-    url: "https://snowballio.gitlab.io/file/",
-    desc: "サーバー1: GitLabホストの公式Unity WebGL日本語版です。広告なし・ブロック対策済み。"
+    url: "snowball/",
+    desc: "サーバー1 (内蔵): チャットサイト内蔵の公式3D日本語版です。同一URL・ブロック完全回避！"
   },
   2: {
-    url: "https://games.crazygames.com/en_US/snowball-io/index.html",
-    desc: "サーバー2: CrazyGames配信の公式版です。"
+    url: "https://snowballio.gitlab.io/file/",
+    desc: "サーバー2 (GitLab): GitLab高速サーバー配信の3D日本語版です。"
   },
   3: {
-    url: "https://snowballio.gitlab.io/",
-    desc: "サーバー3: 予備サーバーです。"
+    url: "https://games.crazygames.com/en_US/snowball-io/index.html",
+    desc: "サーバー3 (CrazyGames): CrazyGames配信の公式版です。"
   }
 };
 let currentSb3DServer = 1;
@@ -4995,8 +4995,12 @@ window.reloadSnowball3D = function () {
 };
 
 window.openSnowball3DInNewTab = function () {
-  const cfg = SB_SERVERS[currentSb3DServer] || SB_SERVERS[1];
-  window.open(cfg.url, "_blank");
+  if (currentSb3DServer === 1) {
+    window.open("snowball/", "_blank");
+  } else {
+    const cfg = SB_SERVERS[currentSb3DServer] || SB_SERVERS[1];
+    window.open(cfg.url, "_blank");
+  }
 };
 
 window.openSnowballHub = function () {
