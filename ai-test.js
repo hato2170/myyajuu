@@ -1,4 +1,3 @@
-import { CreateMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
 
@@ -14,17 +13,12 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 
-const MODEL_ID = "Qwen2.5-0.5B-Instruct-q4f16_1-MLC";
-const HISTORY_KEY = "myyajuu_ai_test_history_v1";
-const MAX_SAVED_MESSAGES = 60;
-const MAX_CONTEXT_MESSAGES = 20;
-const SYSTEM_MESSAGE = "あなたは親切な日本語AIアシスタントです。自然で簡潔な日本語で回答してください。確実でない情報は断定しないでください。";
+// Cloudflare Worker API URL
+const WORKER_URL = window.MYYAJUU_AI_WORKER_URL || "https://myyajuu-ai-worker.hato2170.workers.dev";
 
 const $ = (id) => document.getElementById(id);
 const statusEl = $("status");
-const progressEl = $("progress");
 const errorEl = $("error");
-const loadButton = $("loadButton");
 const promptEl = $("prompt");
 const sendButton = $("sendButton");
 const clearButton = $("clearButton");
@@ -32,57 +26,41 @@ const messagesEl = $("messages");
 const welcomeEl = $("welcome");
 const authGateEl = $("authGate");
 const authMessageEl = $("authMessage");
-let engine = null;
+
+// 会話データはメモリ上にのみ保持（LocalStorage, SessionStorage, IndexedDB, Cache API には一切保存しない）
 let history = [];
+let currentUser = null;
 let currentUid = null;
-let authStateVersion = 0;
-let activeRequestUid = null;
 let generating = false;
-let webGPUChecked = false;
-let webGPUReady = false;
+let loadingHistory = false;
 
-function historyStorageKey(uid) {
-  return `${HISTORY_KEY}_${uid}`;
-}
-
-function loadHistory(uid) {
-  if (!uid) return [];
+// 過去のlocalStorage/sessionStorage上のAIキャッシュを完全消去（Firebaseログイン状態のキーは保持）
+function purgeLegacyLocalData() {
   try {
-    const value = JSON.parse(localStorage.getItem(historyStorageKey(uid)) || "[]");
-    return Array.isArray(value) ? value.filter((item) =>
-      item && (item.role === "user" || item.role === "assistant") && typeof item.content === "string"
-    ).slice(-MAX_SAVED_MESSAGES) : [];
-  } catch (error) {
-    return [];
-  }
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith("myyajuu_ai") || key.includes("ai_test_history"))) {
+        localStorage.removeItem(key);
+      }
+    }
+    sessionStorage.clear();
+  } catch {}
 }
-
-function saveHistory(uid) {
-  if (!uid || uid !== currentUid) return;
-  try {
-    history = history.slice(-MAX_SAVED_MESSAGES);
-    localStorage.setItem(historyStorageKey(uid), JSON.stringify(history));
-  } catch (error) {
-    showError("端末内に会話を保存できませんでした。ブラウザーの保存容量をご確認ください。\n" + error.message);
-  }
-}
+purgeLegacyLocalData();
 
 function showError(message) {
   errorEl.textContent = message;
   errorEl.hidden = false;
 }
 
-function syncAuthUI() {
+function syncUI() {
   const signedIn = Boolean(currentUid);
   authGateEl.hidden = signedIn;
-  clearButton.disabled = !signedIn;
-  loadButton.hidden = !signedIn || !webGPUReady || Boolean(engine);
-  loadButton.disabled = !signedIn || generating;
-  promptEl.disabled = !signedIn || !engine || generating;
-  sendButton.disabled = !signedIn || !engine || generating;
+  clearButton.disabled = !signedIn || generating || loadingHistory || history.length === 0;
+  promptEl.disabled = !signedIn || generating || loadingHistory;
+  sendButton.disabled = !signedIn || generating || loadingHistory;
 
   if (!signedIn) {
-    progressEl.hidden = true;
     welcomeEl.hidden = true;
   }
 }
@@ -106,178 +84,171 @@ function renderHistory() {
     welcomeEl.hidden = true;
     return;
   }
-  for (const item of history) appendMessage(item.role, item.content);
+  for (const item of history) {
+    appendMessage(item.role, item.content);
+  }
   welcomeEl.hidden = history.length > 0;
 }
 
-async function checkWebGPU() {
-  if (!currentUid) return false;
-  webGPUChecked = true;
-  if (!navigator.gpu) {
-    webGPUReady = false;
-    statusEl.textContent = "このブラウザーではWebGPUを利用できません。対応ブラウザー・OSで開いてください。";
-    showError("WebLLMはWebGPUが必要です。ブラウザーとOSを最新版にし、WebGPU対応端末で再度お試しください。iPhone Safariでの動作はOS・端末により異なります。");
-    syncAuthUI();
-    return false;
-  }
+// Cloudflare D1からログイン中アカウントの会話履歴を取得（別端末でも同期）
+async function fetchD1History(user) {
+  if (!user) return [];
+  loadingHistory = true;
+  statusEl.textContent = "会話履歴をD1サーバーから同期しています…";
   try {
-    const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) throw new Error("WebGPU adapterを取得できませんでした。");
-    if (!currentUid) {
-      webGPUChecked = false;
-      return false;
-    }
-    webGPUReady = true;
-    statusEl.textContent = "WebGPUアダプターを確認しました。モデルの読み込みが必要です。";
-    syncAuthUI();
-    return true;
-  } catch (error) {
-    if (!currentUid) {
-      webGPUChecked = false;
-      return false;
-    }
-    webGPUReady = false;
-    statusEl.textContent = "WebGPUを初期化できませんでした。";
-    showError(`WebGPUアダプターを利用できません。対応ブラウザー・端末か確認してください。\n${error?.message || error}`);
-    syncAuthUI();
-    return false;
-  }
-}
-
-async function loadModel() {
-  if (!currentUid || !webGPUReady || engine) return;
-  const loadUid = currentUid;
-  loadButton.disabled = true;
-  loadButton.hidden = true;
-  errorEl.hidden = true;
-  progressEl.hidden = false;
-  progressEl.removeAttribute("value");
-  statusEl.textContent = "モデルをダウンロード・準備しています。初回は約300 MBの通信が発生します…";
-  try {
-    engine = await CreateMLCEngine(MODEL_ID, {
-      initProgressCallback: (report) => {
-        if (currentUid !== loadUid) return;
-        statusEl.textContent = report.text || "モデルを準備しています…";
-        if (typeof report.progress === "number") {
-          progressEl.value = Math.max(0, Math.min(100, report.progress * 100));
-        } else {
-          progressEl.removeAttribute("value");
-        }
+    const token = await user.getIdToken();
+    const response = await fetch(`${WORKER_URL}/v1/chat/history`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
       },
     });
-    progressEl.hidden = true;
-    if (currentUid === loadUid) {
-      statusEl.textContent = "準備完了。会話はこの端末内に保存されます。";
-      syncAuthUI();
-      promptEl.focus();
-    } else {
-      syncAuthUI();
+
+    if (!response.ok) {
+      if (response.status === 401) throw new Error("認証の有効期限が切れました。ログインし直してください。");
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.message || `履歴の取得に失敗しました (${response.status})`);
     }
+
+    const data = await response.json();
+    return Array.isArray(data.messages) ? data.messages : [];
   } catch (error) {
-    engine = null;
-    progressEl.hidden = true;
-    if (currentUid === loadUid) {
-      statusEl.textContent = "モデルを読み込めませんでした。";
-      showError(`モデルの読み込みに失敗しました。WebGPU対応、通信環境、端末の空きメモリ・保存容量を確認してください。\n\n詳細: ${error?.message || error}`);
-      loadButton.textContent = "もう一度読み込む（初回は約300 MB）";
-    }
-    syncAuthUI();
+    showError("会話履歴の同期に失敗しました。\n" + (error?.message || error));
+    return [];
+  } finally {
+    loadingHistory = false;
   }
 }
 
+// メッセージ送信（D1サーバーへ保存・AI生成）
 async function sendMessage(text) {
-  if (!engine || !currentUid || generating) return;
-  const requestUid = currentUid;
-  const requestAuthVersion = authStateVersion;
+  if (!currentUser || generating || loadingHistory) return;
+  const sendUid = currentUid;
   generating = true;
-  activeRequestUid = requestUid;
-  syncAuthUI();
+  syncUI();
   errorEl.hidden = true;
   welcomeEl.hidden = true;
 
+  // メモリ上および画面上にユーザーメッセージを即座に反映
   history.push({ role: "user", content: text });
   appendMessage("user", text);
-  saveHistory(requestUid);
-  const answerBubble = appendMessage("assistant", "");
-  let answer = "";
-  statusEl.textContent = "回答を生成しています…";
+
+  const assistantBubble = appendMessage("assistant", "AIが回答を生成しています…");
+  statusEl.textContent = "AIが回答を生成しています…";
 
   try {
-    const recent = history.slice(-MAX_CONTEXT_MESSAGES).map(({ role, content }) => ({ role, content }));
-    const chunks = await engine.chat.completions.create({
-      messages: [{ role: "system", content: SYSTEM_MESSAGE }, ...recent],
-      stream: true,
-      temperature: 0.7,
-      max_tokens: 512,
+    const token = await currentUser.getIdToken();
+    const response = await fetch(`${WORKER_URL}/v1/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ message: text }),
     });
-    for await (const chunk of chunks) {
-      if (currentUid !== requestUid || authStateVersion !== requestAuthVersion) break;
-      answer += chunk.choices?.[0]?.delta?.content || "";
-      answerBubble.textContent = answer;
-      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      let msg = errData.message || `エラーが発生しました (${response.status})`;
+      if (response.status === 429) {
+        if (errData.error === "user_daily_limit") {
+          msg = "本日の利用上限（20回）に達しました。明日またご利用ください。";
+        } else if (errData.error === "daily_budget_reached") {
+          msg = "本日のAI無料枠上限に達しました。時間を置いてお試しください。";
+        } else if (errData.error === "request_in_progress") {
+          msg = "前回の回答を処理中です。少し待ってから送信してください。";
+        }
+      }
+      throw new Error(msg);
     }
-    if (currentUid !== requestUid || authStateVersion !== requestAuthVersion) return;
-    if (!answer.trim()) answer = await engine.getMessage();
-    if (currentUid !== requestUid || authStateVersion !== requestAuthVersion) return;
-    answerBubble.textContent = answer;
-    history.push({ role: "assistant", content: answer });
-    saveHistory(requestUid);
-    statusEl.textContent = "準備完了。";
+
+    const data = await response.json();
+    const replyText = data.reply || "";
+
+    if (currentUid !== sendUid) return;
+
+    assistantBubble.textContent = replyText;
+    history.push({ role: "assistant", content: replyText });
+    statusEl.textContent = "準備完了。会話はCloudflare D1にサーバー保存されています。";
   } catch (error) {
-    if (currentUid !== requestUid || authStateVersion !== requestAuthVersion) return;
-    answerBubble.textContent = answer || "回答の生成に失敗しました。もう一度お試しください。";
-    if (!answer) history.pop();
-    showError("回答の生成中にエラーが発生しました。端末のメモリやWebGPUの状態を確認してください。\n" + (error?.message || error));
-    statusEl.textContent = "生成に失敗しました。";
+    if (currentUid !== sendUid) return;
+    history.pop(); // エラー時は未送信のユーザー発言をメモリからロールバック
+    assistantBubble.textContent = "回答の取得に失敗しました。";
+    showError(error?.message || "通信エラーが発生しました。");
+    statusEl.textContent = "エラーが発生しました。";
   } finally {
-    if (activeRequestUid === requestUid) {
+    if (currentUid === sendUid) {
       generating = false;
-      activeRequestUid = null;
-      syncAuthUI();
-      if (currentUid) promptEl.focus();
+      syncUI();
+      promptEl.focus();
     }
   }
 }
 
-loadButton.addEventListener("click", loadModel);
 $("chatForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const text = promptEl.value.trim();
-  if (!text || !currentUid || !engine || generating) return;
+  if (!text || !currentUser || generating || loadingHistory) return;
   promptEl.value = "";
   promptEl.style.height = "auto";
   await sendMessage(text);
 });
+
 promptEl.addEventListener("input", () => {
   promptEl.style.height = "auto";
   promptEl.style.height = `${Math.min(promptEl.scrollHeight, 140)}px`;
 });
+
 promptEl.addEventListener("keydown", (event) => {
   if (event.key === "Enter" && !event.shiftKey) {
     event.preventDefault();
     $("chatForm").requestSubmit();
   }
 });
-clearButton.addEventListener("click", () => {
-  if (!currentUid || !window.confirm("この端末に保存された会話履歴を削除しますか？")) return;
-  const uid = currentUid;
-  history = [];
+
+// 会話履歴の全削除（D1サーバーから削除）
+clearButton.addEventListener("click", async () => {
+  if (!currentUser || generating || loadingHistory) return;
+  if (!window.confirm("Cloudflare D1に保存された会話履歴をすべて削除しますか？\n（同じアカウントの全端末で消去されます）")) return;
+
+  statusEl.textContent = "履歴を削除しています…";
+  clearButton.disabled = true;
   try {
-    localStorage.removeItem(historyStorageKey(uid));
+    const token = await currentUser.getIdToken();
+    const response = await fetch(`${WORKER_URL}/v1/chat/history`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("履歴の削除に失敗しました。");
+    }
+
+    history = [];
+    renderHistory();
+    statusEl.textContent = "会話履歴を削除しました。";
   } catch (error) {
-    showError("保存済み履歴を削除できませんでした。");
+    showError(error?.message || "履歴の削除に失敗しました。");
+    statusEl.textContent = "削除に失敗しました。";
+  } finally {
+    syncUI();
   }
-  renderHistory();
 });
 
 renderHistory();
-syncAuthUI();
-onAuthStateChanged(auth, (user) => {
+syncUI();
+
+// 認証状態の監視（Firebaseログイン状態だけは維持、ログアウト時にメモリ上の会話を消去）
+onAuthStateChanged(auth, async (user) => {
+  currentUser = user;
   const nextUid = user?.uid || null;
+
   if (nextUid !== currentUid) {
-    authStateVersion += 1;
     currentUid = nextUid;
-    history = currentUid ? loadHistory(currentUid) : [];
+    // ログアウトまたは別ユーザーへの切り替え時にメモリ上の会話を完全消去
+    history = [];
     renderHistory();
   }
 
@@ -285,24 +256,29 @@ onAuthStateChanged(auth, (user) => {
     authMessageEl.textContent = "AIチャットを利用するには、SNSにログインしてください。ログイン後、このページに戻ってください。";
     errorEl.hidden = true;
     statusEl.textContent = "SNSへのログインが必要です。";
-    syncAuthUI();
+    syncUI();
     return;
   }
 
   authMessageEl.textContent = "SNSのログインを確認しました。";
-  syncAuthUI();
-  if (engine) {
-    statusEl.textContent = "準備完了。会話はこの端末内に保存されます。";
-  } else if (!webGPUChecked) {
-    statusEl.textContent = "WebGPUを確認しています…";
-    checkWebGPU();
+  syncUI();
+
+  // D1から履歴を同期取得
+  const fetched = await fetchD1History(user);
+  if (currentUid === user.uid) {
+    history = fetched;
+    renderHistory();
+    statusEl.textContent = "準備完了。会話はCloudflare D1にサーバー保存されています。";
+    syncUI();
+    promptEl.focus();
   }
 }, (error) => {
+  currentUser = null;
   currentUid = null;
   history = [];
   renderHistory();
   authMessageEl.textContent = "ログイン状態を確認できませんでした。通信環境を確認し、SNSにログインし直してください。";
   statusEl.textContent = "Firebase Authenticationの確認に失敗しました。";
   showError(error?.message || "認証状態を確認できませんでした。");
-  syncAuthUI();
+  syncUI();
 });

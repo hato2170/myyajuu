@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
-  <title>ローカルAIチャット 試作</title>
+  <title>AIチャット</title>
   <link rel="stylesheet" href="ai-test.css">
   <script type="module" src="ai-test.js"></script>
 </head>
@@ -12,7 +12,7 @@
   <main class="app">
     <header class="topbar">
       <a class="back" href="./sns.html" aria-label="SNSへ戻る">←</a>
-      <div><strong>AIアシスタント</strong><small>端末内で動作・会話はこの端末に保存</small></div>
+      <div><strong>AIアシスタント</strong><small>Workers AI · D1サーバー同期</small></div>
       <button id="clearButton" class="clear" type="button" title="会話を削除" disabled>削除</button>
     </header>
 
@@ -25,24 +25,22 @@
     <section id="welcome" class="welcome" aria-label="利用案内" hidden>
       <div class="sparkle">✳</div>
       <h1>何でも聞いてください</h1>
-      <p>この試作品はQwen2.5-0.5B-Instructをブラウザー内で実行します。会話は端末内にのみ保存されます。</p>
-      <div class="download-note"><strong>初回ダウンロードの目安：約300 MB</strong><br>モデル本体の概算です。追加ファイルやブラウザーのキャッシュ領域が必要です。Wi-Fi接続と空き容量をご確認ください。</div>
+      <p>Cloudflare Workers AI（Llama 3.2）が回答します。会話履歴はCloudflare D1にサーバー保存され、同じアカウントなら別端末でも同期されます。</p>
+      <div class="download-note"><strong>クラウド同期</strong><br>会話データはCloudflare D1に安全に保存されます。端末内（LocalStorage/Cache等）にはAI履歴を保存せず、ログアウト時にメモリ上から消去されます。</div>
     </section>
 
     <section id="messages" class="messages" aria-live="polite" aria-label="会話"></section>
 
     <div class="status-area">
-      <div id="status" class="status" role="status">WebGPUを確認しています…</div>
-      <progress id="progress" max="100" value="0" hidden></progress>
+      <div id="status" class="status" role="status">ログイン状態を確認しています…</div>
       <div id="error" class="error" role="alert" hidden></div>
-      <button id="loadButton" class="load-button" type="button" hidden>モデルを読み込む（初回は約300 MB）</button>
     </div>
 
     <form id="chatForm" class="composer">
-      <textarea id="prompt" rows="1" maxlength="2000" placeholder="メッセージを入力" aria-label="メッセージ" disabled></textarea>
+      <textarea id="prompt" rows="1" maxlength="1500" placeholder="メッセージを入力" aria-label="メッセージ" disabled></textarea>
       <button id="sendButton" type="submit" aria-label="送信" disabled>↑</button>
     </form>
-    <footer>回答は端末内の小型モデルによるものです。誤りを含む場合があります。</footer>
+    <footer>回答はCloudflare Workers AIによるものです。誤りを含む場合があります。</footer>
   </main>
 </body>
 </html>
