@@ -18,10 +18,6 @@ const WORKER_URL = window.MYYAJUU_AI_WORKER_URL || "https://myyajuu-ai-worker.ha
 
 const MODEL_CATALOG = {
   "@cf/meta/llama-3.2-3b-instruct": { name: "Llama 3.2 3B" },
-  "@cf/openai/gpt-oss-20b": { name: "GPT-OSS 20B" },
-  "@cf/google/gemma-4-26b-a4b-it": { name: "Gemma 4 26B" },
-  "@cf/meta/llama-3.3-70b-instruct-fp8-fast": { name: "Llama 3.3 70B" },
-  "@cf/qwen/qwen3-30b-a3b-fp8": { name: "Qwen3 30B" },
 };
 
 const $ = (id) => document.getElementById(id);
@@ -32,6 +28,7 @@ const sendButton = $("sendButton");
 const messagesEl = $("messages");
 const welcomeEl = $("welcome");
 const authGateEl = $("authGate");
+const authGateTitleEl = $("authGateTitle");
 const authMessageEl = $("authMessage");
 const modelSelectEl = $("modelSelect");
 
@@ -59,17 +56,25 @@ const removeAttachmentBtn = $("removeAttachmentBtn");
 // 会話データ・セッションデータはメモリ上にのみ保持（LocalStorage, SessionStorage, IndexedDB, Cache API には一切保存しない）
 let history = [];
 let sessions = [];
-let currentSessionId = "default";
-let currentSessionTitle = "AIアシスタント";
+let currentSessionId = null;
+let currentSessionTitle = "新しいチャット";
 let currentUser = null;
 let currentUid = null;
 let generating = false;
 let loadingHistory = false;
 let selectedModelId = "@cf/meta/llama-3.2-3b-instruct";
-let isWebSearchOn = false;
 let currentAttachment = null; // { name, type, content, isImage }
+let authStateVersion = 0;
+let historyRequestVersion = 0;
+let sessionsRequestVersion = 0;
+let navigationRequestVersion = 0;
+let sessionOperationVersion = 0;
+let sessionMutationPending = false;
+let generationRequestVersion = 0;
+let generationAbortController = null;
+let attachmentReadVersion = 0;
 
-// 過去のlocalStorage/sessionStorage上のAIキャッシュを完全消去（Firebaseログイン状態のキーは保持）
+// Remove only legacy AI chat keys; do not clear sessionStorage shared with the SNS.
 function purgeLegacyLocalData() {
   try {
     for (let i = localStorage.length - 1; i >= 0; i--) {
@@ -78,8 +83,9 @@ function purgeLegacyLocalData() {
         localStorage.removeItem(key);
       }
     }
-    sessionStorage.clear();
-  } catch {}
+  } catch (error) {
+    console.warn("古いAI履歴を削除できませんでした:", error);
+  }
 }
 purgeLegacyLocalData();
 
@@ -89,27 +95,12 @@ function showError(message) {
 }
 
 if (modelSelectEl) {
-  modelSelectEl.addEventListener("change", (e) => {
-    selectedModelId = e.target.value;
-  });
+  modelSelectEl.disabled = true;
+  selectedModelId = "@cf/meta/llama-3.2-3b-instruct";
 }
 
-// Web検索トグル
-if (webSearchToggle) {
-  webSearchToggle.addEventListener("click", () => {
-    isWebSearchOn = !isWebSearchOn;
-    webSearchState.textContent = isWebSearchOn ? "ON 🟢" : "OFF";
-    webSearchToggle.classList.toggle("active", isWebSearchOn);
-  });
-}
-
-// 画像生成ボタン（プロンプトに `/image ` を挿入）
-if (imageGenBtn) {
-  imageGenBtn.addEventListener("click", () => {
-    promptEl.value = "/image ";
-    promptEl.focus();
-  });
-}
+if (webSearchToggle) webSearchToggle.disabled = true;
+if (imageGenBtn) imageGenBtn.disabled = true;
 
 // ファイル添付ボタン
 if (attachBtn && fileInput) {
@@ -124,29 +115,37 @@ if (attachBtn && fileInput) {
       return;
     }
 
+    currentAttachment = null;
+    attachmentPreviewArea.hidden = true;
     if (file.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        currentAttachment = {
-          name: file.name,
-          type: "image",
-          content: evt.target.result,
-        };
-        showAttachmentPreview(file.name, "🖼️");
-      };
-      reader.readAsDataURL(file);
-    } else {
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        currentAttachment = {
-          name: file.name,
-          type: "text",
-          content: evt.target.result,
-        };
-        showAttachmentPreview(file.name, "📄");
-      };
-      reader.readAsText(file);
+      showError("現在のWorkerでは画像解析に対応していないため、画像は読み込みませんでした。");
+      fileInput.value = "";
+      return;
     }
+
+    const reader = new FileReader();
+    const readVersion = ++attachmentReadVersion;
+    const uidForRead = currentUid;
+    const authVersionForRead = authStateVersion;
+    reader.onerror = () => {
+      if (readVersion === attachmentReadVersion && currentUid === uidForRead && authStateVersion === authVersionForRead) {
+        showError("添付ファイルを読み込めませんでした。");
+      }
+    };
+    reader.onload = (evt) => {
+      if (readVersion !== attachmentReadVersion || currentUid !== uidForRead || authStateVersion !== authVersionForRead) return;
+      if (typeof evt.target.result !== "string") {
+        showError("添付ファイルをテキストとして読み込めませんでした。");
+        return;
+      }
+      currentAttachment = {
+        name: file.name,
+        type: "text",
+        content: evt.target.result,
+      };
+      showAttachmentPreview(file.name, "📄");
+    };
+    reader.readAsText(file);
   });
 }
 
@@ -156,6 +155,7 @@ function showAttachmentPreview(name, icon) {
 }
 
 function clearAttachment() {
+  attachmentReadVersion += 1;
   currentAttachment = null;
   attachmentPreviewArea.hidden = true;
   if (fileInput) fileInput.value = "";
@@ -181,92 +181,123 @@ if (sessionsBtn) sessionsBtn.addEventListener("click", openDrawer);
 if (closeDrawerBtn) closeDrawerBtn.addEventListener("click", closeDrawer);
 if (drawerOverlay) drawerOverlay.addEventListener("click", closeDrawer);
 
-// 新しいチャット作成
-async function startNewChat() {
-  if (!currentUser) return;
-  closeDrawer();
-  statusEl.textContent = "新しいチャットを作成しています…";
-  try {
-    const token = await currentUser.getIdToken();
-    const res = await fetch(`${WORKER_URL}/v1/chat/sessions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ title: "新しいチャット" }),
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      currentSessionId = data.session.id;
-      currentSessionTitle = data.session.title;
-    } else {
-      currentSessionId = `session-${Date.now()}`;
-      currentSessionTitle = "新しいチャット";
-    }
-
-    sessionTitleDisplay.textContent = currentSessionTitle;
-    history = [];
-    renderHistory();
-    clearAttachment();
-    statusEl.textContent = "新しい会話を開始しました。";
-    await fetchSessionsList(currentUser);
-    promptEl.focus();
-  } catch (err) {
-    currentSessionId = `session-${Date.now()}`;
-    currentSessionTitle = "新しいチャット";
-    sessionTitleDisplay.textContent = currentSessionTitle;
-    history = [];
-    renderHistory();
+function cancelActiveGeneration() {
+  generationRequestVersion += 1;
+  if (generationAbortController) {
+    generationAbortController.abort();
+    generationAbortController = null;
   }
+  generating = false;
+}
+
+function invalidateHistoryRequest() {
+  historyRequestVersion += 1;
+  loadingHistory = false;
+}
+
+// 新しい会話は最初の送信時にWorker側でD1へ作成される。
+function startNewChat() {
+  if (!currentUser || !currentUid || sessionMutationPending) return;
+
+  navigationRequestVersion += 1;
+  closeDrawer();
+  cancelActiveGeneration();
+  invalidateHistoryRequest();
+  currentSessionId = null;
+  currentSessionTitle = "新しいチャット";
+  history = [];
+  clearAttachment();
+  sessionTitleDisplay.textContent = currentSessionTitle;
+  renderHistory();
+  renderSessionsList();
+  errorEl.hidden = true;
+  statusEl.textContent = "新しい会話を開始しました。質問を送信するとD1に保存されます。";
+  syncUI();
+  promptEl.focus();
 }
 
 if (newChatBtn) newChatBtn.addEventListener("click", startNewChat);
 if (drawerNewChatBtn) drawerNewChatBtn.addEventListener("click", startNewChat);
 
-async function fetchSessionsList(user) {
-  if (!user) return;
+async function fetchSessionsList(user, expectedAuthVersion = authStateVersion) {
+  if (!user) return false;
+  const uidForRequest = user.uid;
+  const requestVersion = ++sessionsRequestVersion;
   try {
     const token = await user.getIdToken();
-    const res = await fetch(`${WORKER_URL}/v1/chat/sessions`, {
+    const response = await fetch(`${WORKER_URL}/v1/conversations?limit=50`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (res.ok) {
-      const data = await res.json();
-      sessions = Array.isArray(data.sessions) ? data.sessions : [];
-      renderSessionsList();
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `会話一覧を取得できませんでした (${response.status})`);
     }
-  } catch {}
+
+    const data = await response.json();
+    if (requestVersion !== sessionsRequestVersion || currentUid !== uidForRequest || authStateVersion !== expectedAuthVersion) {
+      return false;
+    }
+    sessions = Array.isArray(data.conversations)
+      ? data.conversations
+          .filter((conversation) => typeof conversation?.conversationId === "string")
+          .map((conversation) => ({
+            id: conversation.conversationId,
+            title: conversation.title || "チャット",
+            updatedAt: conversation.updatedAt,
+          }))
+      : [];
+    renderSessionsList();
+    return true;
+  } catch (error) {
+    if (requestVersion === sessionsRequestVersion && currentUid === uidForRequest && authStateVersion === expectedAuthVersion) {
+      showError(error?.message || "会話一覧を取得できませんでした。");
+      console.error("会話一覧の取得に失敗しました:", error);
+    }
+    return false;
+  }
 }
 
 function renderSessionsList() {
   if (!sessionsList) return;
   sessionsList.replaceChildren();
 
-  // デフォルトセッションがリストに無ければ先頭に配置
-  const hasDefault = sessions.some((s) => s.id === "default");
-  const allSessions = hasDefault ? sessions : [{ id: "default", title: "メインの会話" }, ...sessions];
+  if (sessions.length === 0) {
+    const emptyItem = document.createElement("li");
+    emptyItem.className = "session-item active";
+    emptyItem.textContent = currentSessionId ? "保存済みの会話はありません" : "新しい会話（未保存）";
+    sessionsList.appendChild(emptyItem);
+    return;
+  }
 
-  for (const s of allSessions) {
+  const visibleSessions = !currentSessionId || !sessions.some((session) => session.id === currentSessionId)
+    ? [{ id: currentSessionId, title: currentSessionTitle, ephemeral: true }, ...sessions]
+    : sessions;
+
+  for (const session of visibleSessions) {
     const li = document.createElement("li");
-    li.className = `session-item ${s.id === currentSessionId ? "active" : ""}`;
+    li.className = `session-item ${session.id === currentSessionId ? "active" : ""}`;
 
     const titleSpan = document.createElement("span");
     titleSpan.className = "session-title-text";
-    titleSpan.textContent = `💬 ${s.title || "チャット"}`;
-    titleSpan.addEventListener("click", () => switchSession(s.id, s.title));
+    titleSpan.textContent = `💬 ${session.title || "チャット"}${session.ephemeral ? "（未保存）" : ""}`;
+    titleSpan.addEventListener("click", () => {
+      if (session.ephemeral) {
+        closeDrawer();
+        return;
+      }
+      switchSession(session.id, session.title);
+    });
     li.appendChild(titleSpan);
 
-    if (s.id !== "default") {
+    if (!session.ephemeral) {
       const delBtn = document.createElement("button");
       delBtn.className = "session-del-btn";
       delBtn.textContent = "🗑️";
       delBtn.title = "この会話を削除";
-      delBtn.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        if (!confirm(`「${s.title}」を削除しますか？`)) return;
-        await deleteSession(s.id);
+      delBtn.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        if (!confirm(`「${session.title}」を削除しますか？`)) return;
+        await deleteSession(session.id);
       });
       li.appendChild(delBtn);
     }
@@ -280,49 +311,93 @@ async function switchSession(id, title) {
     closeDrawer();
     return;
   }
+  const user = currentUser;
+  const uidForRequest = currentUid;
+  const authVersionAtStart = authStateVersion;
+  const navigationVersion = ++navigationRequestVersion;
   closeDrawer();
+  cancelActiveGeneration();
+  invalidateHistoryRequest();
   currentSessionId = id;
   currentSessionTitle = title || "チャット";
   sessionTitleDisplay.textContent = currentSessionTitle;
+  history = [];
+  renderHistory();
+  clearAttachment();
+  syncUI();
 
-  if (currentUser) {
-    const fetched = await fetchD1History(currentUser, id);
-    history = fetched;
-    renderHistory();
-    statusEl.textContent = `会話「${currentSessionTitle}」を開きました。`;
-    promptEl.focus();
-  }
+  if (!user || !uidForRequest) return;
+  statusEl.textContent = "会話履歴を読み込んでいます…";
+  const fetched = await fetchD1History(user, id, authVersionAtStart);
+  if (!Array.isArray(fetched) || currentUid !== uidForRequest || authStateVersion !== authVersionAtStart ||
+      navigationRequestVersion !== navigationVersion || currentSessionId !== id) return;
+  history = fetched;
+  renderHistory();
+  statusEl.textContent = `会話「${currentSessionTitle}」を開きました。`;
+  promptEl.focus();
 }
 
 async function deleteSession(id) {
-  if (!currentUser) return;
+  const user = currentUser;
+  const uidForRequest = currentUid;
+  const authVersionAtStart = authStateVersion;
+  if (!user || !uidForRequest || sessionMutationPending) return;
+  const operationVersion = ++sessionOperationVersion;
+  sessionMutationPending = true;
+  syncUI();
+
+  statusEl.textContent = "会話を削除しています…";
   try {
-    const token = await currentUser.getIdToken();
-    await fetch(`${WORKER_URL}/v1/chat/sessions?id=${encodeURIComponent(id)}`, {
+    const token = await user.getIdToken();
+    const response = await fetch(`${WORKER_URL}/v1/conversations/${encodeURIComponent(id)}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
-    sessions = sessions.filter((s) => s.id !== id);
-    if (currentSessionId === id) {
-      await switchSession("default", "メインの会話");
-    } else {
-      renderSessionsList();
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `会話を削除できませんでした (${response.status})`);
     }
-  } catch {}
+    if (currentUid !== uidForRequest || authStateVersion !== authVersionAtStart) return;
+
+    sessions = sessions.filter((session) => session.id !== id);
+    if (currentSessionId === id) {
+      currentSessionId = null;
+      currentSessionTitle = "新しいチャット";
+      history = [];
+      sessionTitleDisplay.textContent = currentSessionTitle;
+      renderHistory();
+    }
+    renderSessionsList();
+    statusEl.textContent = "会話を削除しました。新しい質問は新規会話に保存されます。";
+  } catch (error) {
+    if (currentUid === uidForRequest && authStateVersion === authVersionAtStart) {
+      showError(error?.message || "会話の削除に失敗しました。");
+      statusEl.textContent = "会話の削除に失敗しました。";
+    }
+  } finally {
+    if (sessionOperationVersion === operationVersion) sessionMutationPending = false;
+    syncUI();
+  }
 }
 
 function syncUI() {
   const signedIn = Boolean(currentUid);
+  const busy = generating || loadingHistory || sessionMutationPending;
   authGateEl.hidden = signedIn;
-  promptEl.disabled = !signedIn || generating || loadingHistory;
-  sendButton.disabled = !signedIn || generating || loadingHistory;
-  if (modelSelectEl) modelSelectEl.disabled = !signedIn || generating;
-  if (attachBtn) attachBtn.disabled = !signedIn || generating;
-  if (imageGenBtn) imageGenBtn.disabled = !signedIn || generating;
-  if (webSearchToggle) webSearchToggle.disabled = !signedIn || generating;
+  promptEl.disabled = !signedIn || busy;
+  sendButton.disabled = !signedIn || busy;
+  if (modelSelectEl) modelSelectEl.disabled = true;
+  if (attachBtn) attachBtn.disabled = !signedIn || busy;
+  if (imageGenBtn) imageGenBtn.disabled = true;
+  if (webSearchToggle) webSearchToggle.disabled = true;
+  if (sessionsBtn) sessionsBtn.disabled = !signedIn || busy;
+  if (newChatBtn) newChatBtn.disabled = !signedIn || busy;
+  if (drawerNewChatBtn) drawerNewChatBtn.disabled = !signedIn || busy;
+  if (clearChatBtn) clearChatBtn.disabled = !signedIn || busy;
 
   if (!signedIn) {
     welcomeEl.hidden = true;
+    closeDrawer();
   }
 }
 
@@ -379,90 +454,46 @@ function renderHistory() {
   welcomeEl.hidden = history.length > 0;
 }
 
-// Cloudflare D1からセッション履歴を取得
-async function fetchD1History(user, sessionId = currentSessionId) {
-  if (!user) return [];
+// Cloudflare D1から会話履歴を取得
+async function fetchD1History(user, conversationId = currentSessionId, expectedAuthVersion = authStateVersion) {
+  if (!user) return null;
+  if (!conversationId) return [];
+
+  const uidForRequest = user.uid;
+  const requestVersion = ++historyRequestVersion;
   loadingHistory = true;
   statusEl.textContent = "会話履歴をD1サーバーから同期しています…";
+  syncUI();
+
   try {
     const token = await user.getIdToken();
-    const response = await fetch(`${WORKER_URL}/v1/chat/history?session_id=${encodeURIComponent(sessionId)}`, {
+    const response = await fetch(`${WORKER_URL}/v1/conversations/${encodeURIComponent(conversationId)}?limit=100`, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
 
     if (!response.ok) {
       if (response.status === 401) throw new Error("認証の有効期限が切れました。ログインし直してください。");
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData.message || `履歴の取得に失敗しました (${response.status})`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `履歴の取得に失敗しました (${response.status})`);
     }
 
     const data = await response.json();
+    if (requestVersion !== historyRequestVersion || currentUid !== uidForRequest ||
+        authStateVersion !== expectedAuthVersion || currentSessionId !== conversationId) return null;
     return Array.isArray(data.messages) ? data.messages : [];
   } catch (error) {
-    showError("会話履歴の同期に失敗しました。\n" + (error?.message || error));
-    return [];
-  } finally {
-    loadingHistory = false;
-  }
-}
-
-// 画像生成の実行
-async function generateImage(prompt) {
-  if (!currentUser || generating) return;
-  generating = true;
-  syncUI();
-  errorEl.hidden = true;
-  welcomeEl.hidden = true;
-
-  history.push({ role: "user", content: `🎨 画像生成: ${prompt}` });
-  appendMessage("user", `🎨 画像生成: ${prompt}`);
-
-  const assistantBubble = appendMessage("assistant", "FLUXモデルで画像を生成しています（約2〜3秒）…", "FLUX.1 Schnell");
-  statusEl.textContent = "FLUX画像生成中…";
-
-  try {
-    const token = await currentUser.getIdToken();
-    const response = await fetch(`${WORKER_URL}/v1/images/generate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ prompt }),
-    });
-
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData.message || `画像生成エラー (${response.status})`);
+    if (requestVersion === historyRequestVersion && currentUid === uidForRequest &&
+        authStateVersion === expectedAuthVersion && currentSessionId === conversationId) {
+      showError("会話履歴の同期に失敗しました。\n" + (error?.message || error));
+      console.error("D1会話履歴の取得に失敗しました:", error);
     }
-
-    const data = await response.json();
-    assistantBubble.textContent = `「${prompt}」の画像を生成しました！`;
-
-    // 画像コンテナを追加
-    const container = assistantBubble.parentElement;
-    const imgBox = document.createElement("div");
-    imgBox.className = "generated-image-container";
-    const img = document.createElement("img");
-    img.src = data.image;
-    img.alt = prompt;
-    img.className = "generated-img";
-    imgBox.appendChild(img);
-    container.appendChild(imgBox);
-
-    history.push({ role: "assistant", content: `「${prompt}」の画像`, model: "flux-schnell", image: data.image });
-    statusEl.textContent = "画像生成完了。";
-  } catch (err) {
-    assistantBubble.textContent = "画像の生成に失敗しました。";
-    showError(err?.message || "画像生成エラーが発生しました。");
-    statusEl.textContent = "エラーが発生しました。";
+    return null;
   } finally {
-    generating = false;
-    syncUI();
-    promptEl.focus();
+    if (requestVersion === historyRequestVersion) {
+      loadingHistory = false;
+      syncUI();
+    }
   }
 }
 
@@ -470,45 +501,52 @@ async function generateImage(prompt) {
 async function sendMessage(text) {
   if (!currentUser || generating || loadingHistory) return;
 
-  // `/image ` コマンドの検知
-  if (text.startsWith("/image ") || text.startsWith("画像生成:") || text.startsWith("画像生成：")) {
-    const imgPrompt = text.replace(/^(\/image|画像生成[:：])\s*/, "").trim();
-    if (imgPrompt) {
-      await generateImage(imgPrompt);
-      return;
-    }
+  if (text.startsWith("/image") || text.startsWith("画像生成:") || text.startsWith("画像生成：")) {
+    showError("画像生成は現在未対応です。通常のテキスト質問を入力してください。");
+    return;
   }
 
+  if (currentAttachment?.type === "image") {
+    showError("現在のWorkerでは画像解析に対応していないため、画像は送信できません。テキストファイルを添付してください。");
+    return;
+  }
+
+  const user = currentUser;
   const sendUid = currentUid;
   const sendSessionId = currentSessionId;
+  const sendAuthVersion = authStateVersion;
   const targetModelId = selectedModelId;
   const targetModelInfo = MODEL_CATALOG[targetModelId] || MODEL_CATALOG["@cf/meta/llama-3.2-3b-instruct"];
-
-  // 添付ファイルがある場合はプロンプトに統合
+  const attachment = currentAttachment;
   let fullMessageText = text;
-  if (currentAttachment) {
-    if (currentAttachment.type === "text") {
-      fullMessageText += `\n\n【添付テキストファイル: ${currentAttachment.name}】\n${currentAttachment.content}`;
-    } else if (currentAttachment.type === "image") {
-      fullMessageText += `\n\n【添付画像: ${currentAttachment.name}（画像データを解析してください）】`;
-    }
+  if (attachment?.type === "text") {
+    fullMessageText += `\n\n【添付テキストファイル: ${attachment.name}】\n${attachment.content}`;
+  }
+  if ([...fullMessageText].length > 1500) {
+    showError("メッセージと添付テキストは合計1,500文字以内にしてください。");
+    promptEl.value = text;
+    promptEl.focus();
+    return;
   }
 
+  const requestVersion = ++generationRequestVersion;
+  const controller = new AbortController();
+  generationAbortController = controller;
   generating = true;
   syncUI();
   errorEl.hidden = true;
   welcomeEl.hidden = true;
 
-  const displayUserText = currentAttachment ? `📎 [${currentAttachment.name}]\n${text}` : text;
+  const displayUserText = attachment ? `📎 [${attachment.name}]\n${text}` : text;
+  const userBubble = appendMessage("user", displayUserText);
   history.push({ role: "user", content: displayUserText });
-  appendMessage("user", displayUserText);
   clearAttachment();
 
   const assistantBubble = appendMessage("assistant", `${targetModelInfo.name} が回答を生成しています…`, targetModelInfo.name);
-  statusEl.textContent = isWebSearchOn ? "Web検索と回答生成中…" : `${targetModelInfo.name} に送信中…`;
+  statusEl.textContent = `${targetModelInfo.name} に送信中…`;
 
   try {
-    const token = await currentUser.getIdToken();
+    const token = await user.getIdToken();
     const response = await fetch(`${WORKER_URL}/v1/chat`, {
       method: "POST",
       headers: {
@@ -517,10 +555,9 @@ async function sendMessage(text) {
       },
       body: JSON.stringify({
         message: fullMessageText,
-        model: targetModelId,
-        session_id: sendSessionId,
-        webSearch: isWebSearchOn,
+        ...(sendSessionId ? { conversationId: sendSessionId } : {}),
       }),
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -539,27 +576,48 @@ async function sendMessage(text) {
     }
 
     const data = await response.json();
-    const replyText = data.reply || "";
+    const replyText = typeof data.assistantMessage?.content === "string"
+      ? data.assistantMessage.content
+      : (typeof data.reply === "string" ? data.reply : "");
+    if (!replyText) throw new Error("AIから有効な回答が返されませんでした。");
+    if (typeof data.conversationId !== "string" || !data.conversationId) {
+      throw new Error("Workerから有効な会話IDが返されませんでした。");
+    }
+    if (sendSessionId && data.conversationId !== sendSessionId) {
+      throw new Error("Workerから別の会話IDが返されました。");
+    }
+    if (requestVersion !== generationRequestVersion || currentUid !== sendUid ||
+        authStateVersion !== sendAuthVersion || currentSessionId !== sendSessionId) return;
 
-    if (currentUid !== sendUid || currentSessionId !== sendSessionId) return;
-
+    currentSessionId = data.conversationId;
+    if (!sendSessionId) {
+      currentSessionTitle = [...fullMessageText].slice(0, 80).join("") || "新しいチャット";
+      sessionTitleDisplay.textContent = currentSessionTitle;
+    }
     assistantBubble.textContent = replyText;
-    history.push({ role: "assistant", content: replyText, model: targetModelId });
-    statusEl.textContent = `準備完了（${targetModelInfo.name} で回答）。会話はD1に保存されています。`;
-
-    // セッション一覧を再同期（タイトル自動更新を反映）
-    fetchSessionsList(currentUser);
+    history.push({ role: "assistant", content: replyText, model: "@cf/meta/llama-3.2-3b-instruct" });
+    statusEl.textContent = `準備完了（${MODEL_CATALOG["@cf/meta/llama-3.2-3b-instruct"].name} で回答）。会話はD1に保存されています。`;
+    void fetchSessionsList(user, sendAuthVersion);
   } catch (error) {
-    if (currentUid !== sendUid || currentSessionId !== sendSessionId) return;
+    if (requestVersion !== generationRequestVersion || currentUid !== sendUid ||
+        authStateVersion !== sendAuthVersion || currentSessionId !== sendSessionId) return;
+    if (error?.name === "AbortError") return;
     history.pop();
-    assistantBubble.textContent = "回答の取得に失敗しました。";
+    userBubble.parentElement?.parentElement?.remove();
+    assistantBubble.parentElement?.parentElement?.remove();
+    promptEl.value = text;
+    if (attachment) {
+      currentAttachment = attachment;
+      showAttachmentPreview(attachment.name, "📄");
+    }
     showError(error?.message || "通信エラーが発生しました。");
-    statusEl.textContent = "エラーが発生しました。";
+    statusEl.textContent = "回答の取得に失敗しました。";
   } finally {
-    if (currentUid === sendUid && currentSessionId === sendSessionId) {
+    if (requestVersion === generationRequestVersion) {
       generating = false;
+      generationAbortController = null;
       syncUI();
-      promptEl.focus();
+      if (currentUid) promptEl.focus();
     }
   }
 }
@@ -585,25 +643,54 @@ promptEl.addEventListener("keydown", (event) => {
   }
 });
 
-// この会話の履歴削除
+// この会話をD1から削除
 if (clearChatBtn) {
   clearChatBtn.addEventListener("click", async () => {
-    if (!currentUser || generating || loadingHistory) return;
-    if (!confirm("現在の会話履歴をCloudflare D1から削除しますか？")) return;
+    const user = currentUser;
+    const uidForRequest = currentUid;
+    const conversationId = currentSessionId;
+    const authVersionForRequest = authStateVersion;
+    if (!user || generating || loadingHistory || sessionMutationPending) return;
+    if (!window.confirm("現在の会話をCloudflare D1から削除しますか？")) return;
 
-    statusEl.textContent = "履歴を削除しています…";
+    if (!conversationId) {
+      history = [];
+      renderHistory();
+      statusEl.textContent = "未保存の会話を消去しました。";
+      return;
+    }
+
+    const operationVersion = ++sessionOperationVersion;
+    sessionMutationPending = true;
+    statusEl.textContent = "会話を削除しています…";
+    syncUI();
     try {
-      const token = await currentUser.getIdToken();
-      await fetch(`${WORKER_URL}/v1/chat/history?session_id=${encodeURIComponent(currentSessionId)}`, {
+      const token = await user.getIdToken();
+      const response = await fetch(`${WORKER_URL}/v1/conversations/${encodeURIComponent(conversationId)}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `会話の削除に失敗しました (${response.status})`);
+      }
+      if (currentUid !== uidForRequest || authStateVersion !== authVersionForRequest || currentSessionId !== conversationId) return;
+
+      sessions = sessions.filter((session) => session.id !== conversationId);
+      currentSessionId = null;
+      currentSessionTitle = "新しいチャット";
       history = [];
+      sessionTitleDisplay.textContent = currentSessionTitle;
       renderHistory();
-      statusEl.textContent = "この会話の履歴を削除しました。";
-    } catch {
-      showError("履歴の削除に失敗しました。");
+      renderSessionsList();
+      statusEl.textContent = "会話をD1から削除しました。次の質問は新しい会話になります。";
+    } catch (error) {
+      if (currentUid === uidForRequest && authStateVersion === authVersionForRequest && currentSessionId === conversationId) {
+        showError(error?.message || "会話の削除に失敗しました。");
+        statusEl.textContent = "会話の削除に失敗しました。";
+      }
     } finally {
+      if (sessionOperationVersion === operationVersion) sessionMutationPending = false;
       syncUI();
     }
   });
@@ -614,20 +701,35 @@ syncUI();
 
 // 認証監視
 onAuthStateChanged(auth, async (user) => {
-  currentUser = user;
   const nextUid = user?.uid || null;
+  const identityChanged = nextUid !== currentUid;
 
-  if (nextUid !== currentUid) {
-    currentUid = nextUid;
+  if (identityChanged) {
+    authStateVersion += 1;
+    navigationRequestVersion += 1;
+    sessionOperationVersion += 1;
+    sessionMutationPending = false;
+    cancelActiveGeneration();
+    invalidateHistoryRequest();
+    sessionsRequestVersion += 1;
     history = [];
     sessions = [];
-    currentSessionId = "default";
-    currentSessionTitle = "AIアシスタント";
-    sessionTitleDisplay.textContent = currentSessionTitle;
-    renderHistory();
+    currentSessionId = null;
+    currentSessionTitle = "新しいチャット";
+    clearAttachment();
+    closeDrawer();
   }
 
-  if (!currentUid) {
+  currentUser = user;
+  currentUid = nextUid;
+  if (identityChanged) {
+    sessionTitleDisplay.textContent = currentSessionTitle;
+    renderHistory();
+    renderSessionsList();
+  }
+
+  if (!currentUid || !user) {
+    authGateTitleEl.textContent = "SNSのログインが必要です";
     authMessageEl.textContent = "AIチャットを利用するには、SNSにログインしてください。ログイン後、このページに戻ってください。";
     errorEl.hidden = true;
     statusEl.textContent = "SNSへのログインが必要です。";
@@ -635,24 +737,54 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
+  const uidForRequest = currentUid;
+  const authVersionForRequest = authStateVersion;
+  authGateTitleEl.textContent = "SNSにログインしています";
   authMessageEl.textContent = "SNSのログインを確認しました。";
   syncUI();
 
-  // D1からセッション一覧とメッセージ履歴を同期
-  await fetchSessionsList(user);
-  const fetched = await fetchD1History(user, currentSessionId);
-  if (currentUid === user.uid) {
-    history = fetched;
-    renderHistory();
-    statusEl.textContent = "準備完了。会話はCloudflare D1にサーバー保存されています。";
-    syncUI();
-    promptEl.focus();
+  const listLoaded = await fetchSessionsList(user, authVersionForRequest);
+  if (currentUid !== uidForRequest || authStateVersion !== authVersionForRequest) return;
+  if (listLoaded && !currentSessionId && sessions.length > 0) {
+    currentSessionId = sessions[0].id;
+    currentSessionTitle = sessions[0].title || "チャット";
+    sessionTitleDisplay.textContent = currentSessionTitle;
+    renderSessionsList();
   }
+
+  const sessionIdForRequest = currentSessionId;
+  const fetched = sessionIdForRequest
+    ? await fetchD1History(user, sessionIdForRequest, authVersionForRequest)
+    : [];
+  if (!Array.isArray(fetched) || currentUid !== uidForRequest ||
+      authStateVersion !== authVersionForRequest || currentSessionId !== sessionIdForRequest) return;
+
+  history = fetched;
+  renderHistory();
+  statusEl.textContent = "準備完了。会話はCloudflare D1にサーバー保存されています。";
+  syncUI();
+  promptEl.focus();
 }, (error) => {
+  authStateVersion += 1;
+  navigationRequestVersion += 1;
+  sessionOperationVersion += 1;
+  sessionMutationPending = false;
+  cancelActiveGeneration();
+  invalidateHistoryRequest();
+  sessionsRequestVersion += 1;
   currentUser = null;
   currentUid = null;
   history = [];
+  sessions = [];
+  currentSessionId = null;
+  currentSessionTitle = "新しいチャット";
+  clearAttachment();
+  closeDrawer();
   renderHistory();
+  renderSessionsList();
+  authGateTitleEl.textContent = "ログイン状態を確認できません";
   authMessageEl.textContent = "ログイン状態を確認できませんでした。SNSにログインし直してください。";
+  statusEl.textContent = "Firebase Authenticationの確認に失敗しました。";
+  showError(error?.message || "認証状態を確認できませんでした。");
   syncUI();
 });

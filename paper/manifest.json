@@ -4,7 +4,7 @@
   "short_name": "ubg235",
   "icons": [    
     {
-      "src": "/patch/images/null.png",
+      "src": "patch/images/null.png",
       "sizes": "512x512",
       "purpose": "maskable",
       "type": "image/png"
