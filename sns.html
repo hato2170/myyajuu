@@ -2228,6 +2228,8 @@ async function () {
 
 let uid = null;
 let viewingProfileUserId = null;
+let profileViewRequestVersion = 0;
+let profilePostsLoadVersion = 0;
 const profileCache = {};
 
 // DM & 通知用ステート変数
@@ -2946,6 +2948,7 @@ async function (userId) {
   if (!userId) return;
 
 
+  const requestVersion = ++profileViewRequestVersion;
   viewingProfileUserId =
     userId;
 
@@ -2963,6 +2966,7 @@ async function (userId) {
       userId
     );
 
+  if (requestVersion !== profileViewRequestVersion || viewingProfileUserId !== userId) return;
 
   if (!profile) {
 
@@ -3042,6 +3046,7 @@ async function (userId) {
   await updateFollowUI(
     userId
   );
+  if (requestVersion !== profileViewRequestVersion || viewingProfileUserId !== userId) return;
 
 
   /* ======================
@@ -3108,7 +3113,8 @@ async function (userId) {
   }
 
   await loadProfilePosts(
-    userId
+    userId,
+    requestVersion
   );
 
 };
@@ -3691,7 +3697,7 @@ async function renderNotificationsList() {
   container.innerHTML = allNotifications.map(n => {
     const timeStr = n.createdAt ? new Date(n.createdAt).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
     return `
-      <div class="notif-item ${n.isRead ? "" : "is-unread"}" onclick="clickNotificationItem('${escapeHTML(n.id)}', '${escapeHTML(n.targetPostId || "")}', '${escapeHTML(n.fromUid || "")}', '${escapeHTML(n.type || "")}')">
+      <div class="notif-item ${n.isRead ? "" : "is-unread"}" onclick="clickNotificationItem(${escapeInlineJSArgument(n.id)}, ${escapeInlineJSArgument(n.targetPostId || "")}, ${escapeInlineJSArgument(n.fromUid || "")}, ${escapeInlineJSArgument(n.type || "")})">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
           <strong style="color:${n.isRead ? '#94a3b8' : '#f0f6fc'}; font-size:13px;">${escapeHTML(n.title)}</strong>
           <span style="color:#64748b; font-size:11px;">${timeStr}</span>
@@ -3718,7 +3724,9 @@ window.clickNotificationItem = function (notifId, targetPostId, fromUid, notifTy
   } else if (targetPostId) {
     window.showHome();
     setTimeout(() => {
-      const pEl = document.querySelector(`[data-post-id="${targetPostId}"]`);
+      const pEl = Array.from(document.querySelectorAll("[data-post-id]")).find((element) =>
+        element.dataset.postId === targetPostId
+      );
       if (pEl) {
         pEl.scrollIntoView({ behavior: "smooth", block: "center" });
         pEl.style.boxShadow = "0 0 15px #38bdf8";
@@ -3781,7 +3789,7 @@ async function renderDMConversationsList() {
     const hasUnread = (c.unreadCount || 0) > 0;
 
     return `
-      <div id="dm-conv-item-${escapeHTML(c.otherUid)}" class="dm-conv-item ${hasUnread ? "has-unread" : ""}" onclick="openDMWithUser('${escapeHTML(c.otherUid)}')">
+      <div id="dm-conv-item-${escapeHTML(c.otherUid)}" class="dm-conv-item ${hasUnread ? "has-unread" : ""}" onclick="openDMWithUser(${escapeInlineJSArgument(c.otherUid)})">
         <img class="dm-avatar" src="${escapeHTML(avatar)}" alt="${escapeHTML(name)}">
         <div style="flex:1; min-width:0;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
@@ -3904,7 +3912,7 @@ window.openDMWithUser = async function (targetId) {
   const titleEl = document.getElementById("dmThreadHeaderTitle");
   if (titleEl) {
     titleEl.innerHTML = `
-      <span onclick="showProfile('${escapeHTML(targetId)}')" style="cursor:pointer; color:#38bdf8; text-decoration:underline;">
+      <span onclick="showProfile(${escapeInlineJSArgument(targetId)})" style="cursor:pointer; color:#38bdf8; text-decoration:underline;">
         ${escapeHTML(name)}
       </span>
       <span style="font-size:11px; color:#64748b; font-weight:normal;">(${escapeHTML(username)})</span>
@@ -4963,12 +4971,12 @@ async function createPostHTML(
 
       <div
         class="postUser"
-        onclick="showProfile('${escapeHTML(p.owner)}')"
+        onclick="showProfile(${escapeInlineJSArgument(p.owner)})"
       >
 
         <img
           class="postAvatar"
-          src="${image}"
+          src="${escapeHTML(image)}"
         >
 
         <div class="postUserInfo">
@@ -5002,7 +5010,7 @@ async function createPostHTML(
         ? `
           <img
             class="post-image"
-            src="${p.img}"
+            src="${escapeHTML(p.img)}"
             loading="lazy"
           >
         `
@@ -5013,7 +5021,7 @@ async function createPostHTML(
       <div class="actions">
 
         <span
-          onclick="like('${escapeHTML(id)}')"
+          onclick="like(${escapeInlineJSArgument(id)})"
         >
           ❤️ ${
             (p.likes || [])
@@ -5023,7 +5031,7 @@ async function createPostHTML(
 
 
         <span
-          onclick="showReplyBox('${escapeHTML(id)}')"
+          onclick="showReplyBox(${escapeInlineJSArgument(id)})"
         >
           💬 返信
         </span>
@@ -5034,8 +5042,8 @@ async function createPostHTML(
   ? `
     <span
       onclick="removePost(
-        '${escapeHTML(id)}',
-        '${escapeHTML(p.owner)}'
+        ${escapeInlineJSArgument(id)},
+        ${escapeInlineJSArgument(p.owner)}
       )"
     >
       🗑️ 削除
@@ -5075,9 +5083,9 @@ async function createPostHTML(
 
         <button
           onclick="reply(
-            '${escapeHTML(id)}',
-            '${escapeHTML(p.owner)}',
-            '${escapeHTML(name)}'
+            ${escapeInlineJSArgument(id)},
+            ${escapeInlineJSArgument(p.owner)},
+            ${escapeInlineJSArgument(name)}
           )"
         >
           💬 返信する
@@ -5126,6 +5134,13 @@ function escapeHTML(
 
 }
 
+function escapeInlineJSArgument(value) {
+  const literal = JSON.stringify(String(value))
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+  return escapeHTML(literal);
+}
+
 
 /* ======================
    タイムライン
@@ -5145,6 +5160,7 @@ const q =
 
 let latestPostsSnapshot =
   null;
+let timelineRenderVersion = 0;
 
 
 /* ======================
@@ -5154,40 +5170,23 @@ let latestPostsSnapshot =
 async function renderTimeline(
   snapshot
 ) {
-
-  const postsDiv =
-    document.getElementById(
-      "posts"
-    );
-
+  const postsDiv = document.getElementById("posts");
   if (!postsDiv) return;
 
-  postsDiv.innerHTML =
-    "";
+  const renderVersion = ++timelineRenderVersion;
+  postsDiv.replaceChildren();
 
-  const htmlList =
-    await Promise.all(
-      snapshot.docs.map(
-        async (docSnap) => {
-
-          const p =
-            docSnap.data();
-
-          const id =
-            docSnap.id;
-
-          return await createPostHTML(
-            p,
-            id
-          );
-
-        }
-      )
+  try {
+    const htmlList = await Promise.all(
+      snapshot.docs.map((docSnap) => createPostHTML(docSnap.data(), docSnap.id))
     );
-
-  postsDiv.innerHTML =
-    htmlList.join("");
-
+    if (renderVersion !== timelineRenderVersion) return;
+    postsDiv.innerHTML = htmlList.join("");
+  } catch (error) {
+    if (renderVersion !== timelineRenderVersion) return;
+    postsDiv.textContent = "投稿を読み込めませんでした。通信状態を確認してください。";
+    console.error("タイムラインの投稿描画に失敗しました:", error);
+  }
 }
 
 
@@ -5223,123 +5222,42 @@ onSnapshot(
 ====================== */
 
 async function loadProfilePosts(
-  userId
+  userId,
+  requestVersion
 ) {
+  const profilePosts = document.getElementById("profilePosts");
+  if (!profilePosts || !userId) return;
 
-  const profilePosts =
-    document.getElementById(
-      "profilePosts"
-    );
+  const postsLoadVersion = ++profilePostsLoadVersion;
+  const isCurrentRequest = () =>
+    postsLoadVersion === profilePostsLoadVersion &&
+    requestVersion === profileViewRequestVersion &&
+    viewingProfileUserId === userId;
 
+  profilePosts.textContent = "読み込み中...";
 
-  profilePosts.innerHTML =
-    "読み込み中...";
+  try {
+    // A one-shot read avoids leaving an onSnapshot listener active after this view is loaded.
+    const snapshot = await getDocs(q);
+    if (!isCurrentRequest()) return;
 
+    const posts = snapshot.docs
+      .filter((docSnap) => docSnap.data().owner === userId)
+      .map((docSnap) => ({ data: docSnap.data(), id: docSnap.id }));
 
-  const posts =
-    [];
-
-
-  const snapshot =
-    await new Promise(
-      (resolve) => {
-
-        onSnapshot(
-          q,
-          (snap) => {
-
-            resolve(
-              snap
-            );
-
-          },
-
-          () => {
-
-            resolve(
-              null
-            );
-
-          }
-        );
-
-      }
-    );
-
-
-  if (!snapshot) {
-
-    profilePosts.innerHTML =
-      "投稿を読み込めませんでした";
-
-    return;
-
-  }
-
-
-  snapshot.forEach(
-    (docSnap) => {
-
-      const p =
-        docSnap.data();
-
-
-      if (
-        p.owner === userId
-      ) {
-
-        posts.push({
-
-          data:
-            p,
-
-          id:
-            docSnap.id
-
-        });
-
-      }
-
+    if (posts.length === 0) {
+      profilePosts.innerHTML = '<div style="color:#777;">まだ投稿がありません</div>';
+      return;
     }
-  );
 
-
-  if (
-    posts.length === 0
-  ) {
-
-    profilePosts.innerHTML =
-      `
-        <div style="color:#777;">
-          まだ投稿がありません
-        </div>
-      `;
-
-    return;
-
+    const htmlList = await Promise.all(posts.map((item) => createPostHTML(item.data, item.id)));
+    if (!isCurrentRequest()) return;
+    profilePosts.innerHTML = htmlList.join("");
+  } catch (error) {
+    if (!isCurrentRequest()) return;
+    profilePosts.textContent = "投稿を読み込めませんでした。通信状態を確認してください。";
+    console.error("プロフィール投稿の読み込みに失敗しました:", error);
   }
-
-
-  profilePosts.innerHTML =
-    "";
-
-
-  for (
-    const item of posts
-  ) {
-
-    const html =
-      await createPostHTML(
-        item.data,
-        item.id
-      );
-
-
-    profilePosts.innerHTML +=
-      html;
-
-  }
-
 }
 
 /* ======================
@@ -7435,8 +7353,9 @@ function renderOnlineUnoUI(data, myUid) {
 
   const oppArea = document.getElementById("unoOpponentsArea");
   oppArea.innerHTML = "";
-  const players = data.players || [];
+  const players = Array.isArray(data.players) ? data.players.filter((player) => player && typeof player === "object") : [];
   players.filter(p => p.uid !== myUid).forEach((p) => {
+    const cardCount = Number.isSafeInteger(p.cardCount) && p.cardCount >= 0 ? p.cardCount : 0;
     const isTheirTurn = (data.status === "playing" && players[data.turnIndex]?.uid === p.uid);
     const box = document.createElement("div");
     box.style.cssText = `
@@ -7451,8 +7370,8 @@ function renderOnlineUnoUI(data, myUid) {
     `;
     box.innerHTML = `
       <div style="font-size:12px; color:#cbd5e1; font-weight:bold; margin-bottom:4px;">👤 ${escapeHTML(p.name)}</div>
-      <div style="font-size:14px; color:#facc15; font-weight:bold;">🎴 ${p.cardCount}枚</div>
-      ${p.cardCount === 1 ? '<span style="font-size:10px; background:#dc2626; color:#fff; padding:1px 4px; border-radius:4px; font-weight:bold;">UNO!</span>' : ''}
+      <div style="font-size:14px; color:#facc15; font-weight:bold;">🎴 ${cardCount}枚</div>
+      ${cardCount === 1 ? '<span style="font-size:10px; background:#dc2626; color:#fff; padding:1px 4px; border-radius:4px; font-weight:bold;">UNO!</span>' : ''}
     `;
     oppArea.appendChild(box);
   });
