@@ -16,6 +16,39 @@ const auth = getAuth(firebaseApp);
 // Cloudflare Worker API URL
 const WORKER_URL = window.MYYAJUU_AI_WORKER_URL || "https://myyajuu-ai-worker.harumei-260329.workers.dev";
 
+const MODEL_CATALOG = {
+  "@cf/meta/llama-3.2-3b-instruct": {
+    name: "Llama 3.2 3B",
+    provider: "Meta",
+    badge: "超高速レスポンス · 低消費",
+    desc: "高速・軽量で自然な日本語対応。日常の会話や素早い質問に最適です。",
+  },
+  "@cf/openai/gpt-oss-20b": {
+    name: "GPT-OSS 20B",
+    provider: "OpenAI",
+    badge: "思考・論理推論 · バランス型",
+    desc: "OpenAIのオープンモデル。論理的推論やステップごとの思考に強みがあります。",
+  },
+  "@cf/google/gemma-4-26b-a4b-it": {
+    name: "Gemma 4 26B",
+    provider: "Google",
+    badge: "高知識 · 知的対話",
+    desc: "Google最新のGemma 4ファミリー。知識・推論能力が高く知的な受け答えが得意です。",
+  },
+  "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+    name: "Llama 3.3 70B",
+    provider: "Meta",
+    badge: "最高峰品質 · 高度な分析",
+    desc: "700億パラメータの高性能フラグシップ。複雑な文章作成や高度な分析に対応します。",
+  },
+  "@cf/qwen/qwen3-30b-a3b-fp8": {
+    name: "Qwen3 30B",
+    provider: "Qwen",
+    badge: "多言語対応 · MoE高効率",
+    desc: "最新のQwen3 MoEモデル。優れた多言語理解力と長文要約力を備えています。",
+  },
+};
+
 const $ = (id) => document.getElementById(id);
 const statusEl = $("status");
 const errorEl = $("error");
@@ -26,6 +59,9 @@ const messagesEl = $("messages");
 const welcomeEl = $("welcome");
 const authGateEl = $("authGate");
 const authMessageEl = $("authMessage");
+const modelSelectEl = $("modelSelect");
+const modelBadgeEl = $("modelBadge");
+const modelInfoTextEl = $("modelInfoText");
 
 // 会話データはメモリ上にのみ保持（LocalStorage, SessionStorage, IndexedDB, Cache API には一切保存しない）
 let history = [];
@@ -33,6 +69,7 @@ let currentUser = null;
 let currentUid = null;
 let generating = false;
 let loadingHistory = false;
+let selectedModelId = "@cf/meta/llama-3.2-3b-instruct";
 
 // 過去のlocalStorage/sessionStorage上のAIキャッシュを完全消去（Firebaseログイン状態のキーは保持）
 function purgeLegacyLocalData() {
@@ -53,29 +90,57 @@ function showError(message) {
   errorEl.hidden = false;
 }
 
+function updateModelUI() {
+  const info = MODEL_CATALOG[selectedModelId] || MODEL_CATALOG["@cf/meta/llama-3.2-3b-instruct"];
+  if (modelBadgeEl) modelBadgeEl.textContent = info.badge;
+  if (modelInfoTextEl) modelInfoTextEl.textContent = info.desc;
+}
+
+if (modelSelectEl) {
+  modelSelectEl.addEventListener("change", (e) => {
+    selectedModelId = e.target.value;
+    updateModelUI();
+    // モデルを切り替えても会話履歴はそのまま維持され、同じ文脈で継続可能
+  });
+}
+updateModelUI();
+
 function syncUI() {
   const signedIn = Boolean(currentUid);
   authGateEl.hidden = signedIn;
   clearButton.disabled = !signedIn || generating || loadingHistory || history.length === 0;
   promptEl.disabled = !signedIn || generating || loadingHistory;
   sendButton.disabled = !signedIn || generating || loadingHistory;
+  if (modelSelectEl) modelSelectEl.disabled = !signedIn || generating;
 
   if (!signedIn) {
     welcomeEl.hidden = true;
   }
 }
 
-function appendMessage(role, text) {
+function appendMessage(role, text, modelName = null) {
   const row = document.createElement("div");
   row.className = `message ${role}`;
   const bubble = document.createElement("div");
   bubble.className = "bubble";
-  bubble.textContent = text;
+
+  if (role === "assistant" && modelName) {
+    const tag = document.createElement("span");
+    tag.className = "model-tag";
+    tag.textContent = `✦ ${modelName}`;
+    bubble.appendChild(tag);
+  }
+
+  const textNode = document.createElement("div");
+  textNode.className = "text-content";
+  textNode.textContent = text;
+  bubble.appendChild(textNode);
+
   row.appendChild(bubble);
   messagesEl.appendChild(row);
   messagesEl.scrollTop = messagesEl.scrollHeight;
   window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-  return bubble;
+  return textNode;
 }
 
 function renderHistory() {
@@ -85,7 +150,12 @@ function renderHistory() {
     return;
   }
   for (const item of history) {
-    appendMessage(item.role, item.content);
+    let mName = null;
+    if (item.role === "assistant") {
+      const info = item.model ? MODEL_CATALOG[item.model] : null;
+      mName = info ? info.name : null;
+    }
+    appendMessage(item.role, item.content, mName);
   }
   welcomeEl.hidden = history.length > 0;
 }
@@ -120,10 +190,13 @@ async function fetchD1History(user) {
   }
 }
 
-// メッセージ送信（D1サーバーへ保存・AI生成）
+// メッセージ送信（D1サーバーへ保存・選択したモデルでAI生成）
 async function sendMessage(text) {
   if (!currentUser || generating || loadingHistory) return;
   const sendUid = currentUid;
+  const targetModelId = selectedModelId;
+  const targetModelInfo = MODEL_CATALOG[targetModelId] || MODEL_CATALOG["@cf/meta/llama-3.2-3b-instruct"];
+
   generating = true;
   syncUI();
   errorEl.hidden = true;
@@ -133,8 +206,8 @@ async function sendMessage(text) {
   history.push({ role: "user", content: text });
   appendMessage("user", text);
 
-  const assistantBubble = appendMessage("assistant", "AIが回答を生成しています…");
-  statusEl.textContent = "AIが回答を生成しています…";
+  const assistantBubble = appendMessage("assistant", `${targetModelInfo.name} が回答を生成しています…`, targetModelInfo.name);
+  statusEl.textContent = `${targetModelInfo.name} に送信中…`;
 
   try {
     const token = await currentUser.getIdToken();
@@ -144,7 +217,7 @@ async function sendMessage(text) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ message: text }),
+      body: JSON.stringify({ message: text, model: targetModelId }),
     });
 
     if (!response.ok) {
@@ -168,8 +241,8 @@ async function sendMessage(text) {
     if (currentUid !== sendUid) return;
 
     assistantBubble.textContent = replyText;
-    history.push({ role: "assistant", content: replyText });
-    statusEl.textContent = "準備完了。会話はCloudflare D1にサーバー保存されています。";
+    history.push({ role: "assistant", content: replyText, model: targetModelId });
+    statusEl.textContent = `準備完了（${targetModelInfo.name} で回答）。会話はD1に保存されています。`;
   } catch (error) {
     if (currentUid !== sendUid) return;
     history.pop(); // エラー時は未送信のユーザー発言をメモリからロールバック
