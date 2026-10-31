@@ -14,7 +14,7 @@ const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 
 // Cloudflare Worker API URL
-const WORKER_URL = window.MYYAJUU_AI_WORKER_URL || "https://myyajuu-ai-worker.hato2170.workers.dev";
+const WORKER_URL = window.MYYAJUU_AI_WORKER_URL || "https://myyajuu-ai-worker.harumei-260329.workers.dev";
 
 const $ = (id) => document.getElementById(id);
 const statusEl = $("status");
