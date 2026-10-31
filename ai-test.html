@@ -4,45 +4,119 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
-  <title>ローカルAIチャット 試作</title>
+  <title>AIチャット</title>
   <link rel="stylesheet" href="ai-test.css">
   <script type="module" src="ai-test.js"></script>
 </head>
 <body>
   <main class="app">
+    <!-- トップバー -->
     <header class="topbar">
       <a class="back" href="./sns.html" aria-label="SNSへ戻る">←</a>
-      <div><strong>AIアシスタント</strong><small>端末内で動作・会話はこの端末に保存</small></div>
-      <button id="clearButton" class="clear" type="button" title="会話を削除" disabled>削除</button>
+      <div class="title-area">
+        <strong id="sessionTitleDisplay">AIアシスタント</strong>
+        <small id="sessionSubtitle">Workers AI · D1クラウド同期</small>
+      </div>
+      <div class="topbar-actions">
+        <button id="sessionsBtn" class="topbar-btn" type="button" title="会話・プロジェクト一覧">📁 会話一覧</button>
+        <button id="newChatBtn" class="topbar-btn primary" type="button" title="新しいチャット">➕ 新規</button>
+      </div>
     </header>
 
+    <!-- 会話・プロジェクト管理ドロワー -->
+    <div id="sessionsDrawer" class="drawer" hidden>
+      <div class="drawer-header">
+        <h3>📁 プロジェクト・会話一覧</h3>
+        <button id="closeDrawerBtn" class="close-btn" type="button">✕</button>
+      </div>
+      <div class="drawer-body">
+        <button id="drawerNewChatBtn" class="drawer-new-btn" type="button">➕ 新しい会話を作成</button>
+        <ul id="sessionsList" class="sessions-list">
+          <li class="session-item active">読み込み中…</li>
+        </ul>
+      </div>
+    </div>
+    <div id="drawerOverlay" class="drawer-overlay" hidden></div>
+
+    <!-- ログインゲート -->
     <section id="authGate" class="welcome" aria-live="polite">
       <h1>ログイン状態を確認しています…</h1>
       <p id="authMessage">SNSのログイン状態を確認しています。</p>
-      <a href="./sns.html">SNSへ戻る</a>
+      <a href="./sns.html" class="sns-back-link">SNSへ戻る</a>
     </section>
 
+    <!-- 案内ウェルカム -->
     <section id="welcome" class="welcome" aria-label="利用案内" hidden>
       <div class="sparkle">✳</div>
       <h1>何でも聞いてください</h1>
-      <p>この試作品はQwen2.5-0.5B-Instructをブラウザー内で実行します。会話は端末内にのみ保存されます。</p>
-      <div class="download-note"><strong>初回ダウンロードの目安：約300 MB</strong><br>モデル本体の概算です。追加ファイルやブラウザーのキャッシュ領域が必要です。Wi-Fi接続と空き容量をご確認ください。</div>
+      <p>Cloudflare Workers AIの多彩なモデルが回答します。プロジェクト（会話）を何個も作成して整理できます。</p>
+      <div class="download-note">
+        <strong>💡 搭載機能</strong><br>
+        ・<strong>複数モデル切替</strong>: 入力欄の上で瞬時にモデルを変更できます。<br>
+        ・<strong>画像・ファイル添付</strong>: 「📎 添付」からファイルを読み込めます。<br>
+        ・<strong>🎨 画像生成</strong>: FLUXモデルで美しい画像を生成できます。<br>
+        ・<strong>🌐 Web検索</strong>: 最新のネット情報を検索して回答できます。<br>
+        ・<strong>D1完全同期</strong>: 端末内にはデータを残さずクラウドで安全に同期します。
+      </div>
     </section>
 
+    <!-- メッセージ一覧 -->
     <section id="messages" class="messages" aria-live="polite" aria-label="会話"></section>
 
+    <!-- ステータス・エラー -->
     <div class="status-area">
-      <div id="status" class="status" role="status">WebGPUを確認しています…</div>
-      <progress id="progress" max="100" value="0" hidden></progress>
+      <div id="status" class="status" role="status">ログイン状態を確認しています…</div>
       <div id="error" class="error" role="alert" hidden></div>
-      <button id="loadButton" class="load-button" type="button" hidden>モデルを読み込む（初回は約300 MB）</button>
     </div>
 
-    <form id="chatForm" class="composer">
-      <textarea id="prompt" rows="1" maxlength="2000" placeholder="メッセージを入力" aria-label="メッセージ" disabled></textarea>
-      <button id="sendButton" type="submit" aria-label="送信" disabled>↑</button>
-    </form>
-    <footer>回答は端末内の小型モデルによるものです。誤りを含む場合があります。</footer>
+    <!-- 添付プレビューエリア -->
+    <div id="attachmentPreviewArea" class="attachment-preview-area" hidden>
+      <div class="attachment-chip">
+        <span id="attachmentName">📄 ファイル</span>
+        <button id="removeAttachmentBtn" type="button" class="chip-remove">✕</button>
+      </div>
+    </div>
+
+    <!-- チャット入力欄エリア（入力欄の真上にモデル選択とツールバーを配置） -->
+    <div class="composer-container">
+      <!-- ツールバー（入力欄の真上） -->
+      <div class="composer-toolbar">
+        <div class="model-pill">
+          <label for="modelSelect" class="toolbar-label">AI:</label>
+          <select id="modelSelect" class="model-select-pill">
+            <option value="@cf/meta/llama-3.2-3b-instruct" selected>⚡ Llama 3.2 3B (超高速)</option>
+            <option value="@cf/openai/gpt-oss-20b">🧠 GPT-OSS 20B (思考推論)</option>
+            <option value="@cf/google/gemma-4-26b-a4b-it">💎 Gemma 4 26B (高知識)</option>
+            <option value="@cf/meta/llama-3.3-70b-instruct-fp8-fast">👑 Llama 3.3 70B (最高峰品質)</option>
+            <option value="@cf/qwen/qwen3-30b-a3b-fp8">🌐 Qwen3 30B (多言語)</option>
+          </select>
+        </div>
+
+        <div class="tool-chips">
+          <button id="webSearchToggle" type="button" class="tool-chip" title="Web検索をON/OFF">
+            🌐 Web検索: <span id="webSearchState">OFF</span>
+          </button>
+          <button id="imageGenBtn" type="button" class="tool-chip" title="画像生成モード">
+            🎨 画像生成
+          </button>
+          <button id="attachBtn" type="button" class="tool-chip" title="画像・ファイル添付">
+            📎 添付
+          </button>
+          <button id="clearChatBtn" type="button" class="tool-chip danger" title="この会話をクリア">
+            🗑️ 履歴削除
+          </button>
+        </div>
+      </div>
+
+      <!-- 入力フォーム -->
+      <form id="chatForm" class="composer">
+        <input type="file" id="fileInput" accept="image/*,.txt,.md,.json,.js,.html,.css,.csv,.py" style="display:none;">
+        <textarea id="prompt" rows="1" maxlength="1500" placeholder="メッセージを入力（/image で画像生成）" aria-label="メッセージ" disabled></textarea>
+        <button id="sendButton" type="submit" aria-label="送信" disabled>↑</button>
+      </form>
+    </div>
+
+    <footer>回答・画像はCloudflare Workers AIによるものです。誤りを含む場合があります。</footer>
   </main>
 </body>
 </html>
