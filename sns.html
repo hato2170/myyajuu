@@ -1151,11 +1151,139 @@ button.back {
         </div>
       </div>
     </div>
+      <div style="background:#161b22; border:1px solid #30363d; border-radius:12px; padding:16px; cursor:pointer; margin-top:10px;" onclick="openBrawlHub()">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <h3 style="margin:0 0 6px 0; color:#f59e0b; font-size:18px;">⭐ ブロスタ（Brawl Stars）</h3>
+            <p style="margin:0; color:#8b949e; font-size:13px;">3v3ジェムグラブ対戦！チャッピー自作2D版・本家WebGL・学校回避版！</p>
+          </div>
+          <span style="font-size:20px; color:#f59e0b;">▶</span>
+        </div>
+      </div>
 
   </div>
 
 
-  <!-- ======================
+    <!-- ======================
+       ブロスタ（Brawl Stars）画面
+  ======================= -->
+  <div id="brawlScreen" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <button class="back" onclick="leaveBrawlGame()" style="margin:0; width:auto; padding:6px 14px;">
+        ← コーナーへ
+      </button>
+      <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 14px; font-weight:bold; border-radius:8px;">
+        🚨 緊急回避 (数学)
+      </button>
+    </div>
+
+    <!-- モード切替タブ -->
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <button id="brawlTab2DBtn" onclick="switchBrawlTab('2d')" style="background:#f59e0b; color:#fff; font-weight:bold; padding:8px 12px; border-radius:8px; flex:1; border:none; cursor:pointer; font-size:13px;">
+        👑 チャッピー自作2D版（3v3ジェムグラブ）
+      </button>
+      <button id="brawlTabOfficialBtn" onclick="switchBrawlTab('official')" style="background:#1e293b; color:#94a3b8; font-weight:bold; padding:8px 12px; border-radius:8px; flex:1; border:1px solid #334155; cursor:pointer; font-size:13px;">
+        ⚡ 本家WebGL版 / 回避ミラー
+      </button>
+    </div>
+
+    <!-- 自作2D版 (Canvas 3v3 Gem Grab) -->
+    <div id="brawl2DContainer">
+      <!-- スコア・ステータスバー -->
+      <div style="background:#161b22; border:1px solid #30363d; border-radius:10px; padding:10px 14px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-size:13px; font-weight:bold; color:#38bdf8;">
+          💎 あなたチーム: <span id="brawlBlueGems">0</span>個
+        </div>
+        <div id="brawlCountdownDisplay" style="font-size:13px; font-weight:bold; color:#ec4899; display:none;">
+          ⏱️ カウントダウン: 15秒!
+        </div>
+        <div style="font-size:13px; font-weight:bold; color:#ef4444;">
+          💎 敵チーム: <span id="brawlRedGems">0</span>個
+        </div>
+      </div>
+
+      <!-- キャンバスエリア -->
+      <div style="position:relative; width:100%; max-width:360px; margin:0 auto; background:#1e293b; border-radius:12px; overflow:hidden; border:2px solid #334155; box-shadow:0 8px 24px rgba(0,0,0,0.6);">
+        <canvas id="brawlCanvas" width="360" height="420" style="display:block; width:100%; height:auto; touch-action:none;"></canvas>
+
+        <!-- ゲームオーバー/勝利オーバーレイ -->
+        <div id="brawlOverlay" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; box-sizing:border-box;">
+          <h2 id="brawlOverlayTitle" style="color:#f59e0b; margin:0 0 8px 0; font-size:24px;">🏆 勝利！</h2>
+          <p id="brawlOverlayMsg" style="color:#cbd5e1; font-size:14px; margin:0 0 20px 0;">ジェムを10個集めてカウントダウンを守り切った！</p>
+          <button onclick="startBrawlGame()" style="background:#f59e0b; color:#fff; font-weight:bold; padding:10px 24px; border-radius:8px; border:none; width:auto; font-size:14px; cursor:pointer;">
+            🔄 もう一度バトル
+          </button>
+        </div>
+      </div>
+
+      <!-- 操作ボタン（スマホ・タブレット用） -->
+      <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center; max-width:360px; margin-left:auto; margin-right:auto; gap:8px;">
+        <!-- 移動D-Pad -->
+        <div style="display:grid; grid-template-columns:repeat(3, 44px); grid-template-rows:repeat(3, 38px); gap:4px;">
+          <div></div>
+          <button onpointerdown="brawlSetDir(0, -1)" onpointerup="brawlResetDir()" style="background:#1e293b; color:#fff; border:1px solid #475569; border-radius:8px; font-size:16px; margin:0; padding:0; display:flex; align-items:center; justify-content:center;">⬆️</button>
+          <div></div>
+          <button onpointerdown="brawlSetDir(-1, 0)" onpointerup="brawlResetDir()" style="background:#1e293b; color:#fff; border:1px solid #475569; border-radius:8px; font-size:16px; margin:0; padding:0; display:flex; align-items:center; justify-content:center;">⬅️</button>
+          <div style="display:flex; align-items:center; justify-content:center; color:#64748b; font-size:10px; font-weight:bold;">移動</div>
+          <button onpointerdown="brawlSetDir(1, 0)" onpointerup="brawlResetDir()" style="background:#1e293b; color:#fff; border:1px solid #475569; border-radius:8px; font-size:16px; margin:0; padding:0; display:flex; align-items:center; justify-content:center;">➡️</button>
+          <div></div>
+          <button onpointerdown="brawlSetDir(0, 1)" onpointerup="brawlResetDir()" style="background:#1e293b; color:#fff; border:1px solid #475569; border-radius:8px; font-size:16px; margin:0; padding:0; display:flex; align-items:center; justify-content:center;">⬇️</button>
+          <div></div>
+        </div>
+
+        <!-- 攻撃 & 必殺技ウルト -->
+        <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+          <button id="brawlAttackBtn" onpointerdown="brawlTriggerAttack()" style="background:#0284c7; color:#fff; font-weight:bold; padding:10px; border-radius:10px; border:none; cursor:pointer; font-size:13px; box-shadow:0 4px 12px rgba(2,132,199,0.3);">
+            💥 通常攻撃 (散弾)
+          </button>
+          <button id="brawlSuperBtn" onpointerdown="brawlTriggerSuper()" style="background:#334155; color:#94a3b8; font-weight:bold; padding:10px; border-radius:10px; border:none; cursor:pointer; font-size:13px;">
+            ⚡ 必殺技 (チャージ中: 0%)
+          </button>
+        </div>
+      </div>
+      <p style="text-align:center; color:#94a3b8; font-size:11px; margin-top:6px;">PC: 矢印キー(WASD)移動 / Spaceキー攻撃 / Xキー必殺技</p>
+    </div>
+
+    <!-- 本家 / 回避ミラー版 (Official / WebGL) -->
+    <div id="brawlOfficialContainer" style="display:none;">
+      <div style="background:#161b22; border:1px solid #30363d; border-radius:10px; padding:10px 14px; margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <span style="color:#f59e0b; font-size:12px; font-weight:bold;">🌐 サーバー:</span>
+            <button id="brawlServer1Btn" onclick="switchBrawlServer(1)" style="background:#f59e0b; color:#fff; width:auto; padding:4px 10px; font-size:11px; border-radius:6px; border:none; cursor:pointer;">
+              ⚡ サーバー1 (UBG移植版)
+            </button>
+            <button id="brawlServer2Btn" onclick="switchBrawlServer(2)" style="background:#1e293b; color:#94a3b8; width:auto; padding:4px 10px; font-size:11px; border-radius:6px; border:1px solid #334155; cursor:pointer;">
+              🌐 サーバー2 (GitHub Pages回避)
+            </button>
+            <button id="brawlServer3Btn" onclick="switchBrawlServer(3)" style="background:#1e293b; color:#94a3b8; width:auto; padding:4px 10px; font-size:11px; border-radius:6px; border:1px solid #334155; cursor:pointer;">
+              🚀 サーバー3 (GitLabミラー)
+            </button>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button onclick="reloadBrawl()" style="background:#1e293b; color:#f1f5f9; width:auto; padding:4px 8px; font-size:11px; border-radius:6px; border:1px solid #334155; cursor:pointer;">
+              🔄 再読込
+            </button>
+            <button onclick="openBrawlInNewTab()" style="background:#1e293b; color:#f1f5f9; width:auto; padding:4px 8px; font-size:11px; border-radius:6px; border:1px solid #334155; cursor:pointer;">
+              🔗 別タブで開く
+            </button>
+            <button onclick="toggleBrawlFullscreen()" style="background:#1e293b; color:#f1f5f9; width:auto; padding:4px 8px; font-size:11px; border-radius:6px; border:1px solid #334155; cursor:pointer;">
+              ⛶ 全画面
+            </button>
+          </div>
+        </div>
+        <div id="brawlServerDesc" style="color:#8b949e; font-size:11px; margin-top:6px;">
+          サーバー1: UBG公式HTML5 WebGL版ブロスタです。i-フィルター回避ミラー対応！
+        </div>
+      </div>
+      <div id="brawlIframeWrapper" style="width:100%; height:70vh; max-height:640px; position:relative; background:#000; border-radius:12px; overflow:hidden; border:2px solid #334155; transition: all 0.2s ease;">
+        <button id="brawlExitFsBtn" onclick="exitBrawlFullscreen()" style="display:none; position:fixed; top:12px; right:12px; z-index:2147483647; width:34px !important; min-width:34px !important; max-width:34px !important; height:34px !important; border-radius:50% !important; background:rgba(0,0,0,0.35) !important; color:#fff !important; border:1px solid rgba(255,255,255,0.25) !important; font-size:16px !important; font-weight:bold !important; cursor:pointer !important; box-shadow:0 2px 8px rgba(0,0,0,0.4) !important; opacity:0.4; transition:opacity 0.2s, background 0.2s; padding:0 !important; margin:0 !important; line-height:32px; text-align:center;">✕</button>
+        <iframe id="brawlOfficialIframe" src="about:blank" style="width:100%; height:100%; border:none; display:block;" allow="autoplay; fullscreen; web-share" allowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
+
+<!-- ======================
        オセロ画面
   ======================= -->
 
@@ -2352,6 +2480,7 @@ if (!joinedGame) {
     "daifugoScreen",
     "solitaireScreen",
     "paperScreen",
+    "brawlScreen",
     "notificationScreen",
     "dmScreen"
   ].some((sId) => {
@@ -9533,6 +9662,793 @@ function drawPaperGame() {
   });
 }
 
+
+
+/* ==========================================================
+   ⭐ ブロスタ（Brawl Stars）システム & 2Dジェムグラブ
+========================================================== */
+const BRAWL_SERVERS = {
+  1: { name: "UBG移植版 (公式WebGL)", url: "https://ubg235.github.io/brawl-stars/" },
+  2: { name: "GitHub Pages回避版", url: "https://ubg17.github.io/brawl-stars/" },
+  3: { name: "GitLabミラー", url: "https://rawcdn.githack.com/3kh0/3kh0-Assets/e31413a96860bc50e184ba22009d1d4d82f71639/brawl-stars/index.html" }
+};
+let currentBrawlServer = 1;
+let currentBrawlTab = "2d";
+let brawlIsFullscreen = false;
+
+window.openBrawlHub = function () {
+  window.hideAllScreens();
+  const screen = document.getElementById("brawlScreen");
+  if (screen) screen.style.display = "block";
+  switchBrawlTab("2d");
+};
+
+window.leaveBrawlGame = function () {
+  stopBrawlLoop();
+  exitBrawlFullscreen();
+  const iframe = document.getElementById("brawlOfficialIframe");
+  if (iframe) iframe.src = "about:blank";
+  showGameCorner();
+};
+
+window.switchBrawlTab = function (mode) {
+  currentBrawlTab = mode;
+  const t2d = document.getElementById("brawlTab2DBtn");
+  const tOff = document.getElementById("brawlTabOfficialBtn");
+  const c2d = document.getElementById("brawl2DContainer");
+  const cOff = document.getElementById("brawlOfficialContainer");
+
+  if (mode === "official") {
+    t2d.style.background = "#1e293b";
+    t2d.style.color = "#94a3b8";
+    t2d.style.border = "1px solid #334155";
+    tOff.style.background = "#0284c7";
+    tOff.style.color = "#fff";
+    tOff.style.border = "none";
+    c2d.style.display = "none";
+    cOff.style.display = "block";
+    stopBrawlLoop();
+    switchBrawlServer(currentBrawlServer);
+  } else {
+    t2d.style.background = "#f59e0b";
+    t2d.style.color = "#fff";
+    t2d.style.border = "none";
+    tOff.style.background = "#1e293b";
+    tOff.style.color = "#94a3b8";
+    tOff.style.border = "1px solid #334155";
+    c2d.style.display = "block";
+    cOff.style.display = "none";
+    startBrawlGame();
+  }
+};
+
+window.switchBrawlServer = function (num) {
+  currentBrawlServer = num;
+  for (let i = 1; i <= 3; i++) {
+    const btn = document.getElementById("brawlServer" + i + "Btn");
+    if (!btn) continue;
+    if (i === num) {
+      btn.style.background = "#f59e0b";
+      btn.style.color = "#fff";
+      btn.style.border = "none";
+    } else {
+      btn.style.background = "#1e293b";
+      btn.style.color = "#94a3b8";
+      btn.style.border = "1px solid #334155";
+    }
+  }
+  const desc = document.getElementById("brawlServerDesc");
+  const cfg = BRAWL_SERVERS[num] || BRAWL_SERVERS[1];
+  if (desc) desc.textContent = "サーバー" + num + " (" + cfg.name + "): i-フィルターや制限を回避してプレイできます。";
+  const iframe = document.getElementById("brawlOfficialIframe");
+  if (iframe) iframe.src = cfg.url;
+};
+
+window.reloadBrawl = function () {
+  const iframe = document.getElementById("brawlOfficialIframe");
+  if (iframe) {
+    const src = iframe.src;
+    iframe.src = "about:blank";
+    setTimeout(() => { iframe.src = src; }, 50);
+  }
+};
+
+window.openBrawlInNewTab = function () {
+  const cfg = BRAWL_SERVERS[currentBrawlServer] || BRAWL_SERVERS[1];
+  window.open(cfg.url, "_blank");
+};
+
+window.toggleBrawlFullscreen = function () {
+  const wrapper = document.getElementById("brawlIframeWrapper");
+  const exitBtn = document.getElementById("brawlExitFsBtn");
+  if (!wrapper) return;
+  if (!brawlIsFullscreen) {
+    brawlIsFullscreen = true;
+    wrapper.style.position = "fixed";
+    wrapper.style.top = "0";
+    wrapper.style.left = "0";
+    wrapper.style.width = "100vw";
+    wrapper.style.height = "100vh";
+    wrapper.style.maxHeight = "none";
+    wrapper.style.zIndex = "2147483640";
+    wrapper.style.borderRadius = "0";
+    wrapper.style.border = "none";
+    if (exitBtn) exitBtn.style.display = "block";
+    document.body.style.overflow = "hidden";
+  } else {
+    exitBrawlFullscreen();
+  }
+};
+
+window.exitBrawlFullscreen = function () {
+  const wrapper = document.getElementById("brawlIframeWrapper");
+  const exitBtn = document.getElementById("brawlExitFsBtn");
+  if (!wrapper) return;
+  brawlIsFullscreen = false;
+  wrapper.style.position = "relative";
+  wrapper.style.top = "auto";
+  wrapper.style.left = "auto";
+  wrapper.style.width = "100%";
+  wrapper.style.height = "70vh";
+  wrapper.style.maxHeight = "640px";
+  wrapper.style.zIndex = "auto";
+  wrapper.style.borderRadius = "12px";
+  wrapper.style.border = "2px solid #334155";
+  if (exitBtn) exitBtn.style.display = "none";
+  document.body.style.overflow = "auto";
+};
+
+/* --- 2Dブロスタ (Brawl Stars Canvas 3v3 Gem Grab) --- */
+let brawlCanvasEl = null;
+let brawlCtx2D = null;
+let brawlRunning2D = false;
+let brawlAnimId2D = null;
+let brawlBlueScore = 0;
+let brawlRedScore = 0;
+let brawlTimer = 0;
+let brawlTimerInterval = null;
+let brawlGems = [];
+let brawlBullets = [];
+let brawlCharacters = [];
+let brawlPlayerChar = null;
+let brawlLastMine = 0;
+let brawlInput = { x: 0, y: 0 };
+let brawlAudioCtx = null;
+
+function playBrawlSound(type) {
+  try {
+    if (!brawlAudioCtx) brawlAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (brawlAudioCtx.state === "suspended") brawlAudioCtx.resume();
+    const osc = brawlAudioCtx.createOscillator();
+    const gain = brawlAudioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(brawlAudioCtx.destination);
+    const now = brawlAudioCtx.currentTime;
+
+    if (type === "shot") {
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.exponentialRampToValueAtTime(110, now + 0.12);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
+      osc.start(now);
+      osc.stop(now + 0.12);
+    } else if (type === "super") {
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(220, now);
+      osc.frequency.exponentialRampToValueAtTime(55, now + 0.28);
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.28);
+      osc.start(now);
+      osc.stop(now + 0.28);
+    } else if (type === "gem") {
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(659.25, now);
+      osc.frequency.setValueAtTime(880, now + 0.08);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+      osc.start(now);
+      osc.stop(now + 0.2);
+    }
+  } catch {}
+}
+
+const BRAWL_MAP_OBSTACLES = [
+  { x: 30, y: 90, w: 60, h: 20 },
+  { x: 270, y: 90, w: 60, h: 20 },
+  { x: 130, y: 130, w: 100, h: 18 },
+  { x: 130, y: 272, w: 100, h: 18 },
+  { x: 30, y: 310, w: 60, h: 20 },
+  { x: 270, y: 310, w: 60, h: 20 }
+];
+
+window.startBrawlGame = function () {
+  brawlCanvasEl = document.getElementById("brawlCanvas");
+  if (!brawlCanvasEl) return;
+  brawlCtx2D = brawlCanvasEl.getContext("2d");
+  brawlCanvasEl.style.touchAction = "none";
+
+  document.getElementById("brawlOverlay").style.display = "none";
+  document.getElementById("brawlCountdownDisplay").style.display = "none";
+  if (brawlTimerInterval) clearInterval(brawlTimerInterval);
+
+  brawlBlueScore = 0;
+  brawlRedScore = 0;
+  brawlTimer = 0;
+  brawlGems = [];
+  brawlBullets = [];
+  brawlLastMine = Date.now();
+
+  let myName = "あなた";
+  if (uid && profileCache[uid] && profileCache[uid].name) {
+    myName = profileCache[uid].name;
+  }
+
+  // プレイヤー & 味方2人 (Blue)
+  brawlPlayerChar = {
+    id: "player",
+    name: myName,
+    team: "blue",
+    x: 180,
+    y: 370,
+    radius: 12,
+    hp: 3600,
+    maxHp: 3600,
+    ammo: 3,
+    maxAmmo: 3,
+    reloadProgress: 0,
+    superMeter: 0,
+    gems: 0,
+    isAlive: true,
+    respawnTimer: 0,
+    speed: 2.2,
+    facing: { x: 0, y: -1 }
+  };
+
+  brawlCharacters = [
+    brawlPlayerChar,
+    { id: "ally1", name: "CPU味方1", team: "blue", x: 90, y: 380, radius: 12, hp: 3400, maxHp: 3400, ammo: 3, maxAmmo: 3, reloadProgress: 0, superMeter: 0, gems: 0, isAlive: true, respawnTimer: 0, speed: 2.0, facing: { x: 0, y: -1 }, aiTimer: 0 },
+    { id: "ally2", name: "CPU味方2", team: "blue", x: 270, y: 380, radius: 12, hp: 3800, maxHp: 3800, ammo: 3, maxAmmo: 3, reloadProgress: 0, superMeter: 0, gems: 0, isAlive: true, respawnTimer: 0, speed: 1.9, facing: { x: 0, y: -1 }, aiTimer: 0 },
+    // 敵チーム 3人 (Red)
+    { id: "enemy1", name: "CPU1", team: "red", x: 90, y: 40, radius: 12, hp: 3400, maxHp: 3400, ammo: 3, maxAmmo: 3, reloadProgress: 0, superMeter: 0, gems: 0, isAlive: true, respawnTimer: 0, speed: 2.0, facing: { x: 0, y: 1 }, aiTimer: 0 },
+    { id: "enemy2", name: "CPU2", team: "red", x: 180, y: 40, radius: 12, hp: 3600, maxHp: 3600, ammo: 3, maxAmmo: 3, reloadProgress: 0, superMeter: 0, gems: 0, isAlive: true, respawnTimer: 0, speed: 2.1, facing: { x: 0, y: 1 }, aiTimer: 0 },
+    { id: "enemy3", name: "CPU3", team: "red", x: 270, y: 40, radius: 12, hp: 3800, maxHp: 3800, ammo: 3, maxAmmo: 3, reloadProgress: 0, superMeter: 0, gems: 0, isAlive: true, respawnTimer: 0, speed: 1.9, facing: { x: 0, y: 1 }, aiTimer: 0 }
+  ];
+
+  // 初期ジェム2個
+  brawlGems.push({ x: 175, y: 205, vx: -0.5, vy: -0.5 });
+  brawlGems.push({ x: 185, y: 215, vx: 0.5, vy: 0.5 });
+
+  updateBrawlScoreboard();
+  stopBrawlLoop();
+  brawlRunning2D = true;
+  requestAnimationFrame(brawlLoop);
+};
+
+function stopBrawlLoop() {
+  if (brawlAnimId2D) {
+    cancelAnimationFrame(brawlAnimId2D);
+    brawlAnimId2D = null;
+  }
+  brawlRunning2D = false;
+  if (brawlTimerInterval) {
+    clearInterval(brawlTimerInterval);
+    brawlTimerInterval = null;
+  }
+}
+
+window.brawlSetDir = function (dx, dy) {
+  brawlInput.x = dx;
+  brawlInput.y = dy;
+};
+
+window.brawlResetDir = function () {
+  brawlInput.x = 0;
+  brawlInput.y = 0;
+};
+
+// キーボード操作
+window.addEventListener("keydown", (e) => {
+  if (currentBrawlTab !== "2d" || !brawlRunning2D) return;
+  if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") brawlInput.y = -1;
+  else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") brawlInput.y = 1;
+  else if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") brawlInput.x = -1;
+  else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") brawlInput.x = 1;
+  else if (e.key === " " || e.key === "z" || e.key === "Z") { e.preventDefault(); brawlTriggerAttack(); }
+  else if (e.key === "x" || e.key === "X") { e.preventDefault(); brawlTriggerSuper(); }
+});
+
+window.addEventListener("keyup", (e) => {
+  if (currentBrawlTab !== "2d" || !brawlRunning2D) return;
+  if ((e.key === "ArrowUp" || e.key === "w" || e.key === "W") && brawlInput.y === -1) brawlInput.y = 0;
+  if ((e.key === "ArrowDown" || e.key === "s" || e.key === "S") && brawlInput.y === 1) brawlInput.y = 0;
+  if ((e.key === "ArrowLeft" || e.key === "a" || e.key === "A") && brawlInput.x === -1) brawlInput.x = 0;
+  if ((e.key === "ArrowRight" || e.key === "d" || e.key === "D") && brawlInput.x === 1) brawlInput.x = 0;
+});
+
+window.brawlTriggerAttack = function () {
+  if (!brawlPlayerChar || !brawlPlayerChar.isAlive || brawlPlayerChar.ammo < 1) return;
+  brawlPlayerChar.ammo--;
+  playBrawlSound("shot");
+
+  // 最も近い敵を自動ロックオン
+  const target = getNearestEnemy(brawlPlayerChar);
+  let dx = brawlPlayerChar.facing.x;
+  let dy = brawlPlayerChar.facing.y;
+  if (target) {
+    const dist = Math.hypot(target.x - brawlPlayerChar.x, target.y - brawlPlayerChar.y);
+    if (dist > 0) {
+      dx = (target.x - brawlPlayerChar.x) / dist;
+      dy = (target.y - brawlPlayerChar.y) / dist;
+    }
+  }
+
+  // シェリー風3wayショットガン散弾
+  const angles = [-0.18, 0, 0.18];
+  angles.forEach(ang => {
+    const cos = Math.cos(ang);
+    const sin = Math.sin(ang);
+    const vx = dx * cos - dy * sin;
+    const vy = dx * sin + dy * cos;
+    brawlBullets.push({
+      x: brawlPlayerChar.x,
+      y: brawlPlayerChar.y,
+      vx: vx * 6.5,
+      vy: vy * 6.5,
+      team: "blue",
+      damage: 340,
+      range: 150,
+      traveled: 0,
+      radius: 4,
+      isSuper: false
+    });
+  });
+};
+
+window.brawlTriggerSuper = function () {
+  if (!brawlPlayerChar || !brawlPlayerChar.isAlive || brawlPlayerChar.superMeter < 100) return;
+  brawlPlayerChar.superMeter = 0;
+  playBrawlSound("super");
+
+  const target = getNearestEnemy(brawlPlayerChar);
+  let dx = brawlPlayerChar.facing.x;
+  let dy = brawlPlayerChar.facing.y;
+  if (target) {
+    const dist = Math.hypot(target.x - brawlPlayerChar.x, target.y - brawlPlayerChar.y);
+    if (dist > 0) {
+      dx = (target.x - brawlPlayerChar.x) / dist;
+      dy = (target.y - brawlPlayerChar.y) / dist;
+    }
+  }
+
+  // 強力スーパーブラスト（7発）
+  for (let i = -3; i <= 3; i++) {
+    const ang = i * 0.14;
+    const cos = Math.cos(ang);
+    const sin = Math.sin(ang);
+    const vx = dx * cos - dy * sin;
+    const vy = dx * sin + dy * cos;
+    brawlBullets.push({
+      x: brawlPlayerChar.x,
+      y: brawlPlayerChar.y,
+      vx: vx * 8.5,
+      vy: vy * 8.5,
+      team: "blue",
+      damage: 720,
+      range: 200,
+      traveled: 0,
+      radius: 7,
+      isSuper: true
+    });
+  }
+  updateBrawlSuperUI();
+};
+
+function getNearestEnemy(char) {
+  let nearest = null;
+  let minDist = Infinity;
+  brawlCharacters.forEach(c => {
+    if (c.team !== char.team && c.isAlive) {
+      const d = Math.hypot(c.x - char.x, c.y - char.y);
+      if (d < minDist) {
+        minDist = d;
+        nearest = c;
+      }
+    }
+  });
+  return nearest;
+}
+
+function updateBrawlSuperUI() {
+  const superBtn = document.getElementById("brawlSuperBtn");
+  if (!superBtn || !brawlPlayerChar) return;
+  const pct = Math.floor(brawlPlayerChar.superMeter);
+  if (pct >= 100) {
+    superBtn.style.background = "#f59e0b";
+    superBtn.style.color = "#fff";
+    superBtn.textContent = "⚡ 必殺技 READY (発動可能!)";
+    superBtn.style.boxShadow = "0 0 16px rgba(245,158,11,0.8)";
+  } else {
+    superBtn.style.background = "#334155";
+    superBtn.style.color = "#94a3b8";
+    superBtn.textContent = "⚡ 必殺技 (チャージ中: " + pct + "%)";
+    superBtn.style.boxShadow = "none";
+  }
+}
+
+function updateBrawlScoreboard() {
+  let bGems = 0;
+  let rGems = 0;
+  brawlCharacters.forEach(c => {
+    if (c.team === "blue") bGems += c.gems;
+    else rGems += c.gems;
+  });
+  brawlBlueScore = bGems;
+  brawlRedScore = rGems;
+  const bEl = document.getElementById("brawlBlueGems");
+  const rEl = document.getElementById("brawlRedGems");
+  if (bEl) bEl.textContent = bGems;
+  if (rEl) rEl.textContent = rGems;
+
+  const cdEl = document.getElementById("brawlCountdownDisplay");
+  if (bGems >= 10 || rGems >= 10) {
+    if (bGems !== rGems) {
+      const leadingTeam = bGems > rGems ? "あなたチーム" : "敵チーム";
+      if (!brawlCountdownTimer) {
+        brawlCountdown = 15;
+        brawlCountdownTimer = setInterval(() => {
+          brawlCountdown--;
+          if (cdEl) cdEl.textContent = "⏱️ " + leadingTeam + "のカウントダウン: " + brawlCountdown + "秒!";
+          if (brawlCountdown <= 0) {
+            clearInterval(brawlCountdownTimer);
+            brawlCountdownTimer = null;
+            brawlRunning2D = false;
+            showBrawlResult(bGems > rGems);
+          }
+        }, 1000);
+      }
+      if (cdEl) {
+        cdEl.style.display = "block";
+        cdEl.textContent = "⏱️ " + leadingTeam + "のカウントダウン: " + brawlCountdown + "秒!";
+      }
+    } else {
+      if (brawlCountdownTimer) { clearInterval(brawlCountdownTimer); brawlCountdownTimer = null; }
+      if (cdEl) cdEl.style.display = "none";
+    }
+  } else {
+    if (brawlCountdownTimer) { clearInterval(brawlCountdownTimer); brawlCountdownTimer = null; }
+    if (cdEl) cdEl.style.display = "none";
+  }
+}
+
+function showBrawlResult(isWin) {
+  const overlay = document.getElementById("brawlOverlay");
+  const title = document.getElementById("brawlOverlayTitle");
+  const msg = document.getElementById("brawlOverlayMsg");
+  if (!overlay) return;
+  overlay.style.display = "flex";
+  if (isWin) {
+    title.textContent = "🏆 勝利！ (VICTORY)";
+    title.style.color = "#f59e0b";
+    msg.textContent = "仲間と協力してジェムを" + brawlBlueScore + "個獲得・キープしました！";
+  } else {
+    title.textContent = "💥 敗北... (DEFEAT)";
+    title.style.color = "#ef4444";
+    msg.textContent = "敵チームにジェムを" + brawlRedScore + "個集められました。もう一度挑もう！";
+  }
+}
+
+function updateBrawlGame() {
+  const now = Date.now();
+
+  // 中央ジェム鉱山から定期スポーン (5.5秒ごと)
+  if (now - brawlLastMine > 5500 && brawlGems.length < 12) {
+    brawlLastMine = now;
+    const ang = Math.random() * Math.PI * 2;
+    brawlGems.push({
+      x: 180,
+      y: 210,
+      vx: Math.cos(ang) * 1.5,
+      vy: Math.sin(ang) * 1.5
+    });
+  }
+
+  // ジェムの摩擦移動
+  brawlGems.forEach(g => {
+    g.x += g.vx;
+    g.y += g.vy;
+    g.vx *= 0.88;
+    g.vy *= 0.88;
+  });
+
+  // キャラクター移動・リロード・AI
+  brawlCharacters.forEach(c => {
+    if (!c.isAlive) {
+      c.respawnTimer--;
+      if (c.respawnTimer <= 0) {
+        c.isAlive = true;
+        c.hp = c.maxHp;
+        c.ammo = c.maxAmmo;
+        c.x = c.team === "blue" ? 180 : 180;
+        c.y = c.team === "blue" ? 380 : 40;
+      }
+      return;
+    }
+
+    // リロード回復 (1.2秒で1発)
+    if (c.ammo < c.maxAmmo) {
+      c.reloadProgress += 0.016;
+      if (c.reloadProgress >= 1.2) {
+        c.ammo++;
+        c.reloadProgress = 0;
+      }
+    }
+
+    // 移動処理
+    let mx = 0, my = 0;
+    if (c.id === "player") {
+      mx = brawlInput.x;
+      my = brawlInput.y;
+    } else {
+      // AI処理
+      c.aiTimer = (c.aiTimer || 0) + 1;
+      const targetEnemy = getNearestEnemy(c);
+
+      // 中央のジェムに向かう、または敵を追跡
+      let tx = 180, ty = 210;
+      if (brawlGems.length > 0) {
+        let nearestGem = brawlGems[0];
+        let ngd = Math.hypot(nearestGem.x - c.x, nearestGem.y - c.y);
+        brawlGems.forEach(g => {
+          const d = Math.hypot(g.x - c.x, g.y - c.y);
+          if (d < ngd) { ngd = d; nearestGem = g; }
+        });
+        tx = nearestGem.x;
+        ty = nearestGem.y;
+      } else if (targetEnemy) {
+        tx = targetEnemy.x;
+        ty = targetEnemy.y;
+      }
+
+      const dist = Math.hypot(tx - c.x, ty - c.y);
+      if (dist > 25) {
+        mx = (tx - c.x) / dist;
+        my = (ty - c.y) / dist;
+      }
+
+      // AI攻撃
+      if (targetEnemy && c.ammo >= 1 && c.aiTimer % 70 === 0) {
+        const edist = Math.hypot(targetEnemy.x - c.x, targetEnemy.y - c.y);
+        if (edist < 160) {
+          c.ammo--;
+          const ex = (targetEnemy.x - c.x) / edist;
+          const ey = (targetEnemy.y - c.y) / edist;
+          brawlBullets.push({
+            x: c.x,
+            y: c.y,
+            vx: ex * 6.0,
+            vy: ey * 6.0,
+            team: c.team,
+            damage: 320,
+            range: 140,
+            traveled: 0,
+            radius: 4,
+            isSuper: false
+          });
+        }
+      }
+    }
+
+    if (mx !== 0 || my !== 0) {
+      const len = Math.hypot(mx, my);
+      const nx = c.x + (mx / len) * c.speed;
+      const ny = c.y + (my / len) * c.speed;
+
+      // 障害物コリジョン
+      let hitWall = false;
+      BRAWL_MAP_OBSTACLES.forEach(w => {
+        if (nx > w.x - c.radius && nx < w.x + w.w + c.radius &&
+            ny > w.y - c.radius && ny < w.y + w.h + c.radius) {
+          hitWall = true;
+        }
+      });
+
+      if (!hitWall && nx > c.radius && nx < 360 - c.radius && ny > c.radius && ny < 420 - c.radius) {
+        c.x = nx;
+        c.y = ny;
+        c.facing = { x: mx / len, y: my / len };
+      }
+    }
+
+    // ジェム拾い判定
+    for (let i = brawlGems.length - 1; i >= 0; i--) {
+      const g = brawlGems[i];
+      if (Math.hypot(g.x - c.x, g.y - c.y) < c.radius + 8) {
+        brawlGems.splice(i, 1);
+        c.gems++;
+        if (c.id === "player") playBrawlSound("gem");
+        updateBrawlScoreboard();
+      }
+    }
+  });
+
+  // 弾丸処理
+  for (let i = brawlBullets.length - 1; i >= 0; i--) {
+    const b = brawlBullets[i];
+    b.x += b.vx;
+    b.y += b.vy;
+    b.traveled += Math.hypot(b.vx, b.vy);
+
+    // 障害物衝突
+    let bulletBlocked = false;
+    if (!b.isSuper) {
+      BRAWL_MAP_OBSTACLES.forEach(w => {
+        if (b.x > w.x && b.x < w.x + w.w && b.y > w.y && b.y < w.y + w.h) {
+          bulletBlocked = true;
+        }
+      });
+    }
+
+    if (bulletBlocked || b.traveled >= b.range || b.x < 0 || b.x > 360 || b.y < 0 || b.y > 420) {
+      brawlBullets.splice(i, 1);
+      continue;
+    }
+
+    // キャラクターヒット
+    for (let j = 0; j < brawlCharacters.length; j++) {
+      const c = brawlCharacters[j];
+      if (c.team !== b.team && c.isAlive) {
+        if (Math.hypot(c.x - b.x, c.y - b.y) < c.radius + b.radius) {
+          c.hp -= b.damage;
+
+          // 攻撃者にウルトチャージ加算
+          if (b.team === "blue" && brawlPlayerChar) {
+            brawlPlayerChar.superMeter = Math.min(100, brawlPlayerChar.superMeter + 16);
+            updateBrawlSuperUI();
+          }
+
+          // 撃破
+          if (c.hp <= 0) {
+            c.isAlive = false;
+            c.respawnTimer = 180; // 約3秒
+            // ジェムを地面にドロップ
+            for (let k = 0; k < c.gems; k++) {
+              const ang = Math.random() * Math.PI * 2;
+              brawlGems.push({
+                x: c.x,
+                y: c.y,
+                vx: Math.cos(ang) * (2 + Math.random()),
+                vy: Math.sin(ang) * (2 + Math.random())
+              });
+            }
+            c.gems = 0;
+            updateBrawlScoreboard();
+          }
+
+          brawlBullets.splice(i, 1);
+          break;
+        }
+      }
+    }
+  }
+}
+
+function drawBrawlGame() {
+  if (!brawlCtx2D) return;
+  const ctx = brawlCtx2D;
+
+  // 背景
+  ctx.fillStyle = "#1e293b";
+  ctx.fillRect(0, 0, 360, 420);
+
+  // グリッド線
+  ctx.strokeStyle = "rgba(255,255,255,0.04)";
+  ctx.lineWidth = 1;
+  for (let x = 0; x < 360; x += 30) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 420); ctx.stroke();
+  }
+  for (let y = 0; y < 420; y += 30) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(360, y); ctx.stroke();
+  }
+
+  // 中央ジェム鉱山
+  ctx.fillStyle = "#334155";
+  ctx.beginPath();
+  ctx.arc(180, 210, 20, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#8b5cf6";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // 障害物 (レンガ壁)
+  ctx.fillStyle = "#78350f";
+  ctx.strokeStyle = "#b45309";
+  ctx.lineWidth = 2;
+  BRAWL_MAP_OBSTACLES.forEach(w => {
+    ctx.fillRect(w.x, w.y, w.w, w.h);
+    ctx.strokeRect(w.x, w.y, w.w, w.h);
+  });
+
+  // 地面のジェム 💎
+  brawlGems.forEach(g => {
+    ctx.fillStyle = "#c084fc";
+    ctx.beginPath();
+    ctx.arc(g.x, g.y, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#fdf4ff";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  });
+
+  // 弾丸
+  brawlBullets.forEach(b => {
+    ctx.fillStyle = b.team === "blue" ? (b.isSuper ? "#f59e0b" : "#38bdf8") : "#ef4444";
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // キャラクター
+  brawlCharacters.forEach(c => {
+    if (!c.isAlive) return;
+
+    // 足元のチームサークル
+    ctx.fillStyle = c.team === "blue" ? "rgba(56,189,248,0.3)" : "rgba(239,68,68,0.3)";
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, c.radius + 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 本体
+    ctx.fillStyle = c.team === "blue" ? "#0284c7" : "#dc2626";
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 向き (銃口)
+    ctx.strokeStyle = "#1e293b";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(c.x, c.y);
+    ctx.lineTo(c.x + c.facing.x * 16, c.y + c.facing.y * 16);
+    ctx.stroke();
+
+    // HPバー
+    const barW = 28;
+    const barH = 4;
+    const barX = c.x - barW / 2;
+    const barY = c.y - c.radius - 12;
+
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.fillRect(barX, barY, barW, barH);
+    const hpRate = Math.max(0, c.hp / c.maxHp);
+    ctx.fillStyle = c.team === "blue" ? "#22c55e" : "#ef4444";
+    ctx.fillRect(barX, barY, barW * hpRate, barH);
+
+    // プレイヤー名 & 所持ジェム
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 9px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(c.name + " 💎" + c.gems, c.x, barY - 3);
+
+    // 弾丸ストックバー (プレイヤーのみ)
+    if (c.id === "player") {
+      for (let a = 0; a < c.maxAmmo; a++) {
+        ctx.fillStyle = a < c.ammo ? "#f59e0b" : "#64748b";
+        ctx.fillRect(c.x - 14 + a * 10, barY + barH + 2, 8, 2);
+      }
+    }
+  });
+}
+
+function brawlLoop() {
+  if (!brawlRunning2D) return;
+  updateBrawlGame();
+  drawBrawlGame();
+  brawlAnimId2D = requestAnimationFrame(brawlLoop);
+}
 
 </script>
 

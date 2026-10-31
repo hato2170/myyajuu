@@ -17,36 +17,11 @@ const auth = getAuth(firebaseApp);
 const WORKER_URL = window.MYYAJUU_AI_WORKER_URL || "https://myyajuu-ai-worker.harumei-260329.workers.dev";
 
 const MODEL_CATALOG = {
-  "@cf/meta/llama-3.2-3b-instruct": {
-    name: "Llama 3.2 3B",
-    provider: "Meta",
-    badge: "超高速レスポンス · 低消費",
-    desc: "高速・軽量で自然な日本語対応。日常の会話や素早い質問に最適です。",
-  },
-  "@cf/openai/gpt-oss-20b": {
-    name: "GPT-OSS 20B",
-    provider: "OpenAI",
-    badge: "思考・論理推論 · バランス型",
-    desc: "OpenAIのオープンモデル。論理的推論やステップごとの思考に強みがあります。",
-  },
-  "@cf/google/gemma-4-26b-a4b-it": {
-    name: "Gemma 4 26B",
-    provider: "Google",
-    badge: "高知識 · 知的対話",
-    desc: "Google最新のGemma 4ファミリー。知識・推論能力が高く知的な受け答えが得意です。",
-  },
-  "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
-    name: "Llama 3.3 70B",
-    provider: "Meta",
-    badge: "最高峰品質 · 高度な分析",
-    desc: "700億パラメータの高性能フラグシップ。複雑な文章作成や高度な分析に対応します。",
-  },
-  "@cf/qwen/qwen3-30b-a3b-fp8": {
-    name: "Qwen3 30B",
-    provider: "Qwen",
-    badge: "多言語対応 · MoE高効率",
-    desc: "最新のQwen3 MoEモデル。優れた多言語理解力と長文要約力を備えています。",
-  },
+  "@cf/meta/llama-3.2-3b-instruct": { name: "Llama 3.2 3B" },
+  "@cf/openai/gpt-oss-20b": { name: "GPT-OSS 20B" },
+  "@cf/google/gemma-4-26b-a4b-it": { name: "Gemma 4 26B" },
+  "@cf/meta/llama-3.3-70b-instruct-fp8-fast": { name: "Llama 3.3 70B" },
+  "@cf/qwen/qwen3-30b-a3b-fp8": { name: "Qwen3 30B" },
 };
 
 const $ = (id) => document.getElementById(id);
@@ -54,22 +29,45 @@ const statusEl = $("status");
 const errorEl = $("error");
 const promptEl = $("prompt");
 const sendButton = $("sendButton");
-const clearButton = $("clearButton");
 const messagesEl = $("messages");
 const welcomeEl = $("welcome");
 const authGateEl = $("authGate");
 const authMessageEl = $("authMessage");
 const modelSelectEl = $("modelSelect");
-const modelBadgeEl = $("modelBadge");
-const modelInfoTextEl = $("modelInfoText");
 
-// 会話データはメモリ上にのみ保持（LocalStorage, SessionStorage, IndexedDB, Cache API には一切保存しない）
+// Sessions / Project elements
+const sessionTitleDisplay = $("sessionTitleDisplay");
+const sessionsBtn = $("sessionsBtn");
+const newChatBtn = $("newChatBtn");
+const sessionsDrawer = $("sessionsDrawer");
+const drawerOverlay = $("drawerOverlay");
+const closeDrawerBtn = $("closeDrawerBtn");
+const drawerNewChatBtn = $("drawerNewChatBtn");
+const sessionsList = $("sessionsList");
+
+// Toolbar elements
+const webSearchToggle = $("webSearchToggle");
+const webSearchState = $("webSearchState");
+const imageGenBtn = $("imageGenBtn");
+const attachBtn = $("attachBtn");
+const fileInput = $("fileInput");
+const clearChatBtn = $("clearChatBtn");
+const attachmentPreviewArea = $("attachmentPreviewArea");
+const attachmentName = $("attachmentName");
+const removeAttachmentBtn = $("removeAttachmentBtn");
+
+// 会話データ・セッションデータはメモリ上にのみ保持（LocalStorage, SessionStorage, IndexedDB, Cache API には一切保存しない）
 let history = [];
+let sessions = [];
+let currentSessionId = "default";
+let currentSessionTitle = "AIアシスタント";
 let currentUser = null;
 let currentUid = null;
 let generating = false;
 let loadingHistory = false;
 let selectedModelId = "@cf/meta/llama-3.2-3b-instruct";
+let isWebSearchOn = false;
+let currentAttachment = null; // { name, type, content, isImage }
 
 // 過去のlocalStorage/sessionStorage上のAIキャッシュを完全消去（Firebaseログイン状態のキーは保持）
 function purgeLegacyLocalData() {
@@ -90,35 +88,245 @@ function showError(message) {
   errorEl.hidden = false;
 }
 
-function updateModelUI() {
-  const info = MODEL_CATALOG[selectedModelId] || MODEL_CATALOG["@cf/meta/llama-3.2-3b-instruct"];
-  if (modelBadgeEl) modelBadgeEl.textContent = info.badge;
-  if (modelInfoTextEl) modelInfoTextEl.textContent = info.desc;
-}
-
 if (modelSelectEl) {
   modelSelectEl.addEventListener("change", (e) => {
     selectedModelId = e.target.value;
-    updateModelUI();
-    // モデルを切り替えても会話履歴はそのまま維持され、同じ文脈で継続可能
   });
 }
-updateModelUI();
+
+// Web検索トグル
+if (webSearchToggle) {
+  webSearchToggle.addEventListener("click", () => {
+    isWebSearchOn = !isWebSearchOn;
+    webSearchState.textContent = isWebSearchOn ? "ON 🟢" : "OFF";
+    webSearchToggle.classList.toggle("active", isWebSearchOn);
+  });
+}
+
+// 画像生成ボタン（プロンプトに `/image ` を挿入）
+if (imageGenBtn) {
+  imageGenBtn.addEventListener("click", () => {
+    promptEl.value = "/image ";
+    promptEl.focus();
+  });
+}
+
+// ファイル添付ボタン
+if (attachBtn && fileInput) {
+  attachBtn.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("ファイルサイズは2MB以内で指定してください。");
+      fileInput.value = "";
+      return;
+    }
+
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        currentAttachment = {
+          name: file.name,
+          type: "image",
+          content: evt.target.result,
+        };
+        showAttachmentPreview(file.name, "🖼️");
+      };
+      reader.readAsDataURL(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        currentAttachment = {
+          name: file.name,
+          type: "text",
+          content: evt.target.result,
+        };
+        showAttachmentPreview(file.name, "📄");
+      };
+      reader.readAsText(file);
+    }
+  });
+}
+
+function showAttachmentPreview(name, icon) {
+  attachmentName.textContent = `${icon} ${name}`;
+  attachmentPreviewArea.hidden = false;
+}
+
+function clearAttachment() {
+  currentAttachment = null;
+  attachmentPreviewArea.hidden = true;
+  if (fileInput) fileInput.value = "";
+}
+
+if (removeAttachmentBtn) {
+  removeAttachmentBtn.addEventListener("click", clearAttachment);
+}
+
+// ドロワー開閉
+function openDrawer() {
+  sessionsDrawer.hidden = false;
+  drawerOverlay.hidden = false;
+  renderSessionsList();
+}
+
+function closeDrawer() {
+  sessionsDrawer.hidden = true;
+  drawerOverlay.hidden = true;
+}
+
+if (sessionsBtn) sessionsBtn.addEventListener("click", openDrawer);
+if (closeDrawerBtn) closeDrawerBtn.addEventListener("click", closeDrawer);
+if (drawerOverlay) drawerOverlay.addEventListener("click", closeDrawer);
+
+// 新しいチャット作成
+async function startNewChat() {
+  if (!currentUser) return;
+  closeDrawer();
+  statusEl.textContent = "新しいチャットを作成しています…";
+  try {
+    const token = await currentUser.getIdToken();
+    const res = await fetch(`${WORKER_URL}/v1/chat/sessions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title: "新しいチャット" }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      currentSessionId = data.session.id;
+      currentSessionTitle = data.session.title;
+    } else {
+      currentSessionId = `session-${Date.now()}`;
+      currentSessionTitle = "新しいチャット";
+    }
+
+    sessionTitleDisplay.textContent = currentSessionTitle;
+    history = [];
+    renderHistory();
+    clearAttachment();
+    statusEl.textContent = "新しい会話を開始しました。";
+    await fetchSessionsList(currentUser);
+    promptEl.focus();
+  } catch (err) {
+    currentSessionId = `session-${Date.now()}`;
+    currentSessionTitle = "新しいチャット";
+    sessionTitleDisplay.textContent = currentSessionTitle;
+    history = [];
+    renderHistory();
+  }
+}
+
+if (newChatBtn) newChatBtn.addEventListener("click", startNewChat);
+if (drawerNewChatBtn) drawerNewChatBtn.addEventListener("click", startNewChat);
+
+async function fetchSessionsList(user) {
+  if (!user) return;
+  try {
+    const token = await user.getIdToken();
+    const res = await fetch(`${WORKER_URL}/v1/chat/sessions`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      sessions = Array.isArray(data.sessions) ? data.sessions : [];
+      renderSessionsList();
+    }
+  } catch {}
+}
+
+function renderSessionsList() {
+  if (!sessionsList) return;
+  sessionsList.replaceChildren();
+
+  // デフォルトセッションがリストに無ければ先頭に配置
+  const hasDefault = sessions.some((s) => s.id === "default");
+  const allSessions = hasDefault ? sessions : [{ id: "default", title: "メインの会話" }, ...sessions];
+
+  for (const s of allSessions) {
+    const li = document.createElement("li");
+    li.className = `session-item ${s.id === currentSessionId ? "active" : ""}`;
+
+    const titleSpan = document.createElement("span");
+    titleSpan.className = "session-title-text";
+    titleSpan.textContent = `💬 ${s.title || "チャット"}`;
+    titleSpan.addEventListener("click", () => switchSession(s.id, s.title));
+    li.appendChild(titleSpan);
+
+    if (s.id !== "default") {
+      const delBtn = document.createElement("button");
+      delBtn.className = "session-del-btn";
+      delBtn.textContent = "🗑️";
+      delBtn.title = "この会話を削除";
+      delBtn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        if (!confirm(`「${s.title}」を削除しますか？`)) return;
+        await deleteSession(s.id);
+      });
+      li.appendChild(delBtn);
+    }
+
+    sessionsList.appendChild(li);
+  }
+}
+
+async function switchSession(id, title) {
+  if (id === currentSessionId) {
+    closeDrawer();
+    return;
+  }
+  closeDrawer();
+  currentSessionId = id;
+  currentSessionTitle = title || "チャット";
+  sessionTitleDisplay.textContent = currentSessionTitle;
+
+  if (currentUser) {
+    const fetched = await fetchD1History(currentUser, id);
+    history = fetched;
+    renderHistory();
+    statusEl.textContent = `会話「${currentSessionTitle}」を開きました。`;
+    promptEl.focus();
+  }
+}
+
+async function deleteSession(id) {
+  if (!currentUser) return;
+  try {
+    const token = await currentUser.getIdToken();
+    await fetch(`${WORKER_URL}/v1/chat/sessions?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    sessions = sessions.filter((s) => s.id !== id);
+    if (currentSessionId === id) {
+      await switchSession("default", "メインの会話");
+    } else {
+      renderSessionsList();
+    }
+  } catch {}
+}
 
 function syncUI() {
   const signedIn = Boolean(currentUid);
   authGateEl.hidden = signedIn;
-  clearButton.disabled = !signedIn || generating || loadingHistory || history.length === 0;
   promptEl.disabled = !signedIn || generating || loadingHistory;
   sendButton.disabled = !signedIn || generating || loadingHistory;
   if (modelSelectEl) modelSelectEl.disabled = !signedIn || generating;
+  if (attachBtn) attachBtn.disabled = !signedIn || generating;
+  if (imageGenBtn) imageGenBtn.disabled = !signedIn || generating;
+  if (webSearchToggle) webSearchToggle.disabled = !signedIn || generating;
 
   if (!signedIn) {
     welcomeEl.hidden = true;
   }
 }
 
-function appendMessage(role, text, modelName = null) {
+function appendMessage(role, text, modelName = null, imageUrl = null) {
   const row = document.createElement("div");
   row.className = `message ${role}`;
   const bubble = document.createElement("div");
@@ -135,6 +343,17 @@ function appendMessage(role, text, modelName = null) {
   textNode.className = "text-content";
   textNode.textContent = text;
   bubble.appendChild(textNode);
+
+  if (imageUrl) {
+    const imgContainer = document.createElement("div");
+    imgContainer.className = "generated-image-container";
+    const img = document.createElement("img");
+    img.src = imageUrl;
+    img.alt = "生成された画像";
+    img.className = "generated-img";
+    imgContainer.appendChild(img);
+    bubble.appendChild(imgContainer);
+  }
 
   row.appendChild(bubble);
   messagesEl.appendChild(row);
@@ -155,19 +374,19 @@ function renderHistory() {
       const info = item.model ? MODEL_CATALOG[item.model] : null;
       mName = info ? info.name : null;
     }
-    appendMessage(item.role, item.content, mName);
+    appendMessage(item.role, item.content, mName, item.image);
   }
   welcomeEl.hidden = history.length > 0;
 }
 
-// Cloudflare D1からログイン中アカウントの会話履歴を取得（別端末でも同期）
-async function fetchD1History(user) {
+// Cloudflare D1からセッション履歴を取得
+async function fetchD1History(user, sessionId = currentSessionId) {
   if (!user) return [];
   loadingHistory = true;
   statusEl.textContent = "会話履歴をD1サーバーから同期しています…";
   try {
     const token = await user.getIdToken();
-    const response = await fetch(`${WORKER_URL}/v1/chat/history`, {
+    const response = await fetch(`${WORKER_URL}/v1/chat/history?session_id=${encodeURIComponent(sessionId)}`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -190,24 +409,103 @@ async function fetchD1History(user) {
   }
 }
 
-// メッセージ送信（D1サーバーへ保存・選択したモデルでAI生成）
+// 画像生成の実行
+async function generateImage(prompt) {
+  if (!currentUser || generating) return;
+  generating = true;
+  syncUI();
+  errorEl.hidden = true;
+  welcomeEl.hidden = true;
+
+  history.push({ role: "user", content: `🎨 画像生成: ${prompt}` });
+  appendMessage("user", `🎨 画像生成: ${prompt}`);
+
+  const assistantBubble = appendMessage("assistant", "FLUXモデルで画像を生成しています（約2〜3秒）…", "FLUX.1 Schnell");
+  statusEl.textContent = "FLUX画像生成中…";
+
+  try {
+    const token = await currentUser.getIdToken();
+    const response = await fetch(`${WORKER_URL}/v1/images/generate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ prompt }),
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.message || `画像生成エラー (${response.status})`);
+    }
+
+    const data = await response.json();
+    assistantBubble.textContent = `「${prompt}」の画像を生成しました！`;
+
+    // 画像コンテナを追加
+    const container = assistantBubble.parentElement;
+    const imgBox = document.createElement("div");
+    imgBox.className = "generated-image-container";
+    const img = document.createElement("img");
+    img.src = data.image;
+    img.alt = prompt;
+    img.className = "generated-img";
+    imgBox.appendChild(img);
+    container.appendChild(imgBox);
+
+    history.push({ role: "assistant", content: `「${prompt}」の画像`, model: "flux-schnell", image: data.image });
+    statusEl.textContent = "画像生成完了。";
+  } catch (err) {
+    assistantBubble.textContent = "画像の生成に失敗しました。";
+    showError(err?.message || "画像生成エラーが発生しました。");
+    statusEl.textContent = "エラーが発生しました。";
+  } finally {
+    generating = false;
+    syncUI();
+    promptEl.focus();
+  }
+}
+
+// メッセージ送信
 async function sendMessage(text) {
   if (!currentUser || generating || loadingHistory) return;
+
+  // `/image ` コマンドの検知
+  if (text.startsWith("/image ") || text.startsWith("画像生成:") || text.startsWith("画像生成：")) {
+    const imgPrompt = text.replace(/^(\/image|画像生成[:：])\s*/, "").trim();
+    if (imgPrompt) {
+      await generateImage(imgPrompt);
+      return;
+    }
+  }
+
   const sendUid = currentUid;
+  const sendSessionId = currentSessionId;
   const targetModelId = selectedModelId;
   const targetModelInfo = MODEL_CATALOG[targetModelId] || MODEL_CATALOG["@cf/meta/llama-3.2-3b-instruct"];
+
+  // 添付ファイルがある場合はプロンプトに統合
+  let fullMessageText = text;
+  if (currentAttachment) {
+    if (currentAttachment.type === "text") {
+      fullMessageText += `\n\n【添付テキストファイル: ${currentAttachment.name}】\n${currentAttachment.content}`;
+    } else if (currentAttachment.type === "image") {
+      fullMessageText += `\n\n【添付画像: ${currentAttachment.name}（画像データを解析してください）】`;
+    }
+  }
 
   generating = true;
   syncUI();
   errorEl.hidden = true;
   welcomeEl.hidden = true;
 
-  // メモリ上および画面上にユーザーメッセージを即座に反映
-  history.push({ role: "user", content: text });
-  appendMessage("user", text);
+  const displayUserText = currentAttachment ? `📎 [${currentAttachment.name}]\n${text}` : text;
+  history.push({ role: "user", content: displayUserText });
+  appendMessage("user", displayUserText);
+  clearAttachment();
 
   const assistantBubble = appendMessage("assistant", `${targetModelInfo.name} が回答を生成しています…`, targetModelInfo.name);
-  statusEl.textContent = `${targetModelInfo.name} に送信中…`;
+  statusEl.textContent = isWebSearchOn ? "Web検索と回答生成中…" : `${targetModelInfo.name} に送信中…`;
 
   try {
     const token = await currentUser.getIdToken();
@@ -217,7 +515,12 @@ async function sendMessage(text) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ message: text, model: targetModelId }),
+      body: JSON.stringify({
+        message: fullMessageText,
+        model: targetModelId,
+        session_id: sendSessionId,
+        webSearch: isWebSearchOn,
+      }),
     });
 
     if (!response.ok) {
@@ -238,19 +541,22 @@ async function sendMessage(text) {
     const data = await response.json();
     const replyText = data.reply || "";
 
-    if (currentUid !== sendUid) return;
+    if (currentUid !== sendUid || currentSessionId !== sendSessionId) return;
 
     assistantBubble.textContent = replyText;
     history.push({ role: "assistant", content: replyText, model: targetModelId });
     statusEl.textContent = `準備完了（${targetModelInfo.name} で回答）。会話はD1に保存されています。`;
+
+    // セッション一覧を再同期（タイトル自動更新を反映）
+    fetchSessionsList(currentUser);
   } catch (error) {
-    if (currentUid !== sendUid) return;
-    history.pop(); // エラー時は未送信のユーザー発言をメモリからロールバック
+    if (currentUid !== sendUid || currentSessionId !== sendSessionId) return;
+    history.pop();
     assistantBubble.textContent = "回答の取得に失敗しました。";
     showError(error?.message || "通信エラーが発生しました。");
     statusEl.textContent = "エラーが発生しました。";
   } finally {
-    if (currentUid === sendUid) {
+    if (currentUid === sendUid && currentSessionId === sendSessionId) {
       generating = false;
       syncUI();
       promptEl.focus();
@@ -261,10 +567,10 @@ async function sendMessage(text) {
 $("chatForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const text = promptEl.value.trim();
-  if (!text || !currentUser || generating || loadingHistory) return;
+  if ((!text && !currentAttachment) || !currentUser || generating || loadingHistory) return;
   promptEl.value = "";
   promptEl.style.height = "auto";
-  await sendMessage(text);
+  await sendMessage(text || "ファイルを解析してください。");
 });
 
 promptEl.addEventListener("input", () => {
@@ -279,49 +585,45 @@ promptEl.addEventListener("keydown", (event) => {
   }
 });
 
-// 会話履歴の全削除（D1サーバーから削除）
-clearButton.addEventListener("click", async () => {
-  if (!currentUser || generating || loadingHistory) return;
-  if (!window.confirm("Cloudflare D1に保存された会話履歴をすべて削除しますか？\n（同じアカウントの全端末で消去されます）")) return;
+// この会話の履歴削除
+if (clearChatBtn) {
+  clearChatBtn.addEventListener("click", async () => {
+    if (!currentUser || generating || loadingHistory) return;
+    if (!confirm("現在の会話履歴をCloudflare D1から削除しますか？")) return;
 
-  statusEl.textContent = "履歴を削除しています…";
-  clearButton.disabled = true;
-  try {
-    const token = await currentUser.getIdToken();
-    const response = await fetch(`${WORKER_URL}/v1/chat/history`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("履歴の削除に失敗しました。");
+    statusEl.textContent = "履歴を削除しています…";
+    try {
+      const token = await currentUser.getIdToken();
+      await fetch(`${WORKER_URL}/v1/chat/history?session_id=${encodeURIComponent(currentSessionId)}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      history = [];
+      renderHistory();
+      statusEl.textContent = "この会話の履歴を削除しました。";
+    } catch {
+      showError("履歴の削除に失敗しました。");
+    } finally {
+      syncUI();
     }
-
-    history = [];
-    renderHistory();
-    statusEl.textContent = "会話履歴を削除しました。";
-  } catch (error) {
-    showError(error?.message || "履歴の削除に失敗しました。");
-    statusEl.textContent = "削除に失敗しました。";
-  } finally {
-    syncUI();
-  }
-});
+  });
+}
 
 renderHistory();
 syncUI();
 
-// 認証状態の監視（Firebaseログイン状態だけは維持、ログアウト時にメモリ上の会話を消去）
+// 認証監視
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   const nextUid = user?.uid || null;
 
   if (nextUid !== currentUid) {
     currentUid = nextUid;
-    // ログアウトまたは別ユーザーへの切り替え時にメモリ上の会話を完全消去
     history = [];
+    sessions = [];
+    currentSessionId = "default";
+    currentSessionTitle = "AIアシスタント";
+    sessionTitleDisplay.textContent = currentSessionTitle;
     renderHistory();
   }
 
@@ -336,8 +638,9 @@ onAuthStateChanged(auth, async (user) => {
   authMessageEl.textContent = "SNSのログインを確認しました。";
   syncUI();
 
-  // D1から履歴を同期取得
-  const fetched = await fetchD1History(user);
+  // D1からセッション一覧とメッセージ履歴を同期
+  await fetchSessionsList(user);
+  const fetched = await fetchD1History(user, currentSessionId);
   if (currentUid === user.uid) {
     history = fetched;
     renderHistory();
@@ -350,8 +653,6 @@ onAuthStateChanged(auth, async (user) => {
   currentUid = null;
   history = [];
   renderHistory();
-  authMessageEl.textContent = "ログイン状態を確認できませんでした。通信環境を確認し、SNSにログインし直してください。";
-  statusEl.textContent = "Firebase Authenticationの確認に失敗しました。";
-  showError(error?.message || "認証状態を確認できませんでした。");
+  authMessageEl.textContent = "ログイン状態を確認できませんでした。SNSにログインし直してください。";
   syncUI();
 });
