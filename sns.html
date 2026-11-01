@@ -1251,13 +1251,13 @@ button.back {
           <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
             <span style="color:#f59e0b; font-size:12px; font-weight:bold;">🌐 サーバー:</span>
             <button id="brawlServer1Btn" onclick="switchBrawlServer(1)" style="background:#f59e0b; color:#fff; width:auto; padding:4px 10px; font-size:11px; border-radius:6px; border:none; cursor:pointer;">
-              ⚡ サーバー1 (UBG移植版)
+              ⚡ サーバー1 (本家3D WebGL版)
             </button>
             <button id="brawlServer2Btn" onclick="switchBrawlServer(2)" style="background:#1e293b; color:#94a3b8; width:auto; padding:4px 10px; font-size:11px; border-radius:6px; border:1px solid #334155; cursor:pointer;">
-              🌐 サーバー2 (GitHub Pages回避)
+              🌐 サーバー2 (TurboWarp 69キャラ版)
             </button>
             <button id="brawlServer3Btn" onclick="switchBrawlServer(3)" style="background:#1e293b; color:#94a3b8; width:auto; padding:4px 10px; font-size:11px; border-radius:6px; border:1px solid #334155; cursor:pointer;">
-              🚀 サーバー3 (GitLabミラー)
+              🚀 サーバー3 (TurboWarp最新アプデ版)
             </button>
           </div>
           <div style="display:flex; gap:6px;">
@@ -1273,12 +1273,12 @@ button.back {
           </div>
         </div>
         <div id="brawlServerDesc" style="color:#8b949e; font-size:11px; margin-top:6px;">
-          サーバー1: UBG公式HTML5 WebGL版ブロスタです。i-フィルター回避ミラー対応！
+          サーバー1: 本家3D WebGL版ブロスタです。全画面＆ジェムグラブ対戦対応！
         </div>
       </div>
       <div id="brawlIframeWrapper" style="width:100%; height:70vh; max-height:640px; position:relative; background:#000; border-radius:12px; overflow:hidden; border:2px solid #334155; transition: all 0.2s ease;">
         <button id="brawlExitFsBtn" onclick="exitBrawlFullscreen()" style="display:none; position:fixed; top:12px; right:12px; z-index:2147483647; width:34px !important; min-width:34px !important; max-width:34px !important; height:34px !important; border-radius:50% !important; background:rgba(0,0,0,0.35) !important; color:#fff !important; border:1px solid rgba(255,255,255,0.25) !important; font-size:16px !important; font-weight:bold !important; cursor:pointer !important; box-shadow:0 2px 8px rgba(0,0,0,0.4) !important; opacity:0.4; transition:opacity 0.2s, background 0.2s; padding:0 !important; margin:0 !important; line-height:32px; text-align:center;">✕</button>
-        <iframe id="brawlOfficialIframe" src="about:blank" style="width:100%; height:100%; border:none; display:block;" allow="autoplay; fullscreen; web-share" allowfullscreen></iframe>
+        <iframe id="brawlOfficialIframe" src="about:blank" style="width:100%; height:100%; border:none; display:block;" allow="autoplay; fullscreen; web-share; gamepad; pointer-lock" allowfullscreen></iframe>
       </div>
     </div>
   </div>
@@ -9668,9 +9668,9 @@ function drawPaperGame() {
    ⭐ ブロスタ（Brawl Stars）システム & 2Dジェムグラブ
 ========================================================== */
 const BRAWL_SERVERS = {
-  1: { name: "UBG移植版 (公式WebGL)", url: "https://ubg235.github.io/brawl-stars/" },
-  2: { name: "GitHub Pages回避版", url: "https://ubg17.github.io/brawl-stars/" },
-  3: { name: "GitLabミラー", url: "https://rawcdn.githack.com/3kh0/3kh0-Assets/e31413a96860bc50e184ba22009d1d4d82f71639/brawl-stars/index.html" }
+  1: { name: "本家3D WebGL版 (StaticQuasar)", url: "https://staticquasar931.github.io/Brawl-Stars/" },
+  2: { name: "TurboWarp 60FPS版 (全69キャラ)", url: "https://turbowarp.org/544538470/embed?autoplay=true" },
+  3: { name: "TurboWarp最新アプデ版 (Gods vs Monsters)", url: "https://turbowarp.org/1059386427/embed?autoplay=true" }
 };
 let currentBrawlServer = 1;
 let currentBrawlTab = "2d";
