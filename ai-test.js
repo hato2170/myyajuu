@@ -18,6 +18,10 @@ const WORKER_URL = window.MYYAJUU_AI_WORKER_URL || "https://myyajuu-ai-worker.ha
 
 const MODEL_CATALOG = {
   "@cf/meta/llama-3.2-3b-instruct": { name: "Llama 3.2 3B" },
+  "@cf/openai/gpt-oss-20b": { name: "GPT-OSS 20B" },
+  "@cf/google/gemma-4-26b-a4b-it": { name: "Gemma 4 26B" },
+  "@cf/meta/llama-3.3-70b-instruct-fp8-fast": { name: "Llama 3.3 70B" },
+  "@cf/qwen/qwen3-30b-a3b-fp8": { name: "Qwen3 30B" },
 };
 
 const $ = (id) => document.getElementById(id);
@@ -95,8 +99,11 @@ function showError(message) {
 }
 
 if (modelSelectEl) {
+  modelSelectEl.value = selectedModelId;
   modelSelectEl.disabled = true;
-  selectedModelId = "@cf/meta/llama-3.2-3b-instruct";
+  modelSelectEl.addEventListener("change", (event) => {
+    if (MODEL_CATALOG[event.target.value]) selectedModelId = event.target.value;
+  });
 }
 
 if (webSearchToggle) webSearchToggle.disabled = true;
@@ -386,7 +393,7 @@ function syncUI() {
   authGateEl.hidden = signedIn;
   promptEl.disabled = !signedIn || busy;
   sendButton.disabled = !signedIn || busy;
-  if (modelSelectEl) modelSelectEl.disabled = true;
+  if (modelSelectEl) modelSelectEl.disabled = !signedIn || busy;
   if (attachBtn) attachBtn.disabled = !signedIn || busy;
   if (imageGenBtn) imageGenBtn.disabled = true;
   if (webSearchToggle) webSearchToggle.disabled = true;
@@ -555,6 +562,7 @@ async function sendMessage(text) {
       },
       body: JSON.stringify({
         message: fullMessageText,
+        model: targetModelId,
         ...(sendSessionId ? { conversationId: sendSessionId } : {}),
       }),
       signal: controller.signal,
@@ -586,6 +594,9 @@ async function sendMessage(text) {
     if (sendSessionId && data.conversationId !== sendSessionId) {
       throw new Error("Workerから別の会話IDが返されました。");
     }
+    if (data.model !== targetModelId) {
+      throw new Error("Workerから選択したモデルの利用を確認できませんでした。");
+    }
     if (requestVersion !== generationRequestVersion || currentUid !== sendUid ||
         authStateVersion !== sendAuthVersion || currentSessionId !== sendSessionId) return;
 
@@ -595,8 +606,8 @@ async function sendMessage(text) {
       sessionTitleDisplay.textContent = currentSessionTitle;
     }
     assistantBubble.textContent = replyText;
-    history.push({ role: "assistant", content: replyText, model: "@cf/meta/llama-3.2-3b-instruct" });
-    statusEl.textContent = `準備完了（${MODEL_CATALOG["@cf/meta/llama-3.2-3b-instruct"].name} で回答）。会話はD1に保存されています。`;
+    history.push({ role: "assistant", content: replyText, model: data.model });
+    statusEl.textContent = `準備完了（${targetModelInfo.name} で回答）。会話はD1に保存されています。`;
     void fetchSessionsList(user, sendAuthVersion);
   } catch (error) {
     if (requestVersion !== generationRequestVersion || currentUid !== sendUid ||
