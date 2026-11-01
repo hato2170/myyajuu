@@ -71,8 +71,24 @@
     }
     function ShowAds() {}
     window.ads = { showAds: ShowAds };
+
+    // Fallback if script loading stalls on older iOS/iPadOS WebKit
+    setTimeout(function() {
+      var game = document.getElementById('game');
+      if (game && game.children.length === 0 && !window.paperio2api) {
+        console.warn("Paper.io standalone engine taking long, providing mirror fallback...");
+        var fallback = document.createElement('div');
+        fallback.id = 'paperFallbackBanner';
+        fallback.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1e293b; color:#fff; padding:12px 20px; border-radius:12px; border:2px solid #38bdf8; z-index:999999; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.5); font-family:sans-serif; max-width:90%;';
+        fallback.innerHTML = '<div style="font-size:13px; font-weight:bold; margin-bottom:8px; color:#38bdf8;">⚡ iPad/iPhone高速起動モード</div>' +
+          '<div style="font-size:11px; color:#94a3b8; margin-bottom:10px;">内蔵エンジンが待機中の場合は、高速ミラーで即座にプレイできます</div>' +
+          '<button onclick="window.location.href=\'https://paperio2.gitlab.io/file/\'" style="background:#0284c7; color:#fff; border:none; padding:8px 16px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer; margin-right:8px;">🚀 高速ミラーで起動</button>' +
+          '<button onclick="window.location.href=\'../sns.html\'" style="background:#334155; color:#cbd5e1; border:none; padding:8px 14px; border-radius:8px; font-size:12px; cursor:pointer;">2D軽量版で遊ぶ</button>';
+        document.body.appendChild(fallback);
+      }
+    }, 3500);
   </script>
 
-  <script type="text/javascript" src="app2.js?v8"></script>
+  <script type="text/javascript" src="app2.js?v9"></script>
 </body>
 </html>
