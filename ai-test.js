@@ -232,9 +232,19 @@ async function fetchSessionsList(user, expectedAuthVersion = authStateVersion) {
   const requestVersion = ++sessionsRequestVersion;
   try {
     const token = await user.getIdToken();
-    const response = await fetch(`${WORKER_URL}/v1/conversations?limit=50`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    let response;
+    try {
+      response = await fetch(`${WORKER_URL}/v1/conversations?limit=50`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (netErr) {
+      // iOS Safari等のネットワーク初期化ラグ対策: 1回だけ即時再試行
+      await new Promise((r) => setTimeout(r, 350));
+      const freshToken = await user.getIdToken(true);
+      response = await fetch(`${WORKER_URL}/v1/conversations?limit=50`, {
+        headers: { Authorization: `Bearer ${freshToken}` },
+      });
+    }
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || `会話一覧を取得できませんでした (${response.status})`);
@@ -554,19 +564,40 @@ async function sendMessage(text) {
 
   try {
     const token = await user.getIdToken();
-    const response = await fetch(`${WORKER_URL}/v1/chat`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        message: fullMessageText,
-        model: targetModelId,
-        ...(sendSessionId ? { conversationId: sendSessionId } : {}),
-      }),
-      signal: controller.signal,
-    });
+    let response;
+    try {
+      response = await fetch(`${WORKER_URL}/v1/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          message: fullMessageText,
+          model: targetModelId,
+          ...(sendSessionId ? { conversationId: sendSessionId } : {}),
+        }),
+        signal: controller.signal,
+      });
+    } catch (netErr) {
+      if (netErr?.name === "AbortError") throw netErr;
+      // ネットワークラグ時の自動再試行
+      await new Promise((r) => setTimeout(r, 400));
+      const freshToken = await user.getIdToken(true);
+      response = await fetch(`${WORKER_URL}/v1/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${freshToken}`,
+        },
+        body: JSON.stringify({
+          message: fullMessageText,
+          model: targetModelId,
+          ...(sendSessionId ? { conversationId: sendSessionId } : {}),
+        }),
+        signal: controller.signal,
+      });
+    }
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));

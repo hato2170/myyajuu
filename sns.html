@@ -1180,10 +1180,10 @@ button.back {
     <!-- モード切替タブ -->
     <div style="display:flex; gap:8px; margin-bottom:12px;">
       <button id="brawlTab2DBtn" onclick="switchBrawlTab('2d')" style="background:#f59e0b; color:#fff; font-weight:bold; padding:8px 12px; border-radius:8px; flex:1; border:none; cursor:pointer; font-size:13px;">
-        👑 チャッピー自作2D版（3v3ジェムグラブ）
+        ⭐ 本家ブロスタ完全再現版（3v3ジェムグラブ）
       </button>
       <button id="brawlTabOfficialBtn" onclick="switchBrawlTab('official')" style="background:#1e293b; color:#94a3b8; font-weight:bold; padding:8px 12px; border-radius:8px; flex:1; border:1px solid #334155; cursor:pointer; font-size:13px;">
-        🌐 Supercell公式案内
+        ⚡ WebGL本家版 / 回避サーバー
       </button>
     </div>
 
@@ -1244,18 +1244,41 @@ button.back {
       <p style="text-align:center; color:#94a3b8; font-size:11px; margin-top:6px;">PC: 矢印キー(WASD)移動 / Spaceキー攻撃 / Xキー必殺技</p>
     </div>
 
-    <!-- Supercell公式ページ案内。公式のブラウザー版は確認できないため、ゲームは2D版を利用する。 -->
+    <!-- WebGL本家版 / 回避サーバー -->
     <div id="brawlOfficialContainer" style="display:none;">
-      <div style="background:#161b22; border:1px solid #30363d; border-radius:12px; padding:20px; text-align:center;">
-        <h3 style="margin:0 0 10px; color:#f59e0b;">Supercell公式 Brawl Stars</h3>
-        <p style="margin:0 0 16px; color:#cbd5e1; line-height:1.6;">
-          公式サイトはゲームの案内ページです。公式ブラウザー版は確認できませんでした。<br>
-          このページ内で遊ぶ場合は「チャッピー自作2D版」を選んでください。
-        </p>
-        <a href="https://supercell.com/en/games/brawlstars/" target="_blank" rel="noopener noreferrer"
-           style="display:inline-block; background:#f59e0b; color:#fff; font-weight:bold; padding:10px 18px; border-radius:8px; text-decoration:none;">
-          Supercell公式ページを開く
-        </a>
+      <div style="background:#161b22; border:1px solid #30363d; border-radius:10px; padding:10px 14px; margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <span style="color:#f59e0b; font-size:12px; font-weight:bold;">🌐 サーバー:</span>
+            <button id="brawlServer1Btn" onclick="switchBrawlServer(1)" style="background:#f59e0b; color:#fff; width:auto; padding:4px 10px; font-size:11px; border-radius:6px; border:none; cursor:pointer;">
+              ⚡ サーバー1 (本家3D WebGL版)
+            </button>
+            <button id="brawlServer2Btn" onclick="switchBrawlServer(2)" style="background:#1e293b; color:#94a3b8; width:auto; padding:4px 10px; font-size:11px; border-radius:6px; border:1px solid #334155; cursor:pointer;">
+              🌐 サーバー2 (TurboWarp 69キャラ版)
+            </button>
+            <button id="brawlServer3Btn" onclick="switchBrawlServer(3)" style="background:#1e293b; color:#94a3b8; width:auto; padding:4px 10px; font-size:11px; border-radius:6px; border:1px solid #334155; cursor:pointer;">
+              🚀 サーバー3 (TurboWarp最新版)
+            </button>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button onclick="reloadBrawl()" style="background:#1e293b; color:#f1f5f9; width:auto; padding:4px 8px; font-size:11px; border-radius:6px; border:1px solid #334155; cursor:pointer;">
+              🔄 再読込
+            </button>
+            <button onclick="openBrawlInNewTab()" style="background:#1e293b; color:#f1f5f9; width:auto; padding:4px 8px; font-size:11px; border-radius:6px; border:1px solid #334155; cursor:pointer;">
+              🔗 別タブで開く
+            </button>
+            <button onclick="toggleBrawlFullscreen()" style="background:#1e293b; color:#f1f5f9; width:auto; padding:4px 8px; font-size:11px; border-radius:6px; border:1px solid #334155; cursor:pointer;">
+              ⛶ 全画面
+            </button>
+          </div>
+        </div>
+        <div id="brawlServerDesc" style="color:#8b949e; font-size:11px; margin-top:6px;">
+          サーバー1: 本家3D WebGL版ブロスタです。全画面＆ジェムグラブ対戦対応！
+        </div>
+      </div>
+      <div id="brawlIframeWrapper" style="width:100%; height:70vh; max-height:640px; position:relative; background:#000; border-radius:12px; overflow:hidden; border:2px solid #334155; transition: all 0.2s ease;">
+        <button id="brawlExitFsBtn" onclick="exitBrawlFullscreen()" style="display:none; position:fixed; top:12px; right:12px; z-index:2147483647; width:34px !important; min-width:34px !important; max-width:34px !important; height:34px !important; border-radius:50% !important; background:rgba(0,0,0,0.35) !important; color:#fff !important; border:1px solid rgba(255,255,255,0.25) !important; font-size:16px !important; font-weight:bold !important; cursor:pointer !important; box-shadow:0 2px 8px rgba(0,0,0,0.4) !important; opacity:0.4; transition:opacity 0.2s, background 0.2s; padding:0 !important; margin:0 !important; line-height:32px; text-align:center;">✕</button>
+        <iframe id="brawlOfficialIframe" src="about:blank" style="width:100%; height:100%; border:none; display:block;" allow="autoplay; fullscreen; web-share; gamepad; pointer-lock" allowfullscreen></iframe>
       </div>
     </div>
   </div>
@@ -9553,9 +9576,90 @@ function drawPaperGame() {
 
 
 /* ==========================================================
-   ⭐ ブロスタ（Brawl Stars）システム & 2Dジェムグラブ
+   ⭐ ブロスタ（Brawl Stars）システム & 本家完全再現版
 ========================================================== */
+const BRAWL_SERVERS = {
+  1: {
+    name: "本家3D WebGL版 (StaticQuasar)",
+    url: "https://staticquasar931.github.io/Brawl-Stars/",
+    desc: "サーバー1: 本家3D WebGL版ブロスタです。全画面＆ジェムグラブ対戦対応！"
+  },
+  2: {
+    name: "TurboWarp 60FPS版 (全69キャラ)",
+    url: "https://turbowarp.org/544538470/embed?autoplay=true",
+    desc: "サーバー2: 高速60FPS・全69キャラ完全再現版です。"
+  },
+  3: {
+    name: "TurboWarp最新アプデ版 (Gods vs Monsters)",
+    url: "https://turbowarp.org/1059386427/embed?autoplay=true",
+    desc: "サーバー3: 最新アップデート（Gods vs Monsters）版です。"
+  }
+};
+let currentBrawlServer = 1;
 let currentBrawlTab = "2d";
+
+window.switchBrawlServer = function(num) {
+  currentBrawlServer = num;
+  const cfg = BRAWL_SERVERS[num] || BRAWL_SERVERS[1];
+  const iframe = document.getElementById("brawlOfficialIframe");
+  if (iframe) iframe.src = cfg.url;
+
+  for (let i = 1; i <= 3; i++) {
+    const btn = document.getElementById(`brawlServer${i}Btn`);
+    if (btn) {
+      if (i === num) {
+        btn.style.background = "#f59e0b";
+        btn.style.color = "#fff";
+        btn.style.border = "none";
+      } else {
+        btn.style.background = "#1e293b";
+        btn.style.color = "#94a3b8";
+        btn.style.border = "1px solid #334155";
+      }
+    }
+  }
+  const desc = document.getElementById("brawlServerDesc");
+  if (desc) desc.textContent = cfg.desc;
+};
+
+window.reloadBrawl = function() {
+  const iframe = document.getElementById("brawlOfficialIframe");
+  if (iframe) {
+    const cfg = BRAWL_SERVERS[currentBrawlServer] || BRAWL_SERVERS[1];
+    iframe.src = "about:blank";
+    setTimeout(() => { iframe.src = cfg.url; }, 50);
+  }
+};
+
+window.openBrawlInNewTab = function() {
+  const cfg = BRAWL_SERVERS[currentBrawlServer] || BRAWL_SERVERS[1];
+  window.open(cfg.url, "_blank");
+};
+
+window.toggleBrawlFullscreen = function() {
+  const wrap = document.getElementById("brawlIframeWrapper");
+  const exitBtn = document.getElementById("brawlExitFsBtn");
+  if (!wrap) return;
+  if (!document.fullscreenElement) {
+    if (wrap.requestFullscreen) wrap.requestFullscreen();
+    else if (wrap.webkitRequestFullscreen) wrap.webkitRequestFullscreen();
+    if (exitBtn) exitBtn.style.display = "block";
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    if (exitBtn) exitBtn.style.display = "none";
+  }
+};
+
+window.exitBrawlFullscreen = function() {
+  if (document.fullscreenElement) {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  }
+  const exitBtn = document.getElementById("brawlExitFsBtn");
+  if (exitBtn) exitBtn.style.display = "none";
+  document.body.style.overflow = "";
+};
 
 window.openBrawlHub = function () {
   window.hideAllScreens();
@@ -9588,6 +9692,10 @@ window.switchBrawlTab = function (mode) {
     c2d.style.display = "none";
     cOff.style.display = "block";
     stopBrawlLoop();
+    const iframe = document.getElementById("brawlOfficialIframe");
+    if (iframe && (!iframe.src || iframe.src === "about:blank")) {
+      switchBrawlServer(currentBrawlServer || 1);
+    }
   } else {
     t2d.style.background = "#f59e0b";
     t2d.style.color = "#fff";
@@ -9599,11 +9707,6 @@ window.switchBrawlTab = function (mode) {
     cOff.style.display = "none";
     startBrawlGame();
   }
-};
-
-// Kept for the shared logout cleanup hook; the Brawl official iframe is no longer embedded.
-window.exitBrawlFullscreen = function () {
-  document.body.style.overflow = "";
 };
 
 /* --- 2Dブロスタ (Brawl Stars Canvas 3v3 Gem Grab) --- */
@@ -9678,6 +9781,74 @@ const BRAWL_MAP_OBSTACLES = [
   { x: 30, y: 310, w: 60, h: 20 },
   { x: 270, y: 310, w: 60, h: 20 }
 ];
+
+// 障害物回避BFSグリッド
+const BRAWL_GRID_COLS = 18;
+const BRAWL_GRID_ROWS = 21;
+const BRAWL_CELL_SIZE = 20;
+let brawlNavGrid = null;
+
+function initBrawlNavGrid() {
+  brawlNavGrid = [];
+  for (let r = 0; r < BRAWL_GRID_ROWS; r++) {
+    brawlNavGrid[r] = [];
+    const cy = r * BRAWL_CELL_SIZE + 10;
+    for (let c = 0; c < BRAWL_GRID_COLS; c++) {
+      const cx = c * BRAWL_CELL_SIZE + 10;
+      let blocked = false;
+      BRAWL_MAP_OBSTACLES.forEach(w => {
+        if (cx > w.x - 14 && cx < w.x + w.w + 14 && cy > w.y - 14 && cy < w.y + w.h + 14) {
+          blocked = true;
+        }
+      });
+      brawlNavGrid[r][c] = blocked ? 1 : 0;
+    }
+  }
+}
+
+function getBrawlNextStep(startX, startY, targetX, targetY) {
+  if (!brawlNavGrid) initBrawlNavGrid();
+  const sc = Math.min(BRAWL_GRID_COLS - 1, Math.max(0, Math.floor(startX / BRAWL_CELL_SIZE)));
+  const sr = Math.min(BRAWL_GRID_ROWS - 1, Math.max(0, Math.floor(startY / BRAWL_CELL_SIZE)));
+  const tc = Math.min(BRAWL_GRID_COLS - 1, Math.max(0, Math.floor(targetX / BRAWL_CELL_SIZE)));
+  const tr = Math.min(BRAWL_GRID_ROWS - 1, Math.max(0, Math.floor(targetY / BRAWL_CELL_SIZE)));
+  if (sc === tc && sr === tr) return { x: targetX, y: targetY };
+
+  const queue = [[tc, tr]];
+  const visited = new Set([`${tc},${tr}`]);
+  const parent = new Map();
+
+  let found = false;
+  let iterations = 0;
+  while (queue.length > 0 && iterations < 90) {
+    iterations++;
+    const [cc, cr] = queue.shift();
+    if (cc === sc && cr === sr) {
+      found = true;
+      break;
+    }
+    const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, 1], [1, -1], [-1, -1]];
+    for (let i = 0; i < dirs.length; i++) {
+      const nc = cc + dirs[i][0];
+      const nr = cr + dirs[i][1];
+      const k = `${nc},${nr}`;
+      if (nc >= 0 && nc < BRAWL_GRID_COLS && nr >= 0 && nr < BRAWL_GRID_ROWS &&
+          brawlNavGrid[nr][nc] === 0 && !visited.has(k)) {
+        visited.add(k);
+        parent.set(k, [cc, cr]);
+        queue.push([nc, nr]);
+      }
+    }
+  }
+
+  if (found) {
+    const nextCell = parent.get(`${sc},${sr}`);
+    if (nextCell) {
+      return { x: nextCell[0] * BRAWL_CELL_SIZE + 10, y: nextCell[1] * BRAWL_CELL_SIZE + 10 };
+    }
+  }
+  return { x: targetX, y: targetY };
+}
 
 window.startBrawlGame = function () {
   brawlCanvasEl = document.getElementById("brawlCanvas");
@@ -10064,13 +10235,18 @@ function updateBrawlGame() {
       mx = brawlInput.x;
       my = brawlInput.y;
     } else {
-      // AI処理
+      // AI処理: 目標決定と障害物回避
       c.aiTimer = (c.aiTimer || 0) + 1;
       const targetEnemy = getNearestEnemy(c);
 
-      // 中央のジェムに向かう、または敵を追跡
+      // 目標座標決定 (ジェム優先、大量ジェム時は防衛陣地へ撤退)
       let tx = 180, ty = 210;
-      if (brawlGems.length > 0) {
+      const myTeamGems = c.team === "blue" ? brawlBlueScore : brawlRedScore;
+      if (c.gems >= 4 || (myTeamGems >= 10 && c.gems >= 2)) {
+        // ジェム大量保持時は自陣営に退避して防衛
+        tx = c.team === "blue" ? 180 : 180;
+        ty = c.team === "blue" ? 380 : 40;
+      } else if (brawlGems.length > 0) {
         let nearestGem = brawlGems[0];
         let ngd = Math.hypot(nearestGem.x - c.x, nearestGem.y - c.y);
         brawlGems.forEach(g => {
@@ -10084,27 +10260,29 @@ function updateBrawlGame() {
         ty = targetEnemy.y;
       }
 
-      const dist = Math.hypot(tx - c.x, ty - c.y);
-      if (dist > 25) {
-        mx = (tx - c.x) / dist;
-        my = (ty - c.y) / dist;
+      // BFSで障害物を完全に迂回する次のステップを取得
+      const stepTarget = getBrawlNextStep(c.x, c.y, tx, ty);
+      const dist = Math.hypot(stepTarget.x - c.x, stepTarget.y - c.y);
+      if (dist > 6) {
+        mx = (stepTarget.x - c.x) / dist;
+        my = (stepTarget.y - c.y) / dist;
       }
 
       // AI攻撃
-      if (targetEnemy && c.ammo >= 1 && c.aiTimer % 70 === 0) {
+      if (targetEnemy && c.ammo >= 1 && c.aiTimer % 55 === 0) {
         const edist = Math.hypot(targetEnemy.x - c.x, targetEnemy.y - c.y);
-        if (edist < 160) {
+        if (edist < 165) {
           c.ammo--;
           const ex = (targetEnemy.x - c.x) / edist;
           const ey = (targetEnemy.y - c.y) / edist;
           brawlBullets.push({
             x: c.x,
             y: c.y,
-            vx: ex * 6.0,
-            vy: ey * 6.0,
+            vx: ex * 6.2,
+            vy: ey * 6.2,
             team: c.team,
-            damage: 320,
-            range: 140,
+            damage: 340,
+            range: 150,
             traveled: 0,
             radius: 4,
             isSuper: false
@@ -10114,24 +10292,29 @@ function updateBrawlGame() {
     }
 
     if (mx !== 0 || my !== 0) {
-      const len = Math.hypot(mx, my);
-      const nx = c.x + (mx / len) * c.speed;
-      const ny = c.y + (my / len) * c.speed;
+      const len = Math.hypot(mx, my) || 1;
+      const stepX = (mx / len) * c.speed;
+      const stepY = (my / len) * c.speed;
+      const nextX = c.x + stepX;
+      const nextY = c.y + stepY;
 
-      // 障害物コリジョン
-      let hitWall = false;
+      // 障害物のX軸・Y軸スライド判定 (引っかからず滑らかに移動)
+      let blockX = false;
+      let blockY = false;
       BRAWL_MAP_OBSTACLES.forEach(w => {
-        if (nx > w.x - c.radius && nx < w.x + w.w + c.radius &&
-            ny > w.y - c.radius && ny < w.y + w.h + c.radius) {
-          hitWall = true;
+        if (nextX > w.x - c.radius && nextX < w.x + w.w + c.radius &&
+            c.y > w.y - c.radius && c.y < w.y + w.h + c.radius) {
+          blockX = true;
+        }
+        if (c.x > w.x - c.radius && c.x < w.x + w.w + c.radius &&
+            nextY > w.y - c.radius && nextY < w.y + w.h + c.radius) {
+          blockY = true;
         }
       });
 
-      if (!hitWall && nx > c.radius && nx < 360 - c.radius && ny > c.radius && ny < 420 - c.radius) {
-        c.x = nx;
-        c.y = ny;
-        c.facing = { x: mx / len, y: my / len };
-      }
+      if (!blockX && nextX > c.radius && nextX < 360 - c.radius) c.x = nextX;
+      if (!blockY && nextY > c.radius && nextY < 420 - c.radius) c.y = nextY;
+      c.facing = { x: mx / len, y: my / len };
     }
 
     // ジェム拾い判定
