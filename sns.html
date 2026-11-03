@@ -1826,7 +1826,9 @@ button.back {
 
   </div>
 
-
+<!-- 3Dゲームライブラリ & 自前3Dブロスタエンジン -->
+<script src="js/three.min.js"></script>
+<script src="js/brawl3d.js"></script>
 
 <script type="module">
 
@@ -9669,6 +9671,7 @@ window.openBrawlHub = function () {
 };
 
 window.leaveBrawlGame = function () {
+  if (window.stop3DBrawlGame) window.stop3DBrawlGame();
   stopBrawlLoop();
   exitBrawlFullscreen();
   showGameCorner();
@@ -9851,6 +9854,11 @@ function getBrawlNextStep(startX, startY, targetX, targetY) {
 }
 
 window.startBrawlGame = function () {
+  const container = document.getElementById("brawl2DContainer");
+  if (container && window.start3DBrawlGame) {
+    window.start3DBrawlGame(container, "shelly");
+    return;
+  }
   brawlCanvasEl = document.getElementById("brawlCanvas");
   if (!brawlCanvasEl) {
     console.error("Brawl 2D canvas was not found.");
