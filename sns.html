@@ -1161,6 +1161,32 @@ button.back {
         </div>
       </div>
 
+      <div style="background:#161b22; border:1px solid #30363d; border-radius:12px; padding:16px; cursor:pointer; margin-top:10px;" onclick="openFortniteHub()">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <h3 style="margin:0 0 6px 0; color:#38bdf8; font-size:18px;">🏆 Fortnite 3D（フォートナイト バトルロイヤル）</h3>
+            <p style="margin:0; color:#8b949e; font-size:13px;">建築（壁・階段・床）＆ツルハシ・AR・ショットガン！ストーム迫る本格3Dバトロワ！</p>
+          </div>
+          <span style="font-size:20px; color:#38bdf8;">▶</span>
+        </div>
+      </div>
+
+  </div>
+
+    <!-- ======================
+       Fortnite 3D 画面
+  ======================= -->
+  <div id="fortniteScreen" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <button class="back" onclick="leaveFortniteGame()" style="margin:0; width:auto; padding:6px 14px;">
+        ← コーナーへ
+      </button>
+      <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 14px; font-weight:bold; border-radius:8px;">
+        🚨 緊急回避 (数学)
+      </button>
+    </div>
+
+    <div id="fortniteGameContainer" style="width:100%; height:75vh; min-height:520px; border-radius:12px; overflow:hidden;"></div>
   </div>
 
 
@@ -1826,9 +1852,10 @@ button.back {
 
   </div>
 
-<!-- 3Dゲームライブラリ & 自前3Dブロスタエンジン -->
+<!-- 3Dゲームライブラリ & 自前3Dブロスタエンジン & Fortnite 3Dエンジン -->
 <script src="js/three.min.js"></script>
 <script src="js/brawl3d.js"></script>
+<script src="js/fortnite3d.js"></script>
 
 <script type="module">
 
@@ -3255,7 +3282,9 @@ window.hideAllScreens = function () {
     "unoScreen",
     "daifugoScreen",
     "solitaireScreen",
-    "paperScreen"
+    "paperScreen",
+    "brawlScreen",
+    "fortniteScreen"
   ];
   ids.forEach((id) => {
     const el = document.getElementById(id);
@@ -9668,6 +9697,21 @@ window.openBrawlHub = function () {
   const screen = document.getElementById("brawlScreen");
   if (screen) screen.style.display = "block";
   switchBrawlTab("2d");
+};
+
+window.openFortniteHub = function () {
+  window.hideAllScreens();
+  const screen = document.getElementById("fortniteScreen");
+  if (screen) screen.style.display = "block";
+  const container = document.getElementById("fortniteGameContainer");
+  if (container && window.startFortnite3DGame) {
+    window.startFortnite3DGame(container);
+  }
+};
+
+window.leaveFortniteGame = function () {
+  if (window.stopFortnite3DGame) window.stopFortnite3DGame();
+  showGameCorner();
 };
 
 window.leaveBrawlGame = function () {
