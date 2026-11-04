@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>iroironote</title>
 
 <style>
@@ -720,11 +720,11 @@ button.back {
 
     <!-- モード切替タブ -->
     <div style="display:flex; gap:8px; margin-bottom:12px;">
-      <button id="paperTabOfficialBtn" onclick="switchPaperTab('official')" style="background:#0284c7; color:#fff; font-weight:bold; padding:8px 12px; border-radius:8px; flex:1; border:none; cursor:pointer; font-size:13px;">
-        👑 本家Paper.io 2（公式・ブロックなし）
+      <button id="paperTab2DBtn" onclick="switchPaperTab('2d')" style="background:#0284c7; color:#fff; font-weight:bold; padding:8px 12px; border-radius:8px; flex:1; border:none; cursor:pointer; font-size:13px;">
+        👑 Paper.io 2（完全内蔵・ブロック絶対回避版）
       </button>
-      <button id="paperTab2DBtn" onclick="switchPaperTab('2d')" style="background:#1e293b; color:#94a3b8; font-weight:bold; padding:8px 12px; border-radius:8px; flex:1; border:1px solid #334155; cursor:pointer; font-size:13px;">
-        🎮 2D軽量版
+      <button id="paperTabOfficialBtn" onclick="switchPaperTab('official')" style="background:#1e293b; color:#94a3b8; font-weight:bold; padding:8px 12px; border-radius:8px; flex:1; border:1px solid #334155; cursor:pointer; font-size:13px;">
+        🌐 WebGL外部ミラー（予備）
       </button>
     </div>
 
@@ -1205,13 +1205,17 @@ button.back {
 
     <!-- モード切替タブ -->
     <div style="display:flex; gap:8px; margin-bottom:12px;">
-      <button id="brawlTab2DBtn" onclick="switchBrawlTab('2d')" style="background:#f59e0b; color:#fff; font-weight:bold; padding:8px 12px; border-radius:8px; flex:1; border:none; cursor:pointer; font-size:13px;">
-        ⭐ 本家ブロスタ完全再現版（3v3ジェムグラブ）
+      <button id="brawlTab3DBtn" onclick="switchBrawlTab('3d')" style="background:#f59e0b; color:#fff; font-weight:bold; padding:8px 12px; border-radius:8px; flex:1; border:none; cursor:pointer; font-size:13px;">
+        🔥 3D本格ブロスタ（Three.js 3v3ジェムグラブ）
+      </button>
+      <button id="brawlTab2DBtn" onclick="switchBrawlTab('2d')" style="background:#1e293b; color:#94a3b8; font-weight:bold; padding:8px 12px; border-radius:8px; flex:1; border:1px solid #334155; cursor:pointer; font-size:13px;">
+        👾 2D軽量ブロスタ
       </button>
       <button id="brawlTabOfficialBtn" onclick="switchBrawlTab('official')" style="background:#1e293b; color:#94a3b8; font-weight:bold; padding:8px 12px; border-radius:8px; flex:1; border:1px solid #334155; cursor:pointer; font-size:13px;">
-        ⚡ WebGL本家版 / 回避サーバー
+        ⚡ WebGLミラー
       </button>
     </div>
+    <div id="brawl3DContainer" style="width:100%; height:75vh; min-height:500px; border-radius:12px; overflow:hidden; display:none;"></div>
 
     <!-- 自作2D版 (Canvas 3v3 Gem Grab) -->
     <div id="brawl2DContainer">
@@ -1970,7 +1974,8 @@ import {
   getDocs,
   query,
   where,
-  orderBy
+  orderBy,
+  limit
 }
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
@@ -2347,6 +2352,11 @@ async function () {
       password
     );
 
+    try {
+      const sess = { email: email, pass: password, time: Date.now() };
+      sessionStorage.setItem("myyajuu_auth_session", JSON.stringify(sess));
+      localStorage.setItem("myyajuu_auth_session", JSON.stringify(sess));
+    } catch (e) {}
 
     showMessage(
       "ログインしました"
@@ -2394,6 +2404,22 @@ const profileCache = {};
 let dmTargetUserId = null;
 let dmUnsubscribe = null;
 let dmOpenRequestVersion = 0;
+
+// プライベートブラウズ対応: セッション自動復元 (ログイン画面飛ばされ防止)
+try {
+  const savedSessStr = sessionStorage.getItem("myyajuu_auth_session") || localStorage.getItem("myyajuu_auth_session");
+  if (savedSessStr) {
+    const parsedSess = JSON.parse(savedSessStr);
+    if (parsedSess.email && parsedSess.pass) {
+      setTimeout(() => {
+        if (!auth.currentUser) {
+          signInWithEmailAndPassword(auth, parsedSess.email, parsedSess.pass).catch(() => {});
+        }
+      }, 350);
+    }
+  }
+} catch (e) {}
+
 let notifUnsubReplies = null;
 let notifUnsubDMs = null;
 let allNotifications = [];
@@ -2485,6 +2511,25 @@ onAuthStateChanged(
 
   await checkAdmin(requestUid);
   if (requestVersion !== authStateVersion || uid !== requestUid) return;
+
+  // Firestoreから既読状態を復元して未読復活(0->24)を恒久解消
+  try {
+    const userDocSnap = await getDoc(doc(db, "users", requestUid));
+    if (userDocSnap.exists()) {
+      const uData = userDocSnap.data();
+      if (uData.readNotifs) {
+        const localNotifs = getReadNotifsMap();
+        const mergedNotifs = { ...localNotifs, ...uData.readNotifs };
+        localStorage.setItem(`read_notifs_${requestUid}`, JSON.stringify(mergedNotifs));
+      }
+      if (uData.lastReadDMTimes) {
+        const localDM = getLastReadDMTimes();
+        const mergedDM = { ...localDM, ...uData.lastReadDMTimes };
+        localStorage.setItem(`last_read_dm_${requestUid}`, JSON.stringify(mergedDM));
+      }
+    }
+  } catch (e) {}
+  updateAllBadges();
 
 if (latestPostsSnapshot) {
 
@@ -3642,6 +3687,20 @@ function getReadNotifsMap() {
   }
 }
 
+let syncReadFirestoreTimer = null;
+function syncReadStateToFirestore() {
+  if (!uid) return;
+  if (syncReadFirestoreTimer) clearTimeout(syncReadFirestoreTimer);
+  syncReadFirestoreTimer = setTimeout(async () => {
+    try {
+      await updateDoc(doc(db, "users", uid), {
+        readNotifs: getReadNotifsMap(),
+        lastReadDMTimes: getLastReadDMTimes()
+      });
+    } catch (e) {}
+  }, 350);
+}
+
 function saveReadNotif(id) {
   if (!uid || !id) return;
   const map = getReadNotifsMap();
@@ -3649,6 +3708,7 @@ function saveReadNotif(id) {
   try {
     localStorage.setItem(`read_notifs_${uid}`, JSON.stringify(map));
   } catch (e) {}
+  syncReadStateToFirestore();
 }
 
 function getLastReadDMTimes() {
@@ -3667,6 +3727,7 @@ function saveLastReadDMTime(otherUid, timestamp) {
   try {
     localStorage.setItem(`last_read_dm_${uid}`, JSON.stringify(map));
   } catch (e) {}
+  syncReadStateToFirestore();
 }
 
 // バッジ数値更新ヘルパー
@@ -5303,7 +5364,8 @@ const q =
     orderBy(
       "createdAt",
       "desc"
-    )
+    ),
+    limit(50)
   );
 
 let latestPostsSnapshot =
@@ -6134,6 +6196,20 @@ async function enterOthelloRoom(roomId, isPublic = false) {
    管理者直接追加
 ====================== */
 window.addAdminDirectly = async function () {
+  if (!uid || !isAdmin) {
+    showModernAlert("管理者権限がありません。管理者のみ実行できます。", "権限エラー");
+    return;
+  }
+  try {
+    const callerSnap = await getDoc(doc(db, "users", uid));
+    if (!callerSnap.exists() || callerSnap.data().role !== "admin") {
+      showModernAlert("データベース上で管理者権限が確認できませんでした。", "アクセス拒否");
+      return;
+    }
+  } catch (e) {
+    showModernAlert("管理者権限の検証に失敗しました。", "エラー");
+    return;
+  }
   const input = document.getElementById("newAdminInput");
   if (!input) return;
   let qVal = input.value.trim();
@@ -8946,9 +9022,44 @@ window.startDaifugoWithCPUFill = async function () {
     });
   }
 
+  const deck = shuffleSolDeck(createDaifugoDeck(daifugoRules));
+  const hands = {};
+  for (let i = 0; i < 4; i++) hands[filledPlayers[i].id] = [];
+  let pIdx = 0;
+  while (deck.length > 0) {
+    hands[filledPlayers[pIdx % 4].id].push(deck.pop());
+    pIdx++;
+  }
+  for (let i = 0; i < 4; i++) {
+    hands[filledPlayers[i].id] = sortDaifugoHand(hands[filledPlayers[i].id], false);
+  }
+
+  let starter = 0;
+  for (let i = 0; i < 4; i++) {
+    if (hands[filledPlayers[i].id].some(c => c.suit === "diamond" && c.num === 3)) {
+      starter = i;
+      break;
+    }
+  }
+
   await updateDoc(daifugoCurrentRoomRef, {
     status: "playing",
-    players: filledPlayers,
+    players: filledPlayers.map(p => ({
+      id: p.id,
+      name: p.name,
+      isHuman: p.isHuman,
+      cardCount: (hands[p.id] || []).length,
+      rank: "平民",
+      finishedRank: 0
+    })),
+    hands: hands,
+    turnIndex: starter,
+    table: null,
+    passCount: 0,
+    isRevolution: false,
+    is11Back: false,
+    lockedSuit: null,
+    lastAction: `${filledPlayers[starter].name} の親からスタート！`,
     updatedAt: Date.now()
   });
 
@@ -8956,7 +9067,6 @@ window.startDaifugoWithCPUFill = async function () {
   const boardArea = document.getElementById("daifugoBoardArea");
   if (waitingArea) waitingArea.style.display = "none";
   if (boardArea) boardArea.style.display = "block";
-  initDaifugoGame(filledPlayers);
 };
 
 // joinDaifugoOnlineRoom の再実装 (待機ルーム連携)
@@ -9020,9 +9130,8 @@ async function joinDaifugoOnlineRoom(roomId) {
       const boardArea = document.getElementById("daifugoBoardArea");
       if (waitingArea) waitingArea.style.display = "none";
       if (boardArea) boardArea.style.display = "block";
-      if (!daifugoState || daifugoState.status !== "playing") {
-        initDaifugoGame(data.players);
-      }
+
+      syncOnlineDaifugoState(data, roomRef);
     }
   });
 }
@@ -9210,7 +9319,7 @@ window.switchPaperTab = function (tab) {
 window.openPaperHub = function () {
   window.hideAllScreens();
   document.getElementById("paperScreen").style.display = "block";
-  switchPaperTab("official");
+  switchPaperTab("2d");
 };
 
 window.leavePaperGame = function () {
@@ -9696,7 +9805,7 @@ window.openBrawlHub = function () {
   window.hideAllScreens();
   const screen = document.getElementById("brawlScreen");
   if (screen) screen.style.display = "block";
-  switchBrawlTab("2d");
+  switchBrawlTab("3d");
 };
 
 window.openFortniteHub = function () {
@@ -9898,11 +10007,6 @@ function getBrawlNextStep(startX, startY, targetX, targetY) {
 }
 
 window.startBrawlGame = function () {
-  const container = document.getElementById("brawl2DContainer");
-  if (container && window.start3DBrawlGame) {
-    window.start3DBrawlGame(container, "shelly");
-    return;
-  }
   brawlCanvasEl = document.getElementById("brawlCanvas");
   if (!brawlCanvasEl) {
     console.error("Brawl 2D canvas was not found.");

@@ -82,7 +82,7 @@
       <div class="composer-toolbar">
         <div class="model-pill">
           <label for="modelSelect" class="toolbar-label">AI:</label>
-          <select id="modelSelect" class="model-select-pill" aria-label="AIモデルを選択" disabled>
+          <select id="modelSelect" class="model-select-pill" aria-label="AIモデルを選択">
             <option value="@cf/meta/llama-3.2-3b-instruct" selected>⚡ Llama 3.2 3B (Meta)</option>
             <option value="@cf/openai/gpt-oss-20b">🧠 GPT-OSS 20B (OpenAI)</option>
             <option value="@cf/google/gemma-4-26b-a4b-it">💎 Gemma 4 26B (Google)</option>
@@ -92,11 +92,11 @@
         </div>
 
         <div class="tool-chips">
-          <button id="webSearchToggle" type="button" class="tool-chip" title="Web検索は未対応です" disabled>
-            🌐 Web検索: <span id="webSearchState">未対応</span>
+          <button id="webSearchToggle" type="button" class="tool-chip" title="リアルタイムWeb検索 (最新のネット情報を取得して回答)">
+            🌐 Web検索: <span id="webSearchState">OFF</span>
           </button>
-          <button id="imageGenBtn" type="button" class="tool-chip" title="画像生成は未対応です" disabled>
-            🎨 画像生成: 未対応
+          <button id="imageGenBtn" type="button" class="tool-chip" title="AI画像生成（プロンプトから画像を生成）">
+            🎨 画像生成
           </button>
           <button id="attachBtn" type="button" class="tool-chip" title="テキストファイル添付">
             📎 添付
@@ -109,7 +109,7 @@
 
       <!-- 入力フォーム -->
       <form id="chatForm" class="composer">
-        <input type="file" id="fileInput" accept=".txt,.md,.json,.js,.html,.css,.csv,.py" aria-label="テキストファイルを添付" style="display:none;">
+        <input type="file" id="fileInput" accept=".txt,.md,.json,.js,.html,.css,.csv,.py,image/*" aria-label="ファイル・画像を添付" style="display:none;">
         <textarea id="prompt" rows="1" maxlength="1500" placeholder="メッセージを入力" aria-label="メッセージ" disabled></textarea>
         <button id="sendButton" type="submit" aria-label="送信" disabled>↑</button>
       </form>

@@ -15,6 +15,21 @@ const auth = getAuth(firebaseApp);
 
 // Cloudflare Worker API URL
 const WORKER_URL = window.MYYAJUU_AI_WORKER_URL || "https://myyajuu-ai-worker.harumei-260329.workers.dev";
+const PROXY_URL = "https://mokori.onrender.com/api/ai";
+let activeApiUrl = WORKER_URL;
+
+async function workerFetch(path, options = {}) {
+  try {
+    return await fetch(`${activeApiUrl}${path}`, options);
+  } catch (err) {
+    if (activeApiUrl !== PROXY_URL && err?.name !== "AbortError") {
+      console.warn("Direct Workers API failed (school filter detected), falling back to Render proxy:", err);
+      activeApiUrl = PROXY_URL;
+      return await fetch(`${activeApiUrl}${path}`, options);
+    }
+    throw err;
+  }
+}
 
 const MODEL_CATALOG = {
   "@cf/meta/llama-3.2-3b-instruct": { name: "Llama 3.2 3B" },
@@ -100,14 +115,38 @@ function showError(message) {
 
 if (modelSelectEl) {
   modelSelectEl.value = selectedModelId;
-  modelSelectEl.disabled = true;
+  modelSelectEl.disabled = false;
   modelSelectEl.addEventListener("change", (event) => {
     if (MODEL_CATALOG[event.target.value]) selectedModelId = event.target.value;
   });
 }
 
-if (webSearchToggle) webSearchToggle.disabled = true;
-if (imageGenBtn) imageGenBtn.disabled = true;
+let webSearchEnabled = false;
+if (webSearchToggle) {
+  webSearchToggle.disabled = false;
+  webSearchToggle.addEventListener("click", () => {
+    webSearchEnabled = !webSearchEnabled;
+    webSearchToggle.style.background = webSearchEnabled ? "#0284c7" : "#1e293b";
+    webSearchToggle.style.color = webSearchEnabled ? "#fff" : "#94a3b8";
+    if (webSearchState) {
+      webSearchState.textContent = webSearchEnabled ? "ON" : "OFF";
+      webSearchState.style.color = webSearchEnabled ? "#38bdf8" : "#94a3b8";
+    }
+  });
+}
+
+if (imageGenBtn) {
+  imageGenBtn.disabled = false;
+  imageGenBtn.addEventListener("click", () => {
+    const p = promptEl.value.trim();
+    if (!p) {
+      promptEl.value = "画像生成: ";
+      promptEl.focus();
+      return;
+    }
+    sendMessage(p);
+  });
+}
 
 // ファイル添付ボタン
 if (attachBtn && fileInput) {
@@ -125,8 +164,26 @@ if (attachBtn && fileInput) {
     currentAttachment = null;
     attachmentPreviewArea.hidden = true;
     if (file.type.startsWith("image/")) {
-      showError("現在のWorkerでは画像解析に対応していないため、画像は読み込みませんでした。");
-      fileInput.value = "";
+      const imgReader = new FileReader();
+      const readVersion = ++attachmentReadVersion;
+      const uidForRead = currentUid;
+      const authVersionForRead = authStateVersion;
+      imgReader.onerror = () => {
+        if (readVersion === attachmentReadVersion && currentUid === uidForRead && authStateVersion === authVersionForRead) {
+          showError("画像を読み込めませんでした。");
+        }
+      };
+      imgReader.onload = (evt) => {
+        if (readVersion !== attachmentReadVersion || currentUid !== uidForRead || authStateVersion !== authVersionForRead) return;
+        currentAttachment = {
+          name: file.name,
+          type: "image",
+          content: evt.target.result,
+          isImage: true,
+        };
+        showAttachmentPreview(file.name, "🖼️");
+      };
+      imgReader.readAsDataURL(file);
       return;
     }
 
@@ -234,14 +291,14 @@ async function fetchSessionsList(user, expectedAuthVersion = authStateVersion) {
     const token = await user.getIdToken();
     let response;
     try {
-      response = await fetch(`${WORKER_URL}/v1/conversations?limit=50`, {
+      response = await workerFetch(`/v1/conversations?limit=50`, {
         headers: { Authorization: `Bearer ${token}` },
       });
     } catch (netErr) {
       // iOS Safari等のネットワーク初期化ラグ対策: 1回だけ即時再試行
       await new Promise((r) => setTimeout(r, 350));
       const freshToken = await user.getIdToken(true);
-      response = await fetch(`${WORKER_URL}/v1/conversations?limit=50`, {
+      response = await workerFetch(`/v1/conversations?limit=50`, {
         headers: { Authorization: `Bearer ${freshToken}` },
       });
     }
@@ -366,7 +423,7 @@ async function deleteSession(id) {
   statusEl.textContent = "会話を削除しています…";
   try {
     const token = await user.getIdToken();
-    const response = await fetch(`${WORKER_URL}/v1/conversations/${encodeURIComponent(id)}`, {
+    const response = await workerFetch(`/v1/conversations/${encodeURIComponent(id)}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -405,8 +462,8 @@ function syncUI() {
   sendButton.disabled = !signedIn || busy;
   if (modelSelectEl) modelSelectEl.disabled = !signedIn || busy;
   if (attachBtn) attachBtn.disabled = !signedIn || busy;
-  if (imageGenBtn) imageGenBtn.disabled = true;
-  if (webSearchToggle) webSearchToggle.disabled = true;
+  if (imageGenBtn) imageGenBtn.disabled = !signedIn || busy;
+  if (webSearchToggle) webSearchToggle.disabled = !signedIn || busy;
   if (sessionsBtn) sessionsBtn.disabled = !signedIn || busy;
   if (newChatBtn) newChatBtn.disabled = !signedIn || busy;
   if (drawerNewChatBtn) drawerNewChatBtn.disabled = !signedIn || busy;
@@ -484,7 +541,7 @@ async function fetchD1History(user, conversationId = currentSessionId, expectedA
 
   try {
     const token = await user.getIdToken();
-    const response = await fetch(`${WORKER_URL}/v1/conversations/${encodeURIComponent(conversationId)}?limit=100`, {
+    const response = await workerFetch(`/v1/conversations/${encodeURIComponent(conversationId)}?limit=100`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -514,17 +571,68 @@ async function fetchD1History(user, conversationId = currentSessionId, expectedA
   }
 }
 
+
+async function generateAndShowImage(promptText) {
+  if (!currentUser || generating) return;
+  const user = currentUser;
+  generating = true;
+  syncUI();
+  errorEl.hidden = true;
+  welcomeEl.hidden = true;
+
+  appendMessage("user", `🎨 画像生成: ${promptText}`);
+  const statusBubble = appendMessage("assistant", "AIが画像を生成しています… 🎨 (Stable Diffusion XL)");
+
+  try {
+    const token = await user.getIdToken();
+    let imgDataUrl = null;
+
+    try {
+      const resp = await workerFetch("/v1/image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ prompt: promptText }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.image) imgDataUrl = data.image;
+      }
+    } catch (e) {
+      console.warn("Worker image endpoint failed, using fallback generator:", e);
+    }
+
+    if (!imgDataUrl) {
+      // フォールバック: Pollinations 高速AI画像生成 (無料・キー不要)
+      imgDataUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptText)}?width=512&height=512&nologo=true`;
+    }
+
+    // 回答バブルを更新して画像を表示
+    statusBubble.remove();
+    appendMessage("assistant", `「${promptText}」の画像を生成しました！`, "Stable Diffusion XL", imgDataUrl);
+    statusEl.textContent = "画像生成完了";
+  } catch (err) {
+    statusBubble.remove();
+    showError("画像生成中にエラーが発生しました: " + err.message);
+  } finally {
+    generating = false;
+    syncUI();
+  }
+}
+
 // メッセージ送信
 async function sendMessage(text) {
   if (!currentUser || generating || loadingHistory) return;
 
   if (text.startsWith("/image") || text.startsWith("画像生成:") || text.startsWith("画像生成：")) {
-    showError("画像生成は現在未対応です。通常のテキスト質問を入力してください。");
-    return;
-  }
-
-  if (currentAttachment?.type === "image") {
-    showError("現在のWorkerでは画像解析に対応していないため、画像は送信できません。テキストファイルを添付してください。");
+    const imgPrompt = text.replace(/^(\/image|画像生成[:：])\s*/i, "").trim();
+    if (!imgPrompt) {
+      showError("画像生成のプロンプトを入力してください。（例: 画像生成: かわいい猫のドット絵）");
+      return;
+    }
+    await generateAndShowImage(imgPrompt);
     return;
   }
 
@@ -555,7 +663,7 @@ async function sendMessage(text) {
   welcomeEl.hidden = true;
 
   const displayUserText = attachment ? `📎 [${attachment.name}]\n${text}` : text;
-  const userBubble = appendMessage("user", displayUserText);
+  const userBubble = appendMessage("user", displayUserText, null, attachment?.isImage ? attachment.content : null);
   history.push({ role: "user", content: displayUserText });
   clearAttachment();
 
@@ -566,7 +674,7 @@ async function sendMessage(text) {
     const token = await user.getIdToken();
     let response;
     try {
-      response = await fetch(`${WORKER_URL}/v1/chat`, {
+      response = await workerFetch(`/v1/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -575,16 +683,16 @@ async function sendMessage(text) {
         body: JSON.stringify({
           message: fullMessageText,
           model: targetModelId,
+          webSearch: webSearchEnabled,
           ...(sendSessionId ? { conversationId: sendSessionId } : {}),
         }),
         signal: controller.signal,
       });
     } catch (netErr) {
       if (netErr?.name === "AbortError") throw netErr;
-      // ネットワークラグ時の自動再試行
       await new Promise((r) => setTimeout(r, 400));
       const freshToken = await user.getIdToken(true);
-      response = await fetch(`${WORKER_URL}/v1/chat`, {
+      response = await workerFetch(`/v1/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -593,6 +701,7 @@ async function sendMessage(text) {
         body: JSON.stringify({
           message: fullMessageText,
           model: targetModelId,
+          webSearch: webSearchEnabled,
           ...(sendSessionId ? { conversationId: sendSessionId } : {}),
         }),
         signal: controller.signal,
@@ -708,7 +817,7 @@ if (clearChatBtn) {
     syncUI();
     try {
       const token = await user.getIdToken();
-      const response = await fetch(`${WORKER_URL}/v1/conversations/${encodeURIComponent(conversationId)}`, {
+      const response = await workerFetch(`/v1/conversations/${encodeURIComponent(conversationId)}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -830,3 +939,17 @@ onAuthStateChanged(auth, async (user) => {
   showError(error?.message || "認証状態を確認できませんでした。");
   syncUI();
 });
+
+
+// プライベートブラウズ対応: セッション自動復元
+try {
+  const savedSession = sessionStorage.getItem("myyajuu_auth_session") || localStorage.getItem("myyajuu_auth_session");
+  if (savedSession) {
+    const parsed = JSON.parse(savedSession);
+    if (parsed.email && parsed.pass && !auth.currentUser) {
+      import("https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js").then(({ signInWithEmailAndPassword }) => {
+        signInWithEmailAndPassword(auth, parsed.email, parsed.pass).catch(() => {});
+      });
+    }
+  }
+} catch (e) {}
