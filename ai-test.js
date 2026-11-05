@@ -16,15 +16,30 @@ const auth = getAuth(firebaseApp);
 // Cloudflare Worker API URL
 const WORKER_URL = window.MYYAJUU_AI_WORKER_URL || "https://myyajuu-ai-worker.harumei-260329.workers.dev";
 const PROXY_URL = "https://mokori.onrender.com/api/ai";
-let activeApiUrl = WORKER_URL;
+let activeApiUrl = (function() {
+  try {
+    return sessionStorage.getItem("myyajuu_ai_use_proxy") === "true" ? PROXY_URL : WORKER_URL;
+  } catch (_) {
+    return WORKER_URL;
+  }
+})();
 
 async function workerFetch(path, options = {}) {
   try {
-    return await fetch(`${activeApiUrl}${path}`, options);
+    const res = await fetch(`${activeApiUrl}${path}`, options);
+    // 学校iPad等のフィルターでworkers.devが401/403/502等を返した場合の自動フォールバック
+    if (!res.ok && activeApiUrl !== PROXY_URL && (res.status === 401 || res.status === 403 || res.status === 502)) {
+      console.warn(`Direct Workers API returned ${res.status} (filter block), falling back to Render proxy:`, path);
+      activeApiUrl = PROXY_URL;
+      try { sessionStorage.setItem("myyajuu_ai_use_proxy", "true"); } catch (_) {}
+      return await fetch(`${activeApiUrl}${path}`, options);
+    }
+    return res;
   } catch (err) {
     if (activeApiUrl !== PROXY_URL && err?.name !== "AbortError") {
       console.warn("Direct Workers API failed (school filter detected), falling back to Render proxy:", err);
       activeApiUrl = PROXY_URL;
+      try { sessionStorage.setItem("myyajuu_ai_use_proxy", "true"); } catch (_) {}
       return await fetch(`${activeApiUrl}${path}`, options);
     }
     throw err;
@@ -297,6 +312,12 @@ async function fetchSessionsList(user, expectedAuthVersion = authStateVersion) {
     } catch (netErr) {
       // iOS Safari等のネットワーク初期化ラグ対策: 1回だけ即時再試行
       await new Promise((r) => setTimeout(r, 350));
+      const freshToken = await user.getIdToken(true);
+      response = await workerFetch(`/v1/conversations?limit=50`, {
+        headers: { Authorization: `Bearer ${freshToken}` },
+      });
+    }
+    if (response.status === 401) {
       const freshToken = await user.getIdToken(true);
       response = await workerFetch(`/v1/conversations?limit=50`, {
         headers: { Authorization: `Bearer ${freshToken}` },
