@@ -595,7 +595,7 @@ button.back {
       onclick="window.location.href='./ai-test.html'"
       style="background:#6366f1; font-weight:bold; flex:1; min-width:90px;"
     >
-      ✳ AIアシスタント
+      ✳ AIハヤト
     </button>
 
     <button
@@ -703,8 +703,8 @@ button.back {
     </button>
 
     <div id="posts"></div>
+  </div>
 
-  
   <!-- ======================
        paper.io 画面
   ======================= -->
@@ -714,7 +714,7 @@ button.back {
         ← コーナーへ
       </button>
       <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 14px; font-weight:bold; border-radius:8px;">
-        🚨 緊急回避 (数学)
+        🚨 緊急回避
       </button>
     </div>
 
@@ -805,9 +805,6 @@ button.back {
       </div>
     </div>
   </div>
-
-</div>
-
 
   <!-- ======================
        プロフィール
@@ -1171,6 +1168,16 @@ button.back {
         </div>
       </div>
 
+      <div style="background:#161b22; border:1px solid #30363d; border-radius:12px; padding:16px; cursor:pointer; margin-top:10px;" onclick="openShogiHub()">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <h3 style="margin:0 0 6px 0; color:#f59e0b; font-size:18px;">♟️ 将棋（本将棋・AI＆オンライン対戦）</h3>
+            <p style="margin:0; color:#8b949e; font-size:13px;">本格9×9将棋盤！成駒・持ち駒・王手・二歩防止完備！オンライン対戦＆CPU3段階（弱い・普通・強い）！</p>
+          </div>
+          <span style="font-size:20px; color:#f59e0b;">▶</span>
+        </div>
+      </div>
+
   </div>
 
     <!-- ======================
@@ -1182,11 +1189,52 @@ button.back {
         ← コーナーへ
       </button>
       <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 14px; font-weight:bold; border-radius:8px;">
-        🚨 緊急回避 (数学)
+        🚨 緊急回避
       </button>
     </div>
 
     <div id="fortniteGameContainer" style="width:100%; height:75vh; min-height:520px; border-radius:12px; overflow:hidden;"></div>
+  </div>
+
+  <!-- ======================
+       将棋 (Shogi) 画面
+  ======================= -->
+  <div id="shogiScreen" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <button class="back" onclick="leaveShogiGame()" style="margin:0; width:auto; padding:6px 14px;">
+        ← コーナーへ
+      </button>
+      <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 14px; font-weight:bold; border-radius:8px;">
+        🚨 緊急回避
+      </button>
+    </div>
+
+    <!-- ロビー画面 -->
+    <div id="shogiLobby">
+      <h3 style="margin-top:0; color:#f59e0b;">♟️ 本将棋ルーム</h3>
+
+      <div style="background:#1c2128; padding:14px; border-radius:10px; margin-bottom:12px; border:1px solid #30363d;">
+        <h4 style="margin:0 0 6px 0; color:#38bdf8;">🤖 CPU対戦（ひとりで対局）</h4>
+        <p style="color:#8b949e; font-size:13px; margin:0 0 10px 0;">3段階のCPU（弱い・普通・強い）と手軽に対局練習！</p>
+        <button onclick="startShogiVsCpu()" style="background:#238636; color:#fff; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer;">
+          対局開始
+        </button>
+      </div>
+
+      <div style="background:#1c2128; padding:14px; border-radius:10px; border:1px solid #30363d;">
+        <h4 style="margin:0 0 6px 0; color:#10b981;">👥 オンライン対人対戦</h4>
+        <p style="color:#8b949e; font-size:13px; margin:0 0 10px 0;">合言葉を決めて友達とリアルタイム対局！</p>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="shogiRoomCodeInput" placeholder="合言葉（例: 777）" style="flex:1; background:#0d1117; border:1px solid #30363d; color:#fff; padding:8px; border-radius:6px;">
+          <button onclick="joinShogiOnlineFromInput()" style="background:#0284c7; color:#fff; font-weight:bold; padding:8px 16px; border-radius:6px; border:none; cursor:pointer;">
+            対局・作成
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 対戦エリア -->
+    <div id="shogiGameArea" style="display:none;"></div>
   </div>
 
 
@@ -1199,7 +1247,7 @@ button.back {
         ← コーナーへ
       </button>
       <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 14px; font-weight:bold; border-radius:8px;">
-        🚨 緊急回避 (数学)
+        🚨 緊急回避
       </button>
     </div>
 
@@ -1324,7 +1372,7 @@ button.back {
         ← コーナーへ
       </button>
       <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 14px; font-weight:bold; border-radius:8px;">
-        🚨 緊急回避 (数学)
+        🚨 緊急回避
       </button>
     </div>
 
@@ -1437,7 +1485,7 @@ button.back {
         ← コーナーへ
       </button>
       <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 14px; font-weight:bold; border-radius:8px;">
-        🚨 緊急回避 (数学)
+        🚨 緊急回避
       </button>
     </div>
 
@@ -1542,7 +1590,7 @@ button.back {
         ← コーナーへ
       </button>
       <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 14px; font-weight:bold; border-radius:8px;">
-        🚨 緊急回避 (数学)
+        🚨 緊急回避
       </button>
     </div>
 
@@ -1679,7 +1727,7 @@ button.back {
           ⚙️ ハウスルール
         </button>
         <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 12px; font-weight:bold; border-radius:8px;">
-          🚨 緊急回避 (数学)
+          🚨 緊急回避
         </button>
       </div>
     </div>
@@ -1816,7 +1864,7 @@ button.back {
           🆕 新ゲーム
         </button>
         <button onclick="panicEscape()" style="background:#dc2626; color:#fff; width:auto; padding:6px 12px; font-weight:bold; border-radius:8px;">
-          🚨 緊急回避 (数学)
+          🚨 緊急回避
         </button>
       </div>
     </div>
@@ -1860,6 +1908,7 @@ button.back {
 <script src="js/three.min.js"></script>
 <script src="js/brawl3d.js"></script>
 <script src="js/fortnite3d.js"></script>
+<script src="shogi.js?v=20261106_1"></script>
 
 <script type="module">
 
@@ -2612,6 +2661,7 @@ if (!joinedGame) {
     "solitaireScreen",
     "paperScreen",
     "brawlScreen",
+    "shogiScreen",
     "notificationScreen",
     "dmScreen"
   ].some((sId) => {
@@ -3329,7 +3379,8 @@ window.hideAllScreens = function () {
     "solitaireScreen",
     "paperScreen",
     "brawlScreen",
-    "fortniteScreen"
+    "fortniteScreen",
+    "shogiScreen"
   ];
   ids.forEach((id) => {
     const el = document.getElementById(id);
@@ -5478,16 +5529,155 @@ async function loadProfilePosts(
    緊急回避 & ゲームコーナー & オセロ
 ====================== */
 
+let currentPanicSubject = localStorage.getItem("myyajuu_panic_subj") || "kokugo";
+
+window.switchPanicSubject = function (subj) {
+  currentPanicSubject = subj;
+  try { localStorage.setItem("myyajuu_panic_subj", subj); } catch (_) {}
+  const subjects = ["kokugo", "english", "rika"];
+  const colors = { kokugo: "#dc2626", english: "#2563eb", rika: "#059669" };
+  subjects.forEach(s => {
+    const tab = document.getElementById("panicTab" + s.charAt(0).toUpperCase() + s.slice(1));
+    const content = document.getElementById("panicContent" + s.charAt(0).toUpperCase() + s.slice(1));
+    if (tab && content) {
+      if (s === subj) {
+        tab.style.background = colors[s];
+        tab.style.color = "#fff";
+        tab.style.border = "none";
+        content.style.display = "block";
+      } else {
+        tab.style.background = "#f3f4f6";
+        tab.style.color = "#4b5563";
+        tab.style.border = "1px solid #d1d5db";
+        content.style.display = "none";
+      }
+    }
+  });
+};
+
+window.dismissPanicEscape = function () {
+  const overlay = document.getElementById("panicEscapeOverlay");
+  if (overlay) overlay.style.display = "none";
+};
+
 window.panicEscape = function () {
-  if (othelloUnsub) {
-    othelloUnsub();
-    othelloUnsub = null;
+  if (othelloUnsub) { othelloUnsub(); othelloUnsub = null; }
+  if (typeof unoUnsub !== "undefined" && unoUnsub) { unoUnsub(); unoUnsub = null; }
+  if (typeof shogiUnsub !== "undefined" && shogiUnsub) { shogiUnsub(); shogiUnsub = null; }
+  const overlay = document.getElementById("panicEscapeOverlay");
+  if (overlay) {
+    overlay.style.display = "block";
+    switchPanicSubject(currentPanicSubject);
   }
-  if (typeof unoUnsub !== "undefined" && unoUnsub) {
-    unoUnsub();
-    unoUnsub = null;
+};
+
+/* ======================
+   将棋 (Shogi) コントローラー
+====================== */
+let shogiUnsub = null;
+let currentShogiRoom = null;
+
+window.openShogiHub = function () {
+  window.hideAllScreens();
+  document.getElementById("shogiScreen").style.display = "block";
+  document.getElementById("shogiLobby").style.display = "block";
+  document.getElementById("shogiGameArea").style.display = "none";
+};
+
+window.leaveShogiGame = function () {
+  if (shogiUnsub) { shogiUnsub(); shogiUnsub = null; }
+  if (window._stopShogi) window._stopShogi();
+  openShogiHub();
+};
+
+window.startShogiVsCpu = function () {
+  document.getElementById("shogiLobby").style.display = "none";
+  const area = document.getElementById("shogiGameArea");
+  area.style.display = "block";
+  if (window.renderShogiGame) {
+    window.renderShogiGame(area, null, { difficulty: "normal", myRole: 1, opponentName: "CPU" });
   }
-  window.location.href = "https://www.google.com/search?q=" + encodeURIComponent("数学 一次関数");
+};
+
+window.joinShogiOnlineFromInput = function () {
+  const code = document.getElementById("shogiRoomCodeInput").value.trim();
+  if (!code) {
+    showModernAlert("合言葉を入力してください");
+    return;
+  }
+  joinShogiOnlineRoom(code);
+};
+
+window.joinShogiOnlineRoom = function (roomCode) {
+  document.getElementById("shogiLobby").style.display = "none";
+  const area = document.getElementById("shogiGameArea");
+  area.style.display = "block";
+  currentShogiRoom = roomCode;
+
+  const roomRef = db.collection("shogi_rooms").doc(roomCode);
+  const myUid = currentUser ? currentUser.uid : "guest";
+  const myName = currentUser ? (currentUser.displayName || "あなた") : "あなた";
+
+  roomRef.get().then(doc => {
+    let myRole = 1;
+    let oppName = "対戦相手";
+
+    if (!doc.exists) {
+      roomRef.set({
+        hostUid: myUid,
+        hostName: myName,
+        guestUid: null,
+        guestName: null,
+        status: "waiting",
+        turn: 1,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      myRole = 1;
+    } else {
+      const data = doc.data();
+      if (data.hostUid === myUid) {
+        myRole = 1;
+        oppName = data.guestName || "対戦相手";
+      } else {
+        myRole = 2;
+        oppName = data.hostName || "対戦相手";
+        if (!data.guestUid) {
+          roomRef.update({
+            guestUid: myUid,
+            guestName: myName,
+            status: "playing"
+          });
+        }
+      }
+    }
+
+    if (window.renderShogiGame) {
+      window.renderShogiGame(area, roomCode, {
+        isOnline: true,
+        myRole,
+        opponentName: oppName,
+        onSendMove: (state) => {
+          roomRef.update({
+            state,
+            turn: state.turn,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }).catch(e => console.warn("Shogi sync err:", e));
+        }
+      });
+    }
+
+    if (shogiUnsub) shogiUnsub();
+    shogiUnsub = roomRef.onSnapshot(sDoc => {
+      if (sDoc.exists) {
+        const sData = sDoc.data();
+        if (sData.state && window._applyRemoteShogiState) {
+          window._applyRemoteShogiState(sData.state);
+        }
+      }
+    });
+  }).catch(err => {
+    showModernAlert("ルーム接続エラー: " + err.message);
+  });
 };
 
 window.addEventListener("keydown", function (e) {
@@ -10672,6 +10862,70 @@ function brawlLoop() {
 }
 
 </script>
+
+
+<!-- ======================
+     緊急回避 全画面学習ノート (国語・英語・理科)
+======================= -->
+<div id="panicEscapeOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#ffffff; color:#1f2937; z-index:2147483647; overflow-y:auto; font-family:'Hiragino Mincho ProN', 'Yu Mincho', serif; padding:20px; box-sizing:border-box;">
+  <div style="max-width:760px; margin:0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #e5e7eb; padding-bottom:12px; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+      <div style="display:flex; gap:6px;">
+        <button id="panicTabKokugo" onclick="switchPanicSubject('kokugo')" style="background:#dc2626; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:13px; font-family:sans-serif;">📖 国語（現代文・古典）</button>
+        <button id="panicTabEnglish" onclick="switchPanicSubject('english')" style="background:#f3f4f6; color:#4b5563; border:1px solid #d1d5db; padding:8px 16px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:13px; font-family:sans-serif;">📝 英語（Reading & Grammar）</button>
+        <button id="panicTabRika" onclick="switchPanicSubject('rika')" style="background:#f3f4f6; color:#4b5563; border:1px solid #d1d5db; padding:8px 16px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:13px; font-family:sans-serif;">🔬 理科（物理・化学基礎）</button>
+      </div>
+      <button onclick="dismissPanicEscape()" style="background:#e5e7eb; color:#6b7280; border:none; padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; font-family:sans-serif;">✕ 復帰</button>
+    </div>
+
+    <div id="panicContentKokugo">
+      <h2 style="font-size:20px; color:#111827; margin:0 0 8px; border-left:4px solid #dc2626; padding-left:10px;">現代文・古文 演習ノート (第4講)</h2>
+      <p style="font-size:13px; color:#6b7280; margin:0 0 16px;">単元: 近代文学の成立と人間心理の相克（芥川龍之介『羅生門』）</p>
+      <div style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:16px; margin-bottom:16px; font-size:14px; line-height:1.8;">
+        <strong>【問題】</strong>「ある日の暮方の事である。一人の下人が、羅生門の下で雨やみを待っていた。」<br>
+        下人が羅生門の下に取り残され、「盗人になるよりほかに仕方がない」と思いつめながらも踏み切れない心理の変遷について、本文中の描写に即して60字以内で説明せよ。<br>
+        <hr style="border:none; border-top:1px dashed #d1d5db; margin:12px 0;">
+        <span style="color:#b91c1c; font-weight:bold;">【解答・解説メモ】</span><br>
+        行き場を失い飢え死にするか盗人になるかの極限状態にあっても、わずかに残る倫理観と逡巡により決断できずにいたが、老婆の生存の論理を目の当たりにしたことで悪の肯定へと至る。
+      </div>
+      <div style="font-size:13px; color:#4b5563; line-height:1.7;">
+        <strong>【古文単語・文法確認】</strong><br>
+        ・「あはれなり」: しみじみと心に深く感じられるさま（情趣・哀愁）<br>
+        ・助動詞「けり」: 過去（〜した）・詠嘆（〜だなあ）の識別
+      </div>
+    </div>
+
+    <div id="panicContentEnglish" style="display:none;">
+      <h2 style="font-size:20px; color:#111827; margin:0 0 8px; border-left:4px solid #2563eb; padding-left:10px;">Standard English Reading & Grammar (Lesson 5)</h2>
+      <p style="font-size:13px; color:#6b7280; margin:0 0 16px;">Topic: Technological Innovation and Human Society</p>
+      <div style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:16px; margin-bottom:16px; font-size:14px; line-height:1.8; font-family:sans-serif;">
+        <strong>【Reading Passage】</strong><br>
+        "Artificial intelligence is rapidly transforming modern society, from language translation to medical diagnosis. While automated systems can analyze vast amounts of data in seconds, critical thinking and emotional intelligence remain irreplaceable human qualities."<br>
+        <hr style="border:none; border-top:1px dashed #d1d5db; margin:12px 0;">
+        <strong style="color:#1d4ed8;">【Grammar Key Points】</strong><br>
+        1. <strong>Subordinating Conjunction:</strong> "While ~" expresses contrast (= whereas).<br>
+        2. <strong>Subjunctive Past Perfect:</strong> <em>"If I had studied harder, I would have passed the exam."</em> (仮定法過去完了)
+      </div>
+    </div>
+
+    <div id="panicContentRika" style="display:none;">
+      <h2 style="font-size:20px; color:#111827; margin:0 0 8px; border-left:4px solid #059669; padding-left:10px;">高等学校 理科総合（物理・化学基礎）ノート</h2>
+      <p style="font-size:13px; color:#6b7280; margin:0 0 16px;">単元: 運動の法則・酸化還元反応とエネルギー保存</p>
+      <div style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:16px; margin-bottom:16px; font-size:14px; line-height:1.8;">
+        <strong>【物理基礎: 等加速度直線運動の解析】</strong><br>
+        初速度 $v_0 = 4.0\text{ m/s}$、加速度 $a = 2.0\text{ m/s}^2$ で直線上を運動する物体において、$t = 3.0\text{ s}$ 後の速度 $v$ および変位 $x$:<br>
+        ・$v = v_0 + at = 4.0 + 2.0 \times 3.0 = 10.0\text{ m/s}$<br>
+        ・$x = v_0 t + \frac{1}{2}at^2 = 4.0 \times 3.0 + \frac{1}{2} \times 2.0 \times (3.0)^2 = 12.0 + 9.0 = 21.0\text{ m}$
+      </div>
+      <div style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:16px; font-size:14px; line-height:1.8;">
+        <strong>【化学基礎: 酸化還元反応と電子の移動】</strong><br>
+        $2\text{Mg} + \text{O}_2 \longrightarrow 2\text{MgO}$<br>
+        ・マグネシウム $\text{Mg}$ は電子を失い酸化された（$\text{Mg} \rightarrow \text{Mg}^{2+} + 2e^-$）。<br>
+        ・酸素 $\text{O}_2$ は電子を受け取り還元された（$\text{O}_2 + 4e^- \rightarrow 2\text{O}^{2-}$）。
+      </div>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>

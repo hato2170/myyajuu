@@ -620,14 +620,17 @@ async function generateAndShowImage(promptText) {
       if (resp.ok) {
         const data = await resp.json();
         if (data.image) imgDataUrl = data.image;
+      } else {
+        const errData = await resp.json().catch(() => ({}));
+        throw new Error(errData.message || "現在サーバーが混雑しています");
       }
     } catch (e) {
-      console.warn("Worker image endpoint failed, using fallback generator:", e);
+      console.warn("Worker image endpoint error:", e);
+      throw e;
     }
 
     if (!imgDataUrl) {
-      // フォールバック: Pollinations 高速AI画像生成 (無料・キー不要)
-      imgDataUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptText)}?width=512&height=512&nologo=true`;
+      throw new Error("画像の生成に失敗しました。少し待ってから再度お試しください。");
     }
 
     // 回答バブルを更新して画像を表示
@@ -644,8 +647,19 @@ async function generateAndShowImage(promptText) {
 }
 
 // メッセージ送信
-async function sendMessage(text) {
+async function sendMessage(rawText) {
   if (!currentUser || generating || loadingHistory) return;
+
+  const attachment = currentAttachment;
+  let text = (rawText || "").trim();
+
+  if (!text && attachment?.type === "image") {
+    text = "この画像を送信しました。";
+  } else if (!text && attachment?.type === "text") {
+    text = "添付ファイルを確認してください。";
+  }
+
+  if (!text) return;
 
   if (text.startsWith("/image") || text.startsWith("画像生成:") || text.startsWith("画像生成：")) {
     const imgPrompt = text.replace(/^(\/image|画像生成[:：])\s*/i, "").trim();
@@ -663,16 +677,21 @@ async function sendMessage(text) {
   const sendAuthVersion = authStateVersion;
   const targetModelId = selectedModelId;
   const targetModelInfo = MODEL_CATALOG[targetModelId] || MODEL_CATALOG["@cf/meta/llama-3.2-3b-instruct"];
-  const attachment = currentAttachment;
+  
   let fullMessageText = text;
   if (attachment?.type === "text") {
-    fullMessageText += `\n\n【添付テキストファイル: ${attachment.name}】\n${attachment.content}`;
+    const budget = Math.max(200, 1350 - [...text].length);
+    let snippet = attachment.content;
+    if ([...snippet].length > budget) {
+      snippet = [...snippet].slice(0, budget).join("") + "\n…(上限のため一部抜粋)";
+    }
+    fullMessageText += `\n\n【添付: ${attachment.name}】\n${snippet}`;
+  } else if (attachment?.type === "image") {
+    fullMessageText += `\n\n【添付画像: ${attachment.name}】`;
   }
-  if ([...fullMessageText].length > 1500) {
-    showError("メッセージと添付テキストは合計1,500文字以内にしてください。");
-    promptEl.value = text;
-    promptEl.focus();
-    return;
+
+  if ([...fullMessageText].length > 1450) {
+    fullMessageText = [...fullMessageText].slice(0, 1450).join("");
   }
 
   const requestVersion = ++generationRequestVersion;
