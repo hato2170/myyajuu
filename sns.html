@@ -1148,7 +1148,40 @@ button.back {
         </div>
       </div>
     </div>
-      <div style="background:#161b22; border:1px solid #30363d; border-radius:12px; padding:16px; cursor:pointer; margin-top:10px;" onclick="openBrawlHub()">
+      
+      <!-- 🕵️ web乃木 (別班通信) · 天才プロキシ -->
+      <div style="background:linear-gradient(135deg, #1e293b, #0f172a); border:1px solid #38bdf8; border-radius:12px; padding:16px; cursor:pointer; margin-top:10px; box-shadow:0 4px 14px rgba(56,189,248,0.15);" onclick="location.href='/tensai-proxy/'">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <h3 style="margin:0 0 6px 0; color:#38bdf8; font-size:18px;">🕵️ web乃木 (別班通信)</h3>
+            <p style="margin:0; color:#cbd5e1; font-size:13px;">URL入力でPokiや好きなWebサイトを学校のiPadでも完全回避閲覧！</p>
+          </div>
+          <span style="font-size:20px; color:#38bdf8;">▶</span>
+        </div>
+      </div>
+
+      <!-- 📺 やじゅtube · MP4動画プレイヤー -->
+      <div style="background:linear-gradient(135deg, #1e293b, #0f172a); border:1px solid #ef4444; border-radius:12px; padding:16px; cursor:pointer; margin-top:10px; box-shadow:0 4px 14px rgba(239,68,68,0.15);" onclick="location.href='/tube/'">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <h3 style="margin:0 0 6px 0; color:#f87171; font-size:18px;">📺 やじゅtube</h3>
+            <p style="margin:0; color:#cbd5e1; font-size:13px;">YouTube公式枠なし・広告ゼロ・MP4プレイヤー風の高速動画再生！</p>
+          </div>
+          <span style="font-size:20px; color:#f87171;">▶</span>
+        </div>
+      </div>
+
+      <!-- 🎵 yaju&king · ミュージック -->
+      <div style="background:linear-gradient(135deg, #1e293b, #0f172a); border:1px solid #fa243c; border-radius:12px; padding:16px; cursor:pointer; margin-top:10px; box-shadow:0 4px 14px rgba(250,36,60,0.15);" onclick="location.href='/music/'">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <h3 style="margin:0 0 6px 0; color:#fa243c; font-size:18px;">🎵 yaju&king ミュージック</h3>
+            <p style="margin:0; color:#cbd5e1; font-size:13px;">Apple Music風デザイン！STUTSやLEX等の「畑」プレイリスト内蔵・BGM再生！</p>
+          </div>
+          <span style="font-size:20px; color:#fa243c;">▶</span>
+        </div>
+      </div>
+<div style="background:#161b22; border:1px solid #30363d; border-radius:12px; padding:16px; cursor:pointer; margin-top:10px;" onclick="openBrawlHub()">
         <div style="display:flex; align-items:center; justify-content:space-between;">
           <div>
             <h3 style="margin:0 0 6px 0; color:#f59e0b; font-size:18px;">⭐ ブロスタ（Brawl Stars）</h3>
@@ -9911,18 +9944,18 @@ function drawPaperGame() {
 const BRAWL_SERVERS = {
   1: {
     name: "本家3D WebGL版 (StaticQuasar)",
-    url: "https://staticquasar931.github.io/Brawl-Stars/",
-    desc: "サーバー1: 本家3D WebGL版ブロスタです。全画面＆ジェムグラブ対戦対応！"
+    url: "https://mokori.onrender.com/api/proxy?url=" + encodeURIComponent("https://staticquasar931.github.io/Brawl-Stars/"),
+    desc: "サーバー1: 本家3D WebGL版ブロスタ（プロキシ中継・学校フィルター完全回避）"
   },
   2: {
     name: "TurboWarp 60FPS版 (全69キャラ)",
-    url: "https://turbowarp.org/544538470/embed?autoplay=true",
-    desc: "サーバー2: 高速60FPS・全69キャラ完全再現版です。"
+    url: "https://mokori.onrender.com/api/proxy?url=" + encodeURIComponent("https://turbowarp.org/544538470/embed?autoplay=true"),
+    desc: "サーバー2: 高速60FPS・全69キャラ版（プロキシ中継・学校フィルター完全回避）"
   },
   3: {
     name: "TurboWarp最新アプデ版 (Gods vs Monsters)",
-    url: "https://turbowarp.org/1059386427/embed?autoplay=true",
-    desc: "サーバー3: 最新アップデート（Gods vs Monsters）版です。"
+    url: "https://mokori.onrender.com/api/proxy?url=" + encodeURIComponent("https://turbowarp.org/1059386427/embed?autoplay=true"),
+    desc: "サーバー3: 最新アプデ版（プロキシ中継・学校フィルター完全回避）"
   }
 };
 let currentBrawlServer = 1;
@@ -10021,22 +10054,38 @@ window.leaveBrawlGame = function () {
 };
 
 window.switchBrawlTab = function (mode) {
+  const t3d = document.getElementById("brawlTab3DBtn");
   const t2d = document.getElementById("brawlTab2DBtn");
   const tOff = document.getElementById("brawlTabOfficialBtn");
+  const c3d = document.getElementById("brawl3DContainer");
   const c2d = document.getElementById("brawl2DContainer");
   const cOff = document.getElementById("brawlOfficialContainer");
   if (!t2d || !tOff || !c2d || !cOff) return;
 
-  currentBrawlTab = mode === "official" ? "official" : "2d";
-  if (currentBrawlTab === "official") {
-    t2d.style.background = "#1e293b";
-    t2d.style.color = "#94a3b8";
-    t2d.style.border = "1px solid #334155";
+  currentBrawlTab = mode;
+
+  // タブボタンスタイルの初期化
+  if (t3d) { t3d.style.background = "#1e293b"; t3d.style.color = "#94a3b8"; t3d.style.border = "1px solid #334155"; }
+  t2d.style.background = "#1e293b"; t2d.style.color = "#94a3b8"; t2d.style.border = "1px solid #334155";
+  tOff.style.background = "#1e293b"; tOff.style.color = "#94a3b8"; tOff.style.border = "1px solid #334155";
+
+  if (mode === "3d") {
+    if (t3d) { t3d.style.background = "#f59e0b"; t3d.style.color = "#fff"; t3d.style.border = "none"; }
+    if (c3d) c3d.style.display = "block";
+    c2d.style.display = "none";
+    cOff.style.display = "none";
+    stopBrawlLoop();
+    if (window.start3DBrawlGame && c3d) {
+      window.start3DBrawlGame(c3d, "shelly");
+    }
+  } else if (mode === "official") {
     tOff.style.background = "#0284c7";
     tOff.style.color = "#fff";
     tOff.style.border = "none";
+    if (c3d) c3d.style.display = "none";
     c2d.style.display = "none";
     cOff.style.display = "block";
+    if (window.stop3DBrawlGame) window.stop3DBrawlGame();
     stopBrawlLoop();
     const iframe = document.getElementById("brawlOfficialIframe");
     if (iframe && (!iframe.src || iframe.src === "about:blank")) {
@@ -10046,11 +10095,12 @@ window.switchBrawlTab = function (mode) {
     t2d.style.background = "#f59e0b";
     t2d.style.color = "#fff";
     t2d.style.border = "none";
-    tOff.style.background = "#1e293b";
-    tOff.style.color = "#94a3b8";
-    tOff.style.border = "1px solid #334155";
+    if (c3d) c3d.style.display = "none";
     c2d.style.display = "block";
     cOff.style.display = "none";
+    if (window.stop3DBrawlGame) window.stop3DBrawlGame();
+    const iframe = document.getElementById("brawlOfficialIframe");
+    if (iframe) iframe.src = "about:blank";
     startBrawlGame();
   }
 };
