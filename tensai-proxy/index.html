@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="theme-color" content="#0f172a">
-  <title>web乃木 (別班通信) · 高速Webプロキシ</title>
+  <title>天才プロキシ · 高速Webプロキシ</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -245,10 +245,10 @@
   <header>
     <div class="logo">
       <span>⚡</span>
-      <span>web乃木 (別班通信)</span>
+      <span>天才プロキシ</span>
     </div>
     <div style="display:flex; gap:8px; align-items:center;">
-      <a href="/tube/" style="color:#f8fafc; text-decoration:none; font-size:12px; font-weight:600; padding:6px 10px; background:#1e293b; border-radius:8px;">📺 若雪幸せTube</a>
+      <a href="/tube/" style="color:#f8fafc; text-decoration:none; font-size:12px; font-weight:600; padding:6px 10px; background:#1e293b; border-radius:8px;">📺 やじゅTube</a>
       <a href="/music/" style="color:#f8fafc; text-decoration:none; font-size:12px; font-weight:600; padding:6px 10px; background:#1e293b; border-radius:8px;">🎵 ミュージック</a>
       <button class="stealth-btn" onclick="toggleStealth()">
         <span>🚨</span>
@@ -268,14 +268,29 @@
       </div>
 
       <div class="quick-tiles">
-        <div class="tile" onclick="launchUrl('https://poki.com')">
+        <div class="tile" onclick="launchUrl('https://poki.com/jp')">
           <div class="icon">🎮</div>
           <div class="name">Poki Games</div>
           <div class="desc">人気ゲーム遊び放題</div>
         </div>
+        <div class="tile" onclick="launchUrl('https://poki.com/jp/g/drive-mad')">
+          <div class="icon">🚗</div>
+          <div class="name">Drive Mad</div>
+          <div class="desc">大人気カーアクション</div>
+        </div>
+        <div class="tile" onclick="launchUrl('https://poki.com/jp/g/level-devil')">
+          <div class="icon">😈</div>
+          <div class="name">Level Devil</div>
+          <div class="desc">理不尽トラップ鬼畜ゲー</div>
+        </div>
+        <div class="tile" onclick="launchUrl('https://poki.com/jp/g/subway-surfers')">
+          <div class="icon">🏃</div>
+          <div class="name">Subway Surfers</div>
+          <div class="desc">爽快エンドレス走破</div>
+        </div>
         <div class="tile" onclick="location.href='/tube/'">
           <div class="icon">❄️</div>
-          <div class="name">若雪幸せTube</div>
+          <div class="name">やじゅTube</div>
           <div class="desc">MP4風動画再生</div>
         </div>
         <div class="tile" onclick="location.href='/music/'">
@@ -346,7 +361,7 @@
 
     function launchUrl(url) {
       activeUrl = url;
-      const proxyUrl = "https://mokori.onrender.com/api/proxy?url=" + encodeURIComponent(url);
+      const proxyUrl = "/api/proxy?url=" + encodeURIComponent(url);
       document.getElementById("homeView").style.display = "none";
       document.getElementById("browserView").style.display = "flex";
       document.getElementById("currentLoadedUrl").textContent = url;
@@ -365,7 +380,7 @@
 
     function openExternal() {
       if (activeUrl) {
-        window.open("https://mokori.onrender.com/api/proxy?url=" + encodeURIComponent(activeUrl), "_blank");
+        window.open("/api/proxy?url=" + encodeURIComponent(activeUrl), "_blank");
       }
     }
 
