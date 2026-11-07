@@ -361,7 +361,9 @@
 
     function launchUrl(url) {
       activeUrl = url;
-      const proxyUrl = "/api/proxy?url=" + encodeURIComponent(url);
+      const API_BASE = "https://mokori.onrender.com";
+      const proxyUrl = API_BASE + "/api/proxy?url=" + encodeURIComponent(url);
+      window.open("https://mokori.onrender.com/api/proxy?url=" + encodeURIComponent(activeUrl), "_blank");
       document.getElementById("homeView").style.display = "none";
       document.getElementById("browserView").style.display = "flex";
       document.getElementById("currentLoadedUrl").textContent = url;
