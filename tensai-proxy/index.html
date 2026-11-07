@@ -360,15 +360,14 @@
     }
 
     function launchUrl(url) {
-      activeUrl = url;
-      const API_BASE = "https://mokori.onrender.com";
-      const proxyUrl = API_BASE + "/api/proxy?url=" + encodeURIComponent(url);
-      window.open("https://mokori.onrender.com/api/proxy?url=" + encodeURIComponent(activeUrl), "_blank");
-      document.getElementById("homeView").style.display = "none";
-      document.getElementById("browserView").style.display = "flex";
-      document.getElementById("currentLoadedUrl").textContent = url;
-      document.getElementById("proxyIframe").src = proxyUrl;
-    }
+     activeUrl = url;
+     const API_BASE = "https://mokori.onrender.com";
+     const proxyUrl = API_BASE + "/api/proxy?url=" + encodeURIComponent(url);
+     document.getElementById("homeView").style.display = "none";
+     document.getElementById("browserView").style.display = "flex";
+     document.getElementById("currentLoadedUrl").textContent = url;
+     document.getElementById("proxyIframe").src = proxyUrl;
+   }
 
     function closeBrowserView() {
       document.getElementById("browserView").style.display = "none";
@@ -381,10 +380,13 @@
     }
 
     function openExternal() {
-      if (activeUrl) {
-        window.open("/api/proxy?url=" + encodeURIComponent(activeUrl), "_blank");
-      }
-    }
+     if (activeUrl) {
+     window.open("https://mokori.onrender.com/api/proxy?url=" + encodeURIComponent(activeUrl), "_blank");
+     }
+   }
+
+
+
 
     function toggleStealth() {
       const overlay = document.getElementById("panicOverlay");
