@@ -248,7 +248,7 @@
       <span>天才プロキシ</span>
     </div>
     <div style="display:flex; gap:8px; align-items:center;">
-      <a href="/tube/" style="color:#f8fafc; text-decoration:none; font-size:12px; font-weight:600; padding:6px 10px; background:#1e293b; border-radius:8px;">📺 やじゅTube</a>
+      <a href="/tube/" style="color:#f8fafc; text-decoration:none; font-size:12px; font-weight:600; padding:6px 10px; background:#1e293b; border-radius:8px;">📺 若雪幸せTube</a>
       <a href="/music/" style="color:#f8fafc; text-decoration:none; font-size:12px; font-weight:600; padding:6px 10px; background:#1e293b; border-radius:8px;">🎵 ミュージック</a>
       <button class="stealth-btn" onclick="toggleStealth()">
         <span>🚨</span>
@@ -270,23 +270,28 @@
       <div class="quick-tiles">
         <div class="tile" onclick="launchUrl('https://poki.com/jp')">
           <div class="icon">🎮</div>
-          <div class="name">Poki Games</div>
-          <div class="desc">人気ゲーム遊び放題</div>
+          <div class="name">Poki (ポキ)</div>
+          <div class="desc">公式ゲームポータル</div>
         </div>
-        <div class="tile" onclick="launchUrl('https://poki.com/jp/g/drive-mad')">
+        <div class="tile" onclick="launchUrl('https://anonymousbirb5100.github.io/drive-mad/drive-mad-new/')">
           <div class="icon">🚗</div>
           <div class="name">Drive Mad</div>
           <div class="desc">大人気カーアクション</div>
         </div>
-        <div class="tile" onclick="launchUrl('https://poki.com/jp/g/level-devil')">
+        <div class="tile" onclick="launchUrl('https://10minutestilldawnonline.github.io/a77/level-devil/')">
           <div class="icon">😈</div>
           <div class="name">Level Devil</div>
           <div class="desc">理不尽トラップ鬼畜ゲー</div>
         </div>
-        <div class="tile" onclick="launchUrl('https://poki.com/jp/g/subway-surfers')">
+        <div class="tile" onclick="launchUrl('https://arcadeclash.github.io/subway-surfers-unblocked/')">
           <div class="icon">🏃</div>
           <div class="name">Subway Surfers</div>
           <div class="desc">爽快エンドレス走破</div>
+        </div>
+        <div class="tile" onclick="launchUrl('https://turbowarp.org')">
+          <div class="icon">🚀</div>
+          <div class="name">TurboWarp</div>
+          <div class="desc">高速Scratch</div>
         </div>
         <div class="tile" onclick="location.href='/tube/'">
           <div class="icon">❄️</div>
@@ -295,23 +300,18 @@
         </div>
         <div class="tile" onclick="location.href='/music/'">
           <div class="icon">🎵</div>
-          <div class="name">ミュージック</div>
-          <div class="desc">Apple Music風</div>
-        </div>
-        <div class="tile" onclick="launchUrl('https://turbowarp.org')">
-          <div class="icon">🚀</div>
-          <div class="name">TurboWarp</div>
-          <div class="desc">高速Scratch</div>
-        </div>
-        <div class="tile" onclick="launchUrl('https://ja.wikipedia.org')">
-          <div class="icon">📖</div>
-          <div class="name">Wikipedia</div>
-          <div class="desc">百科事典</div>
+          <div class="name">yaju&king ミュージック</div>
+          <div class="desc">フル尺音楽再生</div>
         </div>
         <div class="tile" onclick="launchUrl('https://html.duckduckgo.com/html/')">
           <div class="icon">🦆</div>
           <div class="name">DuckDuckGo</div>
           <div class="desc">安全なWeb検索</div>
+        </div>
+        <div class="tile" onclick="launchUrl('https://ja.wikipedia.org')">
+          <div class="icon">📖</div>
+          <div class="name">Wikipedia</div>
+          <div class="desc">百科事典</div>
         </div>
       </div>
     </div>
@@ -360,14 +360,13 @@
     }
 
     function launchUrl(url) {
-     activeUrl = url;
-     const API_BASE = "https://mokori.onrender.com";
-     const proxyUrl = API_BASE + "/api/proxy?url=" + encodeURIComponent(url);
-     document.getElementById("homeView").style.display = "none";
-     document.getElementById("browserView").style.display = "flex";
-     document.getElementById("currentLoadedUrl").textContent = url;
-     document.getElementById("proxyIframe").src = proxyUrl;
-   }
+      activeUrl = url;
+      const proxyUrl = "https://mokori.onrender.com/api/proxy?url=" + encodeURIComponent(url);
+      document.getElementById("homeView").style.display = "none";
+      document.getElementById("browserView").style.display = "flex";
+      document.getElementById("currentLoadedUrl").textContent = url;
+      document.getElementById("proxyIframe").src = proxyUrl;
+    }
 
     function closeBrowserView() {
       document.getElementById("browserView").style.display = "none";
@@ -380,13 +379,10 @@
     }
 
     function openExternal() {
-     if (activeUrl) {
-     window.open("https://mokori.onrender.com/api/proxy?url=" + encodeURIComponent(activeUrl), "_blank");
-     }
-   }
-
-
-
+      if (activeUrl) {
+        window.open("https://mokori.onrender.com/api/proxy?url=" + encodeURIComponent(activeUrl), "_blank");
+      }
+    }
 
     function toggleStealth() {
       const overlay = document.getElementById("panicOverlay");
