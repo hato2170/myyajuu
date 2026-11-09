@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="theme-color" content="#0a0f1d">
-  <title>やじゅTube · MP4動画プレイヤー</title>
+  <title>若雪幸せTube · MP4動画プレイヤー</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -232,7 +232,7 @@
   <header>
     <div class="logo">
       <span>❄️</span>
-      <span>やじゅTube</span>
+      <span>若雪幸せTube</span>
     </div>
     <div style="display:flex; gap:8px; align-items:center;">
       <a href="/tensai-proxy/" style="color:#f8fafc; text-decoration:none; font-size:12px; font-weight:600; padding:6px 10px; background:#1e293b; border-radius:8px;">⚡ 天才プロキシ</a>
@@ -361,9 +361,9 @@
       syncAudio.load();
       const frame = document.getElementById("tubeFrame");
       frame.style.display = "block";
-      frame.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(currentVideoId)}?autoplay=1&playsinline=1&controls=1`;
+      frame.src = `${API_BASE}/api/tube/stream?v=${encodeURIComponent(currentVideoId)}`;
       mp4Video.style.display = "none";
-      setMp4Status(message || "⚠️ MP4を再生できないため、YouTubeプレイヤーに切り替えました");
+      setMp4Status(message || "🎓 学校iPad安心モード（Educationプレイヤー）に切り替えました");
     }
     function scheduleYoutubeFallback(message) {
       if (mediaLoadTimer || usingYoutubeFallback) return;
@@ -584,7 +584,7 @@
     }
 
     function openExternalPip() {
-      window.open(`https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&playsinline=1`, "_blank");
+      window.open(`${API_BASE}/api/tube/stream?v=${currentVideoId}`, "_blank");
     }
 
     function copyShareUrl() {

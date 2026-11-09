@@ -293,6 +293,16 @@
           <div class="name">TurboWarp</div>
           <div class="desc">高速Scratch</div>
         </div>
+        <div class="tile" onclick="launchUrl('https://www.instagram.com')">
+          <div class="icon">📸</div>
+          <div class="name">Instagram</div>
+          <div class="desc">写真・リール動画</div>
+        </div>
+        <div class="tile" onclick="launchUrl('https://www.tiktok.com')">
+          <div class="icon">🎵</div>
+          <div class="name">TikTok</div>
+          <div class="desc">ショート動画閲覧</div>
+        </div>
         <div class="tile" onclick="location.href='/tube/'">
           <div class="icon">❄️</div>
           <div class="name">若雪幸せTube</div>
@@ -344,7 +354,6 @@
 
   <script>
     let activeUrl = "";
-    const PROXY_API_BASE = window.location.origin.includes("mokori") ? "" : "https://mokori.onrender.com";
 
     function youtubeTubePath(value) {
       try {
@@ -386,7 +395,7 @@
 
     function launchUrl(url) {
       activeUrl = url;
-      const proxyUrl = `${PROXY_API_BASE}/api/proxy?url=` + encodeURIComponent(url);
+      const proxyUrl = "/api/proxy?url=" + encodeURIComponent(url);
       document.getElementById("homeView").style.display = "none";
       document.getElementById("browserView").style.display = "flex";
       document.getElementById("currentLoadedUrl").textContent = url;
@@ -405,7 +414,7 @@
 
     function openExternal() {
       if (activeUrl) {
-        window.open(`${PROXY_API_BASE}/api/proxy?url=` + encodeURIComponent(activeUrl), "_blank");
+        window.open("/api/proxy?url=" + encodeURIComponent(activeUrl), "_blank");
       }
     }
 
