@@ -393,9 +393,11 @@
       launchUrl(url);
     }
 
+    const API_BASE = window.location.origin.includes("mokori") ? "" : "https://mokori.onrender.com";
+
     function launchUrl(url) {
       activeUrl = url;
-      const proxyUrl = "/api/proxy?url=" + encodeURIComponent(url);
+      const proxyUrl = API_BASE + "/api/proxy?url=" + encodeURIComponent(url);
       document.getElementById("homeView").style.display = "none";
       document.getElementById("browserView").style.display = "flex";
       document.getElementById("currentLoadedUrl").textContent = url;
@@ -414,7 +416,7 @@
 
     function openExternal() {
       if (activeUrl) {
-        window.open("/api/proxy?url=" + encodeURIComponent(activeUrl), "_blank");
+        window.open(API_BASE + "/api/proxy?url=" + encodeURIComponent(activeUrl), "_blank");
       }
     }
 
