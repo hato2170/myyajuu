@@ -389,7 +389,26 @@
     let audioFallbackAttempted = false;
     const audio = document.getElementById("audioEl");
 
-    const API_BASE = window.location.origin.includes("mokori") ? "" : "https://mokori.onrender.com";
+    // このページは静的ホスティングなので、APIは mokori → 避難先(japanese-japan) の順に試す
+    const API_BASES = window.location.origin.includes("mokori")
+      ? [""]
+      : ["https://mokori.onrender.com", "https://japanese-japan.onrender.com"];
+    let API_BASE = API_BASES[0];
+
+    async function apiFetch(path, { timeout = 20000, ...options } = {}) {
+      let lastError = null;
+      for (const base of API_BASES) {
+        try {
+          const res = await fetch(base + path, { ...options, signal: AbortSignal.timeout(timeout) });
+          API_BASE = base;
+          if (res.ok || (res.status >= 400 && res.status < 500)) return res; // 4xx はどこで聞いても同じ
+          lastError = new Error(`HTTP ${res.status}`);
+        } catch (err) {
+          lastError = err;
+        }
+      }
+      throw lastError || new Error("API unreachable");
+    }
 
     function absoluteAudioUrl(url) {
       try { return new URL(url, API_BASE || window.location.origin).href; }
@@ -557,7 +576,7 @@
             duration: String(durationSec)
           });
           document.getElementById("dockArtist").textContent = artist + " · 🎵 フル尺を探しています…";
-          const res = await fetch(`${API_BASE}/api/music/full?${qs.toString()}`, { cache: "no-store", signal: AbortSignal.timeout(20000) });
+          const res = await apiFetch(`/api/music/full?${qs.toString()}`, { cache: "no-store", timeout: 25000 });
           if (!res.ok) throw new Error(`full HTTP ${res.status}`);
           const data = await res.json();
           if (requestId !== playRequestId) return;
@@ -674,7 +693,7 @@
       const q = document.getElementById("musicSearchInput").value.trim();
       if (!q) return;
       try {
-        const res = await fetch(`${API_BASE}/api/music/search?q=${encodeURIComponent(q)}`);
+        const res = await apiFetch(`/api/music/search?q=${encodeURIComponent(q)}`);
         const data = await res.json();
         const songs = (data.tracks || data.results || []).filter(s => s.previewUrl);
         if (songs.length > 0) {
@@ -709,7 +728,7 @@
       } else {
         const jpopBtn = document.getElementById("tabJpop");
         if (jpopBtn) jpopBtn.classList.add("active");
-        fetch(`${API_BASE}/api/music/search?q=STUTS+Kaneee+LEX`)
+        apiFetch(`/api/music/search?q=STUTS+Kaneee+LEX`)
           .then(r => r.json())
           .then(d => {
             const songs = (d.tracks || d.results || []).filter(s => s.previewUrl);
