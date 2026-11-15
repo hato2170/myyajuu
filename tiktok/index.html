@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>もこりTikTok · myyajuu</title>
+  <meta http-equiv="refresh" content="0;url=https://mokori.onrender.com/tiktok/">
+  <style>
+    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+           background: #0f172a; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 26px 22px;
+             max-width: 420px; width: calc(100% - 40px); text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+    h1 { font-size: 19px; margin: 0 0 10px; }
+    p { color: #94a3b8; font-size: 13px; line-height: 1.7; margin: 0 0 18px; }
+    a { display: inline-block; background: #0284c7; color: #fff; text-decoration: none; font-weight: bold;
+         padding: 11px 20px; border-radius: 10px; font-size: 14px; }
+    .sub { margin-top: 14px; }
+    .sub a { background: #334155; color: #cbd5e1; font-size: 12px; padding: 8px 14px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🚀 もこりTikTok</h1>
+    <p>TikTokのおすすめ・ユーザー別・ハッシュタグ・URL再生<br>このページはもこり（mokori）側で動いているので、自動で移動します。</p>
+    <a id="go" href="https://mokori.onrender.com/tiktok/">いますぐ開く</a>
+    <div class="sub"><a href="/sns.html">myyajuu SNSへ戻る</a></div>
+  </div>
+  <script>
+    (function () {
+      var base = "https://mokori.onrender.com/tiktok/";
+      var q = window.location.search || "";
+      var h = window.location.hash || "";
+      var dest = base + (q ? (base.indexOf("?") === -1 ? q : "&" + q.slice(1)) : "") + h;
+      document.getElementById("go").href = dest;
+      window.location.replace(dest);
+    })();
+  </script>
+</body>
+</html>
