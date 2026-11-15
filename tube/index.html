@@ -312,7 +312,26 @@
     let currentVideoId = "";
     let currentMode = "mp4";
     let liveEduParam = "";
-    const API_BASE = window.location.origin.includes("mokori") ? "" : "https://mokori.onrender.com";
+    // 本体(mokori00)が寝ている・落ちている時は予備ミラー(japanese-japan)で同じAPIを叩く
+    const API_CANDIDATES = window.location.origin.includes("mokori")
+      ? [""]
+      : ["https://mokori00.onrender.com", "https://japanese-japan.onrender.com"];
+    let API_BASE = API_CANDIDATES[0];
+
+    async function apiFetch(path, options = {}) {
+      let lastError = null;
+      for (const base of API_CANDIDATES) {
+        try {
+          const res = await fetch(base + path, options);
+          API_BASE = base;
+          if (res.ok || (res.status >= 400 && res.status < 500)) return res; // 4xx はどこで聞いても同じ
+          lastError = new Error(`HTTP ${res.status}`);
+        } catch (err) {
+          lastError = err;
+        }
+      }
+      throw lastError || new Error("API unreachable");
+    }
 
     const mp4Video = document.getElementById("mp4Video");
     const syncAudio = document.getElementById("syncAudio");
@@ -400,7 +419,7 @@
 
     async function loadLiveEduParam() {
       try {
-        const res = await fetch(`${API_BASE}/api/tube/edu-param`);
+        const res = await apiFetch(`/api/tube/edu-param`);
         const data = await res.json();
         if (data.ok && data.params) {
           liveEduParam = data.params;
@@ -446,7 +465,7 @@
         statusSpan.textContent = "⏳ MP4ストリーム接続中...";
 
         try {
-          const res = await fetch(`${API_BASE}/api/tube/stream-info?v=${encodeURIComponent(currentVideoId)}`, { cache: "no-store" });
+          const res = await apiFetch(`/api/tube/stream-info?v=${encodeURIComponent(currentVideoId)}`, { cache: "no-store" });
           if (!res.ok) throw new Error(`stream-info HTTP ${res.status}`);
           const data = await res.json();
           if (loadId !== playerLoadId) return;
@@ -568,7 +587,7 @@
       document.getElementById("resultsHeader").textContent = `「${q}」の検索結果`;
       
       try {
-        const res = await fetch(`${API_BASE}/api/tube/search?q=${encodeURIComponent(q)}`);
+        const res = await apiFetch(`/api/tube/search?q=${encodeURIComponent(q)}`);
         const data = await res.json();
         if (data.videos && data.videos.length > 0) {
           renderCards(data.videos);
@@ -612,7 +631,7 @@
       document.getElementById("searchInput").value = qParam;
       searchVideos();
     } else {
-      fetch(`${API_BASE}/api/tube/search?q=STUTS+Kaneee+LEX`)
+      apiFetch(`/api/tube/search?q=STUTS+Kaneee+LEX`)
         .then(r => r.json())
         .then(d => {
           if (d.videos && d.videos.length > 0) {
