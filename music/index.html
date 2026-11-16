@@ -392,7 +392,7 @@
     // このページは静的ホスティングなので、APIは mokori → 避難先(japanese-japan) の順に試す
     const API_BASES = window.location.origin.includes("mokori")
       ? [""]
-      : ["https://mokori00.onrender.com", "https://japanese-japan.onrender.com"];
+      : ["https://mokori01.onrender.com", "https://filterexit.onrender.com"];
     let API_BASE = API_BASES[0];
 
     async function apiFetch(path, { timeout = 20000, ...options } = {}) {
