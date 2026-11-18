@@ -9593,6 +9593,7 @@ window.startPaperGame = function () {
       isPlayer: idx === 0,
       x: sp.x,
       y: sp.y,
+      home: { x: sp.x, y: sp.y },
       dx: sp.dx,
       dy: sp.dy,
       nextDx: sp.dx,
@@ -9689,9 +9690,22 @@ function updatePaperGame() {
         killPaperPlayer(p, "壁に激突してしまった！");
         return;
       } else {
-        // ボットは壁の手前で反転または旋回
-        p.nextDx = -p.dx;
-        p.nextDy = -p.dy;
+        // ボットは壁で反転すると自分のしっぽに突っ込んで死ぬので、90度曲がる
+        const options = [
+          { dx: 1, dy: 0 }, { dx: -1, dy: 0 }, { dx: 0, dy: 1 }, { dx: 0, dy: -1 }
+        ].filter((d) => {
+          if (d.dx === -p.dx && d.dy === -p.dy) return false;
+          if (d.dx === p.dx && d.dy === p.dy) return false;
+          const cx = p.x + d.dx;
+          const cy = p.y + d.dy;
+          if (cx < 0 || cx >= PAPER_GRID_SIZE || cy < 0 || cy >= PAPER_GRID_SIZE) return false;
+          return !p.trail.some((t) => t.x === cx && t.y === cy);
+        });
+        const turn = options.length > 0
+          ? options[Math.floor(Math.random() * options.length)]
+          : { dx: -p.dx, dy: -p.dy };
+        p.nextDx = turn.dx;
+        p.nextDy = turn.dy;
         return;
       }
     }
@@ -9751,9 +9765,11 @@ function updatePaperBotAI(bot) {
       const dirs = [{ dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 }];
       const valid = dirs.filter(d => d.dx !== -bot.dx || d.dy !== -bot.dy);
       // 自陣方向を選択
+      const homeX = bot.home ? bot.home.x : 30;
+      const homeY = bot.home ? bot.home.y : 30;
       const best = valid.sort((a, b) => {
-        const d1 = Math.hypot(bot.x + a.dx - 30, bot.y + a.dy - 30);
-        const d2 = Math.hypot(bot.x + b.dx - 30, bot.y + b.dy - 30);
+        const d1 = Math.hypot(bot.x + a.dx - homeX, bot.y + a.dy - homeY);
+        const d2 = Math.hypot(bot.x + b.dx - homeX, bot.y + b.dy - homeY);
         return d1 - d2;
       })[0];
       if (best) { bot.nextDx = best.dx; bot.nextDy = best.dy; }
