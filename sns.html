@@ -9666,6 +9666,11 @@ function updatePaperGame() {
   if (living.length === 0) return;
 
   living.forEach((p) => {
+    // プレイヤーは最初の入力までその場で待機（勝手に進んで壁や自分のしっぽに突っ込まない）
+    if (p.isPlayer && p.dx === 0 && p.dy === 0) {
+      return;
+    }
+
     // ボットAI更新
     if (!p.isPlayer) {
       updatePaperBotAI(p);
