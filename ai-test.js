@@ -24,25 +24,81 @@ let activeApiUrl = (function() {
   }
 })();
 
+function rememberApiUrl(url) {
+  activeApiUrl = url;
+  try { sessionStorage.setItem("myyajuu_ai_use_proxy", url === PROXY_URL ? "true" : "false"); } catch (_) {}
+}
+
+// 接続先の候補（直結 → Renderプロキシ）。片方が学校フィルターや回線で届かなくても、
+// もう片方で必ず返事が返るようにする。
+function apiCandidates() {
+  const list = [activeApiUrl, WORKER_URL, PROXY_URL];
+  return list.filter((url, i) => url && list.indexOf(url) === i);
+}
+
+const NETWORK_TIMEOUT_MS = 45000;
+
+// ネットワーク層: タイムアウト付きで順番に接続先を試す（iOS Safariの"Load failed"対策）
 async function workerFetch(path, options = {}) {
-  try {
-    const res = await fetch(`${activeApiUrl}${path}`, options);
-    // 学校iPad等のフィルターでworkers.devが401/403/502等を返した場合の自動フォールバック
-    if (!res.ok && activeApiUrl !== PROXY_URL && (res.status === 401 || res.status === 403 || res.status === 502)) {
-      console.warn(`Direct Workers API returned ${res.status} (filter block), falling back to Render proxy:`, path);
-      activeApiUrl = PROXY_URL;
-      try { sessionStorage.setItem("myyajuu_ai_use_proxy", "true"); } catch (_) {}
-      return await fetch(`${activeApiUrl}${path}`, options);
+  if (options.signal && options.signal.aborted) {
+    throw new DOMException("Aborted", "AbortError");
+  }
+  const candidates = apiCandidates();
+  let lastError = null;
+  let lastResponse = null;
+
+  for (let i = 0; i < candidates.length; i++) {
+    const base = candidates[i];
+    const controller = new AbortController();
+    const callerSignal = options.signal;
+    const onCallerAbort = () => controller.abort();
+    let timedOut = false;
+    const timer = setTimeout(() => { timedOut = true; controller.abort(); }, NETWORK_TIMEOUT_MS);
+    if (callerSignal) callerSignal.addEventListener("abort", onCallerAbort, { once: true });
+
+    try {
+      const res = await fetch(`${base}${path}`, { ...options, signal: controller.signal });
+      if (!res.ok && i < candidates.length - 1 && (res.status === 401 || res.status === 403 || res.status === 502 || res.status === 504)) {
+        // フィルター遮断・プロキシ不調。認証エラーはトークン再取得で直ることもあるので最後の応答を返す。
+        lastResponse = res;
+        console.warn(`AI endpoint ${base} returned ${res.status}; trying the other route.`);
+        continue;
+      }
+      if (base !== activeApiUrl) rememberApiUrl(base);
+      return res;
+    } catch (err) {
+      if (callerSignal && callerSignal.aborted) throw err;
+      lastError = err;
+      console.warn(`AI endpoint ${base} unreachable${timedOut ? " (timeout)" : ""}:`, err);
+    } finally {
+      clearTimeout(timer);
+      if (callerSignal) callerSignal.removeEventListener("abort", onCallerAbort);
     }
-    return res;
-  } catch (err) {
-    if (activeApiUrl !== PROXY_URL && err?.name !== "AbortError") {
-      console.warn("Direct Workers API failed (school filter detected), falling back to Render proxy:", err);
-      activeApiUrl = PROXY_URL;
-      try { sessionStorage.setItem("myyajuu_ai_use_proxy", "true"); } catch (_) {}
-      return await fetch(`${activeApiUrl}${path}`, options);
+  }
+
+  if (lastResponse) return lastResponse;
+  const error = lastError || new Error("network error");
+  error.isNetworkError = true;
+  throw error;
+}
+
+// 起動時にどちらの接続先が生きているか調べ、早い方に切り替えておく
+async function probeAiEndpoints() {
+  const candidates = apiCandidates();
+  for (const base of candidates) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
+    try {
+      const res = await fetch(`${base}/`, { method: "GET", cache: "no-store", signal: controller.signal });
+      if (res.ok) {
+        if (base !== activeApiUrl) rememberApiUrl(base);
+        return;
+      }
+    } catch (_) {
+      // 次の候補へ
+    } finally {
+      clearTimeout(timer);
     }
-    throw err;
   }
 }
 
@@ -122,6 +178,19 @@ function purgeLegacyLocalData() {
   }
 }
 purgeLegacyLocalData();
+
+// Safari系は通信失敗を "Load failed" / "Failed to fetch" とだけ返すので、日本語で意味の通る文に置き換える
+function friendlyErrorMessage(error) {
+  const raw = typeof error === "string" ? error : (error?.message || "");
+  const name = error?.name || "";
+  const text = String(raw || "");
+  const looksNetwork = error?.isNetworkError || name === "TypeError" ||
+    /load failed|failed to fetch|networkerror|network request failed|the internet connection appears to be offline|timeout/i.test(text);
+  if (looksNetwork) {
+    return "AIサーバーに接続できませんでした（通信エラー）。\n電波の良い場所で、もう一度送信してみてください。それでも直らないときは少し時間をおいてから開き直してください。";
+  }
+  return text || "通信エラーが発生しました。";
+}
 
 function showError(message) {
   errorEl.textContent = message;
@@ -345,7 +414,7 @@ async function fetchSessionsList(user, expectedAuthVersion = authStateVersion) {
     return true;
   } catch (error) {
     if (requestVersion === sessionsRequestVersion && currentUid === uidForRequest && authStateVersion === expectedAuthVersion) {
-      showError(error?.message || "会話一覧を取得できませんでした。");
+      showError(friendlyErrorMessage(error) || "会話一覧を取得できませんでした。");
       console.error("会話一覧の取得に失敗しました:", error);
     }
     return false;
@@ -580,7 +649,7 @@ async function fetchD1History(user, conversationId = currentSessionId, expectedA
   } catch (error) {
     if (requestVersion === historyRequestVersion && currentUid === uidForRequest &&
         authStateVersion === expectedAuthVersion && currentSessionId === conversationId) {
-      showError("会話履歴の同期に失敗しました。\n" + (error?.message || error));
+      showError("会話履歴の同期に失敗しました。\n" + friendlyErrorMessage(error));
       console.error("D1会話履歴の取得に失敗しました:", error);
     }
     return null;
@@ -639,7 +708,7 @@ async function generateAndShowImage(promptText) {
     statusEl.textContent = "画像生成完了";
   } catch (err) {
     statusBubble.remove();
-    showError("画像生成中にエラーが発生しました: " + err.message);
+    showError("画像生成中にエラーが発生しました: " + friendlyErrorMessage(err));
   } finally {
     generating = false;
     syncUI();
@@ -774,8 +843,9 @@ async function sendMessage(rawText) {
     if (sendSessionId && data.conversationId !== sendSessionId) {
       throw new Error("Workerから別の会話IDが返されました。");
     }
-    if (data.model !== targetModelId) {
-      throw new Error("Workerから選択したモデルの利用を確認できませんでした。");
+    if (data.model && data.model !== targetModelId && MODEL_CATALOG[data.model]) {
+      // サーバー側が別モデルで答えた場合も、回答自体は捨てずに表示する
+      console.warn(`Requested ${targetModelId} but the worker answered with ${data.model}.`);
     }
     if (requestVersion !== generationRequestVersion || currentUid !== sendUid ||
         authStateVersion !== sendAuthVersion || currentSessionId !== sendSessionId) return;
@@ -801,7 +871,7 @@ async function sendMessage(rawText) {
       currentAttachment = attachment;
       showAttachmentPreview(attachment.name, "📄");
     }
-    showError(error?.message || "通信エラーが発生しました。");
+    showError(friendlyErrorMessage(error));
     statusEl.textContent = "回答の取得に失敗しました。";
   } finally {
     if (requestVersion === generationRequestVersion) {
@@ -889,6 +959,7 @@ if (clearChatBtn) {
 
 renderHistory();
 syncUI();
+void probeAiEndpoints();
 
 // 認証監視
 onAuthStateChanged(auth, async (user) => {
@@ -976,7 +1047,7 @@ onAuthStateChanged(auth, async (user) => {
   authGateTitleEl.textContent = "ログイン状態を確認できません";
   authMessageEl.textContent = "ログイン状態を確認できませんでした。SNSにログインし直してください。";
   statusEl.textContent = "Firebase Authenticationの確認に失敗しました。";
-  showError(error?.message || "認証状態を確認できませんでした。");
+  showError(friendlyErrorMessage(error) || "認証状態を確認できませんでした。");
   syncUI();
 });
 
