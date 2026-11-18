@@ -5592,7 +5592,12 @@ window.openShogiHub = function () {
 window.leaveShogiGame = function () {
   if (shogiUnsub) { shogiUnsub(); shogiUnsub = null; }
   if (window._stopShogi) window._stopShogi();
-  openShogiHub();
+  const area = document.getElementById("shogiGameArea");
+  if (area) area.style.display = "none";
+  const lobby = document.getElementById("shogiLobby");
+  if (lobby) lobby.style.display = "block";
+  // 「← コーナーへ」はその名のとおりゲームコーナーへ戻す（以前はロビーに戻るだけで詰まっていた）
+  window.showGameCorner();
 };
 
 window.startShogiVsCpu = function () {
@@ -8483,7 +8488,9 @@ function renderSolitaireUI() {
         cardDiv.style.top = `${cardIdx * 18}px`;
         cardDiv.style.left = "0";
         cardDiv.style.right = "0";
-        cardDiv.style.width = "100%";
+        // 列の幅いっぱいに伸ばすとトランプが横長に潰れるので、カード幅で中央に置く
+        cardDiv.style.width = "min(100%, 46px)";
+        cardDiv.style.margin = "0 auto";
         cardDiv.style.zIndex = cardIdx + 1;
 
         if (card.faceUp) {
@@ -9528,8 +9535,9 @@ window.leavePaperGame = function () {
 window.paperSetDirection = function (dx, dy) {
   if (!paperPlayers[0] || !paperPlayers[0].isAlive) return;
   const p = paperPlayers[0];
-  // 逆走防止
-  if (dx !== -p.dx || dy !== -p.dy) {
+  // 停止中はどの向きにも動ける。動いている間は真逆（180度）への切り返しだけ禁止
+  const stopped = p.dx === 0 && p.dy === 0;
+  if (stopped || dx !== -p.dx || dy !== -p.dy) {
     p.nextDx = dx;
     p.nextDy = dy;
   }
@@ -9554,7 +9562,7 @@ window.startPaperGame = function () {
 
   // プレイヤー＆ボット初期配置 (5人)
   const spawnPoints = [
-    { x: 30, y: 30, dx: 0, dy: -1 }, // 中央 (あなた)
+    { x: 30, y: 30, dx: 0, dy: 0 }, // 中央 (あなた) — 入力するまで動かない
     { x: 12, y: 12, dx: 1, dy: 0 },  // 左上 (CPU1)
     { x: 48, y: 12, dx: -1, dy: 0 }, // 右上 (CPU2)
     { x: 12, y: 48, dx: 0, dy: -1 }, // 左下 (CPU3)
